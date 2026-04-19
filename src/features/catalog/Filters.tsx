@@ -35,8 +35,8 @@ export default function Filters({ filters, setFilters, brands, resetFilters }: F
                     className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-blue-600 transition-colors"
                 >
                     <option value="default">По умолчанию</option>
-                    <option value="price_asc">Цена: сначала дороже</option>
-                    <option value="price_desc">Цена: сначала дешевле</option>
+                    <option value="price_asc">Цена: сначала дешевле </option>
+                    <option value="price_desc">Цена: сначала дороже</option>
                 </select>
             </div>
 
