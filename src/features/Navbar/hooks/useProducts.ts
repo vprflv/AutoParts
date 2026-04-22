@@ -4,7 +4,7 @@ import { products } from "@/src/lib/mockData";
 import { useDebounce } from "./useDebounce";
 import {Product, ProductsFilter} from "@/src/types";
 
-export type SortOption = "default" | "price_asc" | "price_desc";
+
 
 export const useProducts = (filters:ProductsFilter
 ) => {
@@ -55,7 +55,7 @@ export const useProducts = (filters:ProductsFilter
             } else if (filters.sort === "price_desc") {
                 filtered.sort((a, b) => b.price - a.price);
             }
-            // "default" — без сортировки (оставляем как в mockData)
+
 
             return filtered;
         },

@@ -23,6 +23,6 @@ export type Product = {
   brand: string;
   images: string[];
   stock: number;
-  applicability: string[];
+  applicability?: string[];
 };
 

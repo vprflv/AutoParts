@@ -8,6 +8,7 @@ import ProductCard from "@/src/features/catalog/ProductCard";
 import { ProductsFilter } from "@/src/types";
 import { products as allProducts } from "@/src/lib/mockData";
 import { usePagination } from "@/src/features/catalog/hooks/usePagination";
+import FeedbackModal from "@/src/features/feedback/components/FeedbackModal";
 
 const ITEMS_PER_PAGE_OPTIONS = [12, 24, 36, 48];
 
@@ -18,6 +19,8 @@ export default function ProductsPage() {
         onlyInStock: false,
         sort: "default" as const,
     });
+
+    const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
 
     const { data: filteredProducts = [], isLoading } = useProducts(filters);
 
@@ -162,6 +165,21 @@ export default function ProductsPage() {
                     </div>
                 </div>
             </div>
+            {/* Плавающая кнопка "Оставить заявку" */}
+            <button
+                onClick={() => setIsFeedbackOpen(true)}
+                className="fixed bottom-8 right-8 bg-blue-600 hover:bg-blue-700 text-white px-6 py-4 rounded-2xl flex items-center gap-3 shadow-2xl transition-all active:scale-95 z-50 font-medium"
+            >
+                💬 Оставить заявку
+            </button>
+
+            {/* Модалка обратной связи */}
+            <FeedbackModal
+                isOpen={isFeedbackOpen}
+                onClose={() => setIsFeedbackOpen(false)}
+            />
+
+
         </>
     );
 }

@@ -1,4 +1,3 @@
-// src/features/catalog/hooks/usePagination.ts
 import { useState, useMemo } from "react";
 
 export function usePagination<T>(items: T[], defaultItemsPerPage = 24) {

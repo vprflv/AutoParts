@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Providers } from "./providers";
-import Navbar from "@/src/features/Navbar/components/Navbar";
+
 
 export const metadata: Metadata = {
     title: "AutoPart Pro — Автозапчасти",
