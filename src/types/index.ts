@@ -21,8 +21,9 @@ export type Product = {
   price: number;
   category: string;
   brand: string;
-  images: string[];
   stock: number;
+  images: string[];
   applicability?: string[];
+  crossNumbers?: string[];
 };
 

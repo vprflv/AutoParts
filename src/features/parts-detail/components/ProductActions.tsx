@@ -5,7 +5,7 @@ import { ShoppingCart, Plus, Minus } from "lucide-react";
 import { useCartStore } from "@/src/store/useCartStore";
 import { Product } from "@/src/types";
 import { useState } from "react";
-import CartDrawer from "@/src/features/Navbar/components/CartModal";
+import CartDrawer from "@/src/features/Navbar/components/cart/CartModal";
 
 interface ProductActionsProps {
     product: Product;

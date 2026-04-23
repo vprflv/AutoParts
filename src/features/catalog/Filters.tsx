@@ -1,20 +1,21 @@
 "use client";
 
 import { X } from "lucide-react";
-import {ProductsFilter} from "@/src/types";
+import { ProductsFilter } from "@/src/types";
 
 type SortOption = "default" | "price_asc" | "price_desc";
 
 interface FiltersProps {
-    filters: ProductsFilter
+    filters: ProductsFilter;
     setFilters: (newFilters: Partial<ProductsFilter>) => void;
-    resetFilters:() => void;
+    resetFilters: () => void;
     brands: string[];
 }
 
-export default function Filters({ filters, setFilters, brands, resetFilters }: FiltersProps) {
+export default function Filters({ filters, setFilters, resetFilters, brands }: FiltersProps) {
     return (
-        <div className="w-80 bg-zinc-900 border border-zinc-800 rounded-3xl p-6 sticky top-24 self-start">
+        <div className="w-full lg:w-80 bg-zinc-900 border border-zinc-800 rounded-3xl p-6 lg:sticky lg:top-24 self-start">
+
             <div className="flex items-center justify-between mb-8">
                 <h2 className="text-xl font-semibold">Фильтры</h2>
                 <button
@@ -29,15 +30,17 @@ export default function Filters({ filters, setFilters, brands, resetFilters }: F
             {/* Сортировка по цене */}
             <div className="mb-8">
                 <p className="text-sm text-zinc-400 mb-3">Сортировка</p>
-                <select
-                    value={filters.sort || "default"}
-                    onChange={(e) => setFilters({ sort: e.target.value as SortOption })}
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-blue-600 transition-colors"
-                >
-                    <option value="default">По умолчанию</option>
-                    <option value="price_asc">Цена: сначала дешевле </option>
-                    <option value="price_desc">Цена: сначала дороже</option>
-                </select>
+                <div className="w-full max-w-[280px]">   {/* ← фиксированная ширина */}
+                    <select
+                        value={filters.sort || "default"}
+                        onChange={(e) => setFilters({ sort: e.target.value as SortOption })}
+                        className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-blue-600 transition-colors"
+                    >
+                        <option value="default">По умолчанию</option>
+                        <option value="price_asc">Цена: сначала дешевле</option>
+                        <option value="price_desc">Цена: сначала дороже</option>
+                    </select>
+                </div>
             </div>
 
             {/* Бренд */}

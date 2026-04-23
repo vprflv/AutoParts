@@ -64,6 +64,15 @@ export function useProductImport() {
                                     .filter(Boolean),
                             };
 
+                            // Кросс-номера (аналоги)
+// Пока оставляем пустым. Когда клиент покажет формат прайса — добавим парсинг
+// Пример будущего кода:
+// const crossStr = String(row.Кросс || row.Аналоги || row.cross || "").trim();
+// product.crossNumbers = crossStr
+//     .split(/[,;]/)
+//     .map(s => s.trim())
+//     .filter(s => s.length > 0 && s !== oem);
+
                             if (!product.name || !product.brand || isNaN(product.price)) {
                                 errors.push(`Строка ${index + 2}: обязательные поля не заполнены`);
                                 return;
