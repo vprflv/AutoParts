@@ -5,6 +5,8 @@ import { X, ShoppingCart } from "lucide-react";
 import { useCartStore } from "@/src/store/useCartStore";
 import CartItem from "@/src/features/Navbar/components/cart/CartItem";
 import CartFooter from "@/src/features/Navbar/components/cart/CartFooter";
+import {useState} from "react";
+import OrderModal from "@/src/features/order/components/OrderModal";
 
 
 interface CartModalProps {
@@ -14,7 +16,7 @@ interface CartModalProps {
 
 export default function CartModal({ isOpen, onClose }: CartModalProps) {
     const { items, clearCart } = useCartStore();
-
+    const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
     if (!isOpen) return null;
 
     return (
@@ -63,8 +65,12 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                 </div>
 
                 {/* Футер с итогом */}
-                {items.length > 0 && <CartFooter clearCart={clearCart} />}
+                {items.length > 0 && <CartFooter clearCart={clearCart} onOrderClick={() => setIsOrderModalOpen(true)}  />}
             </div>
+            <OrderModal
+                isOpen={isOrderModalOpen}
+                onClose={() => setIsOrderModalOpen(false)}
+            />
         </div>
     );
 }

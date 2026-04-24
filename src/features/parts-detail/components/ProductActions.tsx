@@ -25,6 +25,7 @@ export default function ProductActions({ product }: ProductActionsProps) {
             oem: product.oem,
             price: product.price,
             image: product.images[0],
+            stock: product.stock,
         });
     };
 
@@ -37,43 +38,46 @@ export default function ProductActions({ product }: ProductActionsProps) {
     };
 
     return (
-        <div className="pt-4 space-y-3">
+        <div className="space-y-3 pt-2">
             {isProductInCart ? (
-                <div className="flex items-center justify-between bg-zinc-800 rounded-2xl p-2">
+                <div className="flex items-center justify-between bg-zinc-800 rounded-2xl p-2.5">
                     <button
                         onClick={() => handleQuantityChange(quantityInCart - 1)}
-                        className="w-12 h-12 flex items-center justify-center text-zinc-400 hover:text-white rounded-xl hover:bg-zinc-700 transition-colors"
+                        className="w-11 h-11 flex items-center justify-center text-zinc-400 hover:text-white rounded-xl hover:bg-zinc-700 active:bg-zinc-700"
                     >
-                        <Minus className="w-6 h-6" />
+                        <Minus className="w-5 h-5" />
                     </button>
 
-                    <span className="font-semibold text-2xl">{quantityInCart}</span>
+                    <span className="font-semibold text-xl min-w-[3rem] text-center">
+                        {quantityInCart}
+                    </span>
 
                     <button
                         onClick={() => handleQuantityChange(quantityInCart + 1)}
-                        className="w-12 h-12 flex items-center justify-center text-zinc-400 hover:text-white rounded-xl hover:bg-zinc-700 transition-colors"
                         disabled={quantityInCart >= product.stock}
+                        className="w-11 h-11 flex items-center justify-center text-zinc-400 hover:text-white rounded-xl hover:bg-zinc-700 active:bg-zinc-700 disabled:opacity-50"
                     >
-                        <Plus className="w-6 h-6" />
+                        <Plus className="w-5 h-5" />
                     </button>
                 </div>
             ) : (
                 <button
                     onClick={handleAddToCart}
                     disabled={product.stock === 0}
-                    className="w-full flex items-center justify-center gap-3 bg-blue-600 hover:bg-blue-700 disabled:bg-zinc-700 disabled:text-zinc-400 py-5 rounded-2xl font-semibold text-lg transition-all active:scale-[0.985]"
+                    className="w-full py-4 sm:py-5 bg-blue-600 hover:bg-blue-700 disabled:bg-zinc-700 disabled:text-zinc-400 rounded-2xl font-semibold text-base sm:text-lg transition-all active:scale-[0.985]"
                 >
-                    <ShoppingCart className="w-6 h-6" />
-                    {product.stock === 0 ? "Товар закончился" : "Добавить в корзину"}
+                    <div className="flex items-center justify-center gap-3">
+                        <ShoppingCart className="w-5 h-5" />
+                        {product.stock === 0 ? "Товар закончился" : "Добавить в корзину"}
+                    </div>
                 </button>
             )}
 
             {isProductInCart && (
                 <button
                     onClick={() => setIsCartOpen(true)}
-                    className="w-full flex items-center justify-center gap-3 border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white py-5 rounded-2xl font-semibold text-lg transition-all"
+                    className="w-full py-4 border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white rounded-2xl font-semibold text-base sm:text-lg transition-all"
                 >
-                    <ShoppingCart className="w-6 h-6" />
                     Перейти в корзину ({quantityInCart})
                 </button>
             )}

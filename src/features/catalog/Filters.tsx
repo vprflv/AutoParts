@@ -1,7 +1,9 @@
+// src/features/catalog/Filters.tsx
 "use client";
 
-import { X } from "lucide-react";
+import { X, ChevronDown } from "lucide-react";
 import { ProductsFilter } from "@/src/types";
+import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from "@headlessui/react";
 
 type SortOption = "default" | "price_asc" | "price_desc";
 
@@ -13,6 +15,14 @@ interface FiltersProps {
 }
 
 export default function Filters({ filters, setFilters, resetFilters, brands }: FiltersProps) {
+    const sortOptions = [
+        { value: "default", label: "По умолчанию" },
+        { value: "price_asc", label: "Цена: сначала дешевле" },
+        { value: "price_desc", label: "Цена: сначала дороже" },
+    ];
+
+    const currentOption = sortOptions.find(opt => opt.value === (filters.sort || "default"));
+
     return (
         <div className="w-full lg:w-80 bg-zinc-900 border border-zinc-800 rounded-3xl p-6 lg:sticky lg:top-24 self-start">
 
@@ -27,20 +37,34 @@ export default function Filters({ filters, setFilters, resetFilters, brands }: F
                 </button>
             </div>
 
-            {/* Сортировка по цене */}
+            {/* Кастомный Select с Headless UI */}
             <div className="mb-8">
                 <p className="text-sm text-zinc-400 mb-3">Сортировка</p>
-                <div className="w-full max-w-[280px]">   {/* ← фиксированная ширина */}
-                    <select
-                        value={filters.sort || "default"}
-                        onChange={(e) => setFilters({ sort: e.target.value as SortOption })}
-                        className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-blue-600 transition-colors"
-                    >
-                        <option value="default">По умолчанию</option>
-                        <option value="price_asc">Цена: сначала дешевле</option>
-                        <option value="price_desc">Цена: сначала дороже</option>
-                    </select>
-                </div>
+
+                <Listbox value={filters.sort || "default"} onChange={(value) => setFilters({ sort: value as SortOption })}>
+                    <div className="relative">
+                        <ListboxButton className="w-full bg-zinc-800 rounded-2xl px-5 py-4 text-sm flex items-center justify-between focus:outline-none focus:border-blue-600 transition-colors">
+                            <span>{currentOption?.label}</span>
+                            <ChevronDown className="w-5 h-5 text-zinc-400" />
+                        </ListboxButton>
+
+                        <ListboxOptions className="absolute mt-2 w-full bg-zinc-800 border border-zinc-700 rounded-2xl py-2 shadow-xl z-50 max-h-60 overflow-auto">
+                            {sortOptions.map((option) => (
+                                <ListboxOption
+                                    key={option.value}
+                                    value={option.value}
+                                    className={({ active }) =>
+                                        `px-5 py-3 text-sm cursor-pointer transition-colors ${
+                                            active ? "bg-zinc-700 text-white" : "text-zinc-300"
+                                        }`
+                                    }
+                                >
+                                    {option.label}
+                                </ListboxOption>
+                            ))}
+                        </ListboxOptions>
+                    </div>
+                </Listbox>
             </div>
 
             {/* Бренд */}

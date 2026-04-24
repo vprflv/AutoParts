@@ -29,10 +29,6 @@ export default function FeedbackForm({ onSuccess, onClose }: FeedbackFormProps) 
             return;
         }
 
-        if (!agreePolicy) {
-            alert("Пожалуйста, согласитесь с политикой конфиденциальности");
-            return;
-        }
 
         // Симуляция отправки
         await new Promise(resolve => setTimeout(resolve, 1300));

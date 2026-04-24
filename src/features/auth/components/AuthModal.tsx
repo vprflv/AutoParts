@@ -1,4 +1,3 @@
-// src/features/auth/components/AuthModal.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -44,9 +43,12 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4 sm:p-6">
-            <div className="bg-zinc-900 rounded-3xl w-full max-w-md mx-auto overflow-hidden">
-                {/* Заголовок */}
-                <div className="flex items-center justify-between px-5 sm:px-6 pt-6 pb-4 border-b border-zinc-800">
+            <div className="bg-zinc-900 rounded-3xl w-full max-w-md mx-auto
+                            max-h-[92vh] sm:max-h-[90vh] md:max-h-[88vh]
+                            overflow-hidden flex flex-col shadow-2xl">
+
+                {/* Header — фиксированный */}
+                <div className="flex items-center justify-between px-5 sm:px-6 pt-5 pb-4 border-b border-zinc-800 flex-shrink-0">
                     <h2 className="text-2xl font-semibold">Авторизация</h2>
                     <button
                         onClick={onClose}
@@ -56,7 +58,8 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                     </button>
                 </div>
 
-                <div className="p-5 sm:p-6 space-y-6">
+                {/* Контент с прокруткой */}
+                <div className="flex-1 overflow-y-auto p-5 sm:p-6">
                     <AuthTabs tab={tab} setTab={setTab} />
 
                     {tab === "login" ? (

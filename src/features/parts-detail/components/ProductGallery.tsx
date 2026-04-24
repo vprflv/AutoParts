@@ -2,8 +2,9 @@
 "use client";
 
 import Image from "next/image";
-import {ChevronLeft, ChevronRight, Expand, X} from "lucide-react";
+import { ChevronLeft, ChevronRight, Expand, X } from "lucide-react";
 import { useState } from "react";
+import ImageThumbnails from "./ImageThumbnails";
 
 interface ProductGalleryProps {
     images: string[];
@@ -13,6 +14,10 @@ export function ProductGallery({ images }: ProductGalleryProps) {
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
     const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
+    // Свайп логика
+    const [touchStart, setTouchStart] = useState<number | null>(null);
+    const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
     const goToPrevious = () => {
         setSelectedImageIndex((prev) => (prev - 1 + images.length) % images.length);
     };
@@ -21,32 +26,56 @@ export function ProductGallery({ images }: ProductGalleryProps) {
         setSelectedImageIndex((prev) => (prev + 1) % images.length);
     };
 
+    const handleTouchStart = (e: React.TouchEvent) => {
+        setTouchEnd(null);
+        setTouchStart(e.targetTouches[0].clientX);
+    };
+
+    const handleTouchMove = (e: React.TouchEvent) => {
+        setTouchEnd(e.targetTouches[0].clientX);
+    };
+
+    const handleTouchEnd = () => {
+        if (!touchStart || !touchEnd) return;
+        const distance = touchStart - touchEnd;
+
+        if (distance > 50 && selectedImageIndex < images.length - 1) goToNext();
+        if (distance < -50 && selectedImageIndex > 0) goToPrevious();
+    };
+
     return (
         <>
-            <div className="bg-zinc-900 rounded-3xl overflow-hidden relative group">
-                <Image
-                    src={images[selectedImageIndex]}
-                    alt="Фото товара"
-                    width={800}
-                    height={500}
-                    className="w-full h-auto object-contain"
-                    priority
-                />
+            {/* Главная галерея */}
+            <div
+                className="bg-zinc-900 rounded-3xl overflow-hidden relative"
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+            >
+                <div className="relative aspect-square md:aspect-[16/13]">
+                    <Image
+                        src={images[selectedImageIndex]}
+                        alt="Фото товара"
+                        fill
+                        className="object-contain"
+                        priority
+                    />
+                </div>
 
-                {/* Стрелки на главном фото */}
+                {/* Стрелки на главной галерее */}
                 {images.length > 1 && (
                     <>
                         <button
                             onClick={goToPrevious}
-                            className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-3 rounded-full transition-all opacity-0 group-hover:opacity-100"
+                            className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-black/90 p-2.5 sm:p-3 rounded-full text-white transition-all z-10"
                         >
-                            <ChevronLeft className="w-6 h-6" />
+                            <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
                         </button>
                         <button
                             onClick={goToNext}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-3 rounded-full transition-all opacity-0 group-hover:opacity-100"
+                            className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-black/90 p-2.5 sm:p-3 rounded-full text-white transition-all z-10"
                         >
-                            <ChevronRight className="w-6 h-6" />
+                            <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
                         </button>
                     </>
                 )}
@@ -55,56 +84,70 @@ export function ProductGallery({ images }: ProductGalleryProps) {
                 {images.length > 1 && (
                     <button
                         onClick={() => setIsLightboxOpen(true)}
-                        className="absolute bottom-6 right-6 bg-black/80 hover:bg-black text-white px-5 py-3 rounded-2xl flex items-center gap-2 text-sm font-medium transition-all shadow-lg"
+                        className="absolute bottom-4 right-4 sm:bottom-6 sm:right-6 bg-black/80 hover:bg-black text-white px-4 py-2.5 sm:px-5 sm:py-3 rounded-2xl flex items-center gap-2 text-sm font-medium transition-all shadow-lg z-10"
                     >
                         <Expand className="w-4 h-4" />
-                        Открыть галерею
+                        <span className="hidden sm:inline">Открыть галерею</span>
                     </button>
                 )}
             </div>
 
-            {/* Миниатюры */}
-            {images.length > 1 && (
-                <div className="mt-6 flex gap-4 overflow-x-auto pb-4">
-                    {images.map((img, index) => (
-                        <button
-                            key={index}
-                            onClick={() => setSelectedImageIndex(index)}
-                            className={`flex-shrink-0 w-28 h-20 rounded-2xl overflow-hidden border-2 transition-all ${
-                                selectedImageIndex === index
-                                    ? "border-blue-600"
-                                    : "border-transparent hover:border-zinc-600"
-                            }`}
-                        >
-                            <Image
-                                src={img}
-                                alt={`Фото ${index + 1}`}
-                                width={120}
-                                height={80}
-                                className="object-cover"
-                            />
-                        </button>
-                    ))}
-                </div>
-            )}
+            {/* Миниатюры под основной галереей */}
+            <ImageThumbnails
+                images={images}
+                selectedIndex={selectedImageIndex}
+                onSelect={setSelectedImageIndex}
+            />
 
-            {/* Lightbox */}
+            {/* ==================== Lightbox (полноэкранная) ==================== */}
             {isLightboxOpen && (
-                <div className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center">
+                <div className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center"
+                     onTouchStart={handleTouchStart}
+                     onTouchMove={handleTouchMove}
+                     onTouchEnd={handleTouchEnd}
+                >
                     <button
                         onClick={() => setIsLightboxOpen(false)}
-                        className="absolute top-6 right-6 text-white hover:text-zinc-300"
+                        className="absolute top-6 right-6 text-white hover:text-zinc-300 z-30"
                     >
-                        <X size={40} />
+                        <X size={36} />
                     </button>
 
-                    <div className="relative w-full max-w-5xl px-6">
+                    {/* Стрелки в lightbox — уменьшенные и адаптивные */}
+                    {images.length > 1 && (
+                        <>
+                            <button
+                                onClick={goToPrevious}
+                                className="absolute left-4 sm:left-8 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-black/90 p-3 sm:p-4 rounded-full text-white z-20 transition-all"
+                            >
+                                <ChevronLeft className="w-7 h-7 sm:w-8 sm:h-8" />
+                            </button>
+                            <button
+                                onClick={goToNext}
+                                className="absolute right-4 sm:right-8 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-black/90 p-3 sm:p-4 rounded-full text-white z-20 transition-all"
+                            >
+                                <ChevronRight className="w-7 h-7 sm:w-8 sm:h-8" />
+                            </button>
+                        </>
+                    )}
+
+                    {/* Основное фото */}
+                    <div className="relative w-full max-w-5xl px-4 sm:px-6">
                         <Image
                             src={images[selectedImageIndex]}
                             alt="Фото товара"
                             width={1400}
                             height={1000}
-                            className="max-h-[88vh] object-contain mx-auto"
+                            className="max-h-[82vh] sm:max-h-[85vh] md:max-h-[88vh] object-contain mx-auto"
+                        />
+                    </div>
+
+                    {/* Миниатюры в lightbox — компактные */}
+                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20">
+                        <ImageThumbnails
+                            images={images}
+                            selectedIndex={selectedImageIndex}
+                            onSelect={setSelectedImageIndex}
                         />
                     </div>
                 </div>

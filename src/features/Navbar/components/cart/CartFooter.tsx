@@ -5,9 +5,10 @@ import {useCartStore} from "@/src/store/useCartStore";
 
 interface CartFooterProps {
     clearCart: () => void;
+    onOrderClick: () => void;
 }
 
-export default function CartFooter({ clearCart }: CartFooterProps) {
+export default function CartFooter({ clearCart, onOrderClick }: CartFooterProps) {
     const { totalPrice } = useCartStore();   // можно вынести totalPrice в props, если хочешь
 
     return (
@@ -17,7 +18,8 @@ export default function CartFooter({ clearCart }: CartFooterProps) {
                 <span>{totalPrice().toLocaleString("ru-RU")} ₽</span>
             </div>
 
-            <button className="w-full bg-blue-600 hover:bg-blue-700 py-4 rounded-2xl font-semibold text-lg transition-colors">
+            <button onClick={onOrderClick}
+                    className="w-full bg-blue-600 hover:bg-blue-700 py-4 rounded-2xl font-semibold text-lg transition-colors">
                 Оформить заказ
             </button>
 

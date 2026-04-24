@@ -35,13 +35,12 @@ export default function ProductCard({ product }: ProductCardProps) {
         updateQuantity(product.id, newQuantity);
     };
 
-    // Если товара нет в наличии вообще
     if (product.stock === 0) {
         return (
-            <Link href={`/products/${product.id}`} className="group block">
-                <div className="bg-zinc-900 border border-zinc-800 rounded-3xl overflow-hidden flex flex-col h-full opacity-75">
+            <Link href={`/products/${product.id}`} className="group block h-full">
+                <div className="bg-zinc-900 border border-zinc-800 rounded-3xl overflow-hidden flex flex-col h-full opacity-75 hover:opacity-90 transition-all">
                     {/* Изображение */}
-                    <div className="relative h-64 bg-zinc-950 overflow-hidden">
+                    <div className="relative aspect-[4/3] bg-zinc-950 overflow-hidden">
                         <Image
                             src={product.images[0]}
                             alt={product.name}
@@ -51,25 +50,26 @@ export default function ProductCard({ product }: ProductCardProps) {
                     </div>
 
                     {/* Контент */}
-                    <div className="p-6 flex flex-col flex-1">
+                    <div className="p-5 sm:p-6 flex flex-col flex-1">
                         <div className="flex-1">
-                            <p className="text-sm text-zinc-500">{product.brand} • {product.category}</p>
-                            <h3 className="font-semibold text-lg leading-tight mt-2 line-clamp-3">
+                            <p className="text-xs sm:text-sm text-zinc-500">
+                                {product.brand} • {product.category}
+                            </p>
+                            <h3 className="font-semibold text-base sm:text-lg leading-tight mt-2 line-clamp-3">
                                 {product.name}
                             </h3>
-                            <p className="text-sm text-red-500 mt-2">OEM: {product.oem}</p>
+                            <p className="text-xs text-red-500 mt-3">OEM: {product.oem}</p>
                         </div>
 
                         <div className="mt-auto pt-6">
-                            <p className="text-3xl font-bold text-white mb-4">
+                            <p className="text-2xl sm:text-3xl font-bold text-white mb-3">
                                 {product.price.toLocaleString("ru-RU")} ₽
                             </p>
-
-                            <p className="text-sm text-red-500 mb-6">В наличии: 0 шт.</p>
+                            <p className="text-sm text-red-500 mb-6">Нет в наличии</p>
 
                             <button
                                 disabled
-                                className="w-full py-4 rounded-2xl font-semibold bg-zinc-700 text-zinc-400 cursor-not-allowed"
+                                className="w-full py-3.5 sm:py-4 rounded-2xl font-semibold bg-zinc-700 text-zinc-400 cursor-not-allowed text-sm sm:text-base"
                             >
                                 Товар закончился
                             </button>
@@ -80,12 +80,13 @@ export default function ProductCard({ product }: ProductCardProps) {
         );
     }
 
+    // Основная карточка (товар в наличии)
     return (
-        <Link href={`/products/${product.id}`} className="group block">
+        <Link href={`/products/${product.id}`} className="group block h-full">
             <div className="bg-zinc-900 border border-zinc-800 rounded-3xl overflow-hidden hover:border-blue-600 transition-all duration-300 hover:shadow-2xl flex flex-col h-full">
 
                 {/* Изображение */}
-                <div className="relative h-64 bg-zinc-950 overflow-hidden">
+                <div className="relative aspect-[4/3] bg-zinc-950 overflow-hidden">
                     <Image
                         src={product.images[0]}
                         alt={product.name}
@@ -95,17 +96,19 @@ export default function ProductCard({ product }: ProductCardProps) {
                 </div>
 
                 {/* Контент */}
-                <div className="p-6 flex flex-col flex-1">
+                <div className="p-5 sm:p-6 flex flex-col flex-1">
                     <div className="flex-1">
-                        <p className="text-sm text-zinc-500">{product.brand} • {product.category}</p>
-                        <h3 className="font-semibold text-lg leading-tight mt-2 line-clamp-3">
+                        <p className="text-xs sm:text-sm text-zinc-500">
+                            {product.brand} • {product.category}
+                        </p>
+                        <h3 className="font-semibold text-base sm:text-lg leading-tight mt-2 line-clamp-3">
                             {product.name}
                         </h3>
-                        <p className="text-sm text-red-500 mt-2">OEM: {product.oem}</p>
+                        <p className="text-xs text-red-500 mt-3">OEM: {product.oem}</p>
                     </div>
 
                     <div className="mt-auto pt-6">
-                        <p className="text-3xl font-bold text-white mb-4">
+                        <p className="text-2xl sm:text-3xl font-bold text-white mb-3">
                             {product.price.toLocaleString("ru-RU")} ₽
                         </p>
 
@@ -114,18 +117,18 @@ export default function ProductCard({ product }: ProductCardProps) {
                         </p>
 
                         {isProductInCart ? (
-                            <div className="flex items-center justify-between bg-zinc-800 rounded-2xl p-1">
+                            <div className="flex items-center justify-between bg-zinc-800 rounded-2xl p-1.5 sm:p-2">
                                 <button
                                     onClick={(e) => {
                                         e.preventDefault();
                                         handleQuantityChange(quantityInCart - 1);
                                     }}
-                                    className="w-10 h-10 flex items-center justify-center text-zinc-400 hover:text-white"
+                                    className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-zinc-400 hover:text-white active:bg-zinc-700 rounded-xl transition-colors"
                                 >
                                     <Minus className="w-5 h-5" />
                                 </button>
 
-                                <span className="font-semibold text-lg min-w-[2rem] text-center">
+                                <span className="font-semibold text-lg min-w-[2.5rem] text-center">
                                     {quantityInCart}
                                 </span>
 
@@ -134,8 +137,8 @@ export default function ProductCard({ product }: ProductCardProps) {
                                         e.preventDefault();
                                         handleQuantityChange(quantityInCart + 1);
                                     }}
-                                    className="w-10 h-10 flex items-center justify-center text-zinc-400 hover:text-white"
                                     disabled={quantityInCart >= product.stock}
+                                    className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-zinc-400 hover:text-white active:bg-zinc-700 rounded-xl transition-colors disabled:opacity-50"
                                 >
                                     <Plus className="w-5 h-5" />
                                 </button>
@@ -143,7 +146,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                         ) : (
                             <button
                                 onClick={handleAddToCart}
-                                className="w-full flex items-center justify-center gap-3 bg-blue-600 hover:bg-blue-700 py-4 rounded-2xl font-semibold text-base transition-all active:scale-[0.985]"
+                                className="w-full flex items-center justify-center gap-3 bg-blue-600 hover:bg-blue-700 py-3.5 sm:py-4 rounded-2xl font-semibold text-sm sm:text-base transition-all active:scale-[0.985]"
                             >
                                 <ShoppingCart className="w-5 h-5" />
                                 Добавить в корзину
