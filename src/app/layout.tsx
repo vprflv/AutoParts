@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Providers } from "./providers";
+import Footer from "@/src/common/components/Footer";
 
 
 export const metadata: Metadata = {
@@ -18,6 +19,7 @@ export default function RootLayout({
         <body className="bg-background text-foreground antialiased min-h-screen">
         <Providers>
             {children}
+            <Footer />
         </Providers>
         </body>
         </html>

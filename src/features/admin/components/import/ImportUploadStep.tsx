@@ -9,7 +9,7 @@ interface ImportUploadStepProps {
     excelFile: File | null;
     setExcelFile: (file: File | null) => void;
     imageFiles: File[];
-    setImageFiles: (files: File[]) => void;
+    setImageFiles: React.Dispatch<React.SetStateAction<File[]>>
     existingProducts: any[];
 }
 
@@ -42,7 +42,8 @@ export default function ImportUploadStep({
     const handleImagesSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
         const validImages = files.filter(f => f.type.startsWith("image/"));
-        setImageFiles(prev => [...prev, ...validImages]);
+
+        setImageFiles((prev: File[]) => [...prev, ...validImages]);
     };
 
     const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
@@ -54,7 +55,9 @@ export default function ImportUploadStep({
         const images = files.filter(f => f.type.startsWith("image/"));
 
         if (excel) setExcelFile(excel);
-        if (images.length > 0) setImageFiles(prev => [...prev, ...images]);
+        if (images.length > 0) {
+            setImageFiles((prev: File[]) => [...prev, ...images]);
+        }
     }, [setExcelFile, setImageFiles]);
 
     const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); setDragOver(true); };

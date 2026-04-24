@@ -24,6 +24,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             oem: product.oem,
             price: product.price,
             image: product.images[0],
+            stock: product.stock
         });
     };
 

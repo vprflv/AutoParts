@@ -42,14 +42,18 @@ export default function ProductsPage() {
         return Array.from(new Set(allProducts.map((p) => p.brand))).sort();
     }, []);
 
-    // Скрытие плавающей кнопки при достижении пагинации
+    // Логика скрытия плавающей кнопки при достижении пагинации
     useEffect(() => {
         const observer = new IntersectionObserver(
-            ([entry]) => setHideFloatingButton(entry.isIntersecting),
-            { threshold: 0.1 }
+            ([entry]) => {
+                setHideFloatingButton(entry.isIntersecting);
+            },
+            { threshold: 0.3 }   // чуть увеличил порог, чтобы раньше пряталась
         );
 
-        if (paginationRef.current) observer.observe(paginationRef.current);
+        if (paginationRef.current) {
+            observer.observe(paginationRef.current);
+        }
 
         return () => observer.disconnect();
     }, [totalPages]);
@@ -99,7 +103,6 @@ export default function ProductsPage() {
                 </div>
 
                 <div className="flex flex-col lg:flex-row gap-8 lg:gap-10">
-                    {/* Фильтры */}
                     <div className={`
                         w-full lg:w-80 flex-shrink-0 transition-all duration-300
                         ${isFiltersOpen ? 'block' : 'hidden lg:block'}
@@ -112,7 +115,6 @@ export default function ProductsPage() {
                         />
                     </div>
 
-                    {/* Основной контент */}
                     <div className="flex-1">
                         <div className="mb-6 md:mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                             <h1 className="text-3xl md:text-4xl font-bold">Каталог автозапчастей</h1>
@@ -139,18 +141,22 @@ export default function ProductsPage() {
                                     ))}
                                 </div>
 
-                                <Pagination
-                                    currentPage={currentPage}
-                                    totalPages={totalPages}
-                                    onPageChange={changePage}
-                                />
+                                {totalPages > 1 && (
+                                    <div ref={paginationRef}>
+                                        <Pagination
+                                            currentPage={currentPage}
+                                            totalPages={totalPages}
+                                            onPageChange={changePage}
+                                        />
+                                    </div>
+                                )}
                             </>
                         )}
                     </div>
                 </div>
             </div>
 
-            {/* Плавающая кнопка */}
+            {/* Плавающая кнопка "Оставить заявку" */}
             <button
                 onClick={() => setIsFeedbackOpen(true)}
                 className={`hidden lg:block fixed bottom-8 right-8 bg-blue-600 hover:bg-blue-700 text-white px-6 py-4 rounded-2xl flex items-center gap-3 shadow-2xl transition-all active:scale-95 z-50 font-medium text-base

@@ -34,7 +34,9 @@ export const useProducts = (filters:ProductsFilter
                         product.name.toLowerCase().includes(term) ||
                         product.oem.toLowerCase().includes(term) ||
                         product.brand.toLowerCase().includes(term) ||
-                        product.applicability.some((car) => car.toLowerCase().includes(term))
+                        (product.applicability && product.applicability.some((car) =>
+                            car.toLowerCase().includes(term)
+                        ))
                     );
                 });
             }

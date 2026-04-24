@@ -29,7 +29,7 @@ export default function Navbar({ onSearchChange, searchValue }: NavbarProps) {
                         {/* Логотип */}
                         <div className="flex items-center gap-3 flex-shrink-0">
                             <div className="w-9 h-9 bg-blue-600 rounded-2xl flex items-center justify-center text-2xl">
-                                🚗
+
                             </div>
                             <div>
                                 <h1 className="text-xl font-bold tracking-tight">AutoPart</h1>
