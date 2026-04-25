@@ -1,4 +1,3 @@
-// src/features/product-detail/components/ProductGallery.tsx
 "use client";
 
 import Image from "next/image";
@@ -87,7 +86,7 @@ export function ProductGallery({ images }: ProductGalleryProps) {
                         className="absolute bottom-4 right-4 sm:bottom-6 sm:right-6 bg-black/80 hover:bg-black text-white px-4 py-2.5 sm:px-5 sm:py-3 rounded-2xl flex items-center gap-2 text-sm font-medium transition-all shadow-lg z-10"
                     >
                         <Expand className="w-4 h-4" />
-                        <span className="hidden sm:inline">Открыть галерею</span>
+
                     </button>
                 )}
             </div>
@@ -99,13 +98,10 @@ export function ProductGallery({ images }: ProductGalleryProps) {
                 onSelect={setSelectedImageIndex}
             />
 
+
             {/* ==================== Lightbox (полноэкранная) ==================== */}
             {isLightboxOpen && (
-                <div className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center"
-                     onTouchStart={handleTouchStart}
-                     onTouchMove={handleTouchMove}
-                     onTouchEnd={handleTouchEnd}
-                >
+                <div className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center">
                     <button
                         onClick={() => setIsLightboxOpen(false)}
                         className="absolute top-6 right-6 text-white hover:text-zinc-300 z-30"
@@ -113,42 +109,46 @@ export function ProductGallery({ images }: ProductGalleryProps) {
                         <X size={36} />
                     </button>
 
-                    {/* Стрелки в lightbox — уменьшенные и адаптивные */}
+                    {/* Стрелки */}
                     {images.length > 1 && (
                         <>
                             <button
                                 onClick={goToPrevious}
-                                className="absolute left-4 sm:left-8 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-black/90 p-3 sm:p-4 rounded-full text-white z-20 transition-all"
+                                className="absolute left-4 sm:left-8 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/90 p-3 sm:p-4 rounded-full text-white z-20 transition-all "
                             >
                                 <ChevronLeft className="w-7 h-7 sm:w-8 sm:h-8" />
                             </button>
                             <button
                                 onClick={goToNext}
-                                className="absolute right-4 sm:right-8 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-black/90 p-3 sm:p-4 rounded-full text-white z-20 transition-all"
+                                className="absolute right-4 sm:right-8 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/90 p-3 sm:p-4 rounded-full text-white z-20 transition-all"
                             >
                                 <ChevronRight className="w-7 h-7 sm:w-8 sm:h-8" />
                             </button>
                         </>
                     )}
 
-                    {/* Основное фото */}
-                    <div className="relative w-full max-w-5xl px-4 sm:px-6">
+                    <div className="relative w-full max-w-5xl px-4 sm:px-6 flex flex-col items-center">
+                        {/* Основное фото */}
                         <Image
                             src={images[selectedImageIndex]}
                             alt="Фото товара"
                             width={1400}
                             height={1000}
-                            className="max-h-[82vh] sm:max-h-[85vh] md:max-h-[88vh] object-contain mx-auto"
+                            className="max-h-[78vh] sm:max-h-[82vh] md:max-h-[85vh] object-contain mx-auto"
                         />
-                    </div>
 
-                    {/* Миниатюры в lightbox — компактные */}
-                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20">
-                        <ImageThumbnails
-                            images={images}
-                            selectedIndex={selectedImageIndex}
-                            onSelect={setSelectedImageIndex}
-                        />
+                        {/* Миниатюры в lightbox */}
+                        {images.length > 1 && (
+                            <div className="mt-6 sm:mt-8 w-full flex justify-center px-4">
+                                <div className="max-w-[680px] w-full">
+                                    <ImageThumbnails
+                                        images={images}
+                                        selectedIndex={selectedImageIndex}
+                                        onSelect={setSelectedImageIndex}
+                                    />
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

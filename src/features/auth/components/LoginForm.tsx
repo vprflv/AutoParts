@@ -1,15 +1,17 @@
-// src/features/auth/components/LoginForm.tsx
 "use client";
 
 
 
 import {useAuthForm} from "@/src/features/auth/hooks/useAuthForm";
+import Link from "next/link";
+import {useState} from "react";
 
 interface LoginFormProps {
     onClose: () => void;
+    setTab: (tab: "login" | "register" | "forgot") => void;
 }
 
-export default function LoginForm({ onClose }: LoginFormProps) {
+export default function LoginForm({ onClose, setTab  }: LoginFormProps) {
     const {
         email,
         setEmail,
@@ -20,6 +22,7 @@ export default function LoginForm({ onClose }: LoginFormProps) {
         handleSubmit,
         validateField,
     } = useAuthForm();
+    const [rememberMe, setRememberMe] = useState(false);
 
     return (
         <div className="space-y-6">
@@ -46,6 +49,27 @@ export default function LoginForm({ onClose }: LoginFormProps) {
                 />
             </div>
 
+            {/* Запомнить меня + Забыл пароль */}
+            <div className="flex items-center justify-between">
+                <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                        type="checkbox"
+                        checked={rememberMe}
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                        className="w-4 h-4 accent-blue-600 bg-zinc-800 border-zinc-700 rounded"
+                    />
+                    <span className="text-sm text-zinc-400">Запомнить меня</span>
+                </label>
+
+                <button
+                    type="button"
+                    onClick={() => setTab("forgot")}
+                    className="text-blue-500 hover:text-blue-400 text-sm transition-colors"
+                >
+                    Забыл пароль?
+                </button>
+            </div>
+
             <button
                 onClick={handleSubmit}
                 disabled={isLoading}
@@ -53,6 +77,8 @@ export default function LoginForm({ onClose }: LoginFormProps) {
             >
                 {isLoading ? "Подождите..." : "Войти"}
             </button>
+
+
         </div>
     );
 }

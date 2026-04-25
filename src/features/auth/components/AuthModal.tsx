@@ -1,3 +1,4 @@
+// src/features/auth/components/AuthModal.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -7,6 +8,7 @@ import { useAuthStore } from "@/src/store/useAuthStore";
 import AuthTabs from "./AuthTabs";
 import LoginForm from "./LoginForm";
 import RegisterForm from "./RegisterForm";
+import ForgotPasswordForm from "./ForgotPasswordForm";
 
 interface AuthModalProps {
     isOpen: boolean;
@@ -14,7 +16,7 @@ interface AuthModalProps {
 }
 
 export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
-    const [tab, setTab] = useState<"login" | "register">("login");
+    const [tab, setTab] = useState<"login" | "register" | "forgot">("login");
     const { user, logout } = useAuthStore();
 
     useEffect(() => {
@@ -43,13 +45,12 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4 sm:p-6">
-            <div className="bg-zinc-900 rounded-3xl w-full max-w-md mx-auto
-                            max-h-[92vh] sm:max-h-[90vh] md:max-h-[88vh]
-                            overflow-hidden flex flex-col shadow-2xl">
-
-                {/* Header — фиксированный */}
-                <div className="flex items-center justify-between px-5 sm:px-6 pt-5 pb-4 border-b border-zinc-800 flex-shrink-0">
-                    <h2 className="text-2xl font-semibold">Авторизация</h2>
+            <div className="bg-zinc-900 rounded-3xl w-full max-w-md mx-auto overflow-hidden">
+                {/* Заголовок */}
+                <div className="flex items-center justify-between px-5 sm:px-6 pt-6 pb-4 border-b border-zinc-800">
+                    <h2 className="text-2xl font-semibold">
+                        {tab === "forgot" ? "Восстановление пароля" : "Авторизация"}
+                    </h2>
                     <button
                         onClick={onClose}
                         className="text-zinc-400 hover:text-white p-2 transition-colors"
@@ -58,14 +59,18 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                     </button>
                 </div>
 
-                {/* Контент с прокруткой */}
-                <div className="flex-1 overflow-y-auto p-5 sm:p-6">
-                    <AuthTabs tab={tab} setTab={setTab} />
-
-                    {tab === "login" ? (
-                        <LoginForm onClose={onClose} />
+                <div className="p-5 sm:p-6">
+                    {tab === "forgot" ? (
+                        <ForgotPasswordForm onClose={onClose} setTab={setTab} />
                     ) : (
-                        <RegisterForm onClose={onClose} />
+                        <>
+                            <AuthTabs tab={tab} setTab={setTab} />
+                            {tab === "login" ? (
+                                <LoginForm onClose={onClose} setTab={setTab} />
+                            ) : (
+                                <RegisterForm onClose={onClose} />
+                            )}
+                        </>
                     )}
                 </div>
             </div>

@@ -13,6 +13,7 @@ export const products: Product[] = [
             "https://picsum.photos/id/1015/800/600",
             "https://picsum.photos/id/1016/800/600",
             "https://picsum.photos/id/1018/800/600",
+
         ],
         stock: 12,
         applicability: ["Toyota Camry 2018", "Toyota Camry 2019", "Honda Accord 2017"],
@@ -25,8 +26,11 @@ export const products: Product[] = [
         category: "Фильтры",
         brand: "Mann",
         images: [
-            "https://picsum.photos/id/102/800/600",
-            "https://picsum.photos/id/103/800/600",
+            "https://picsum.photos/id/1018/800/600",
+            "https://picsum.photos/id/1018/800/600",
+            "https://picsum.photos/id/1018/800/600",
+
+
         ],
         stock: 20,
         applicability: ["Toyota Camry 2015-2022", "Toyota RAV4 2018-2023"],

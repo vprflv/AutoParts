@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 interface AuthTabsProps {
     tab: "login" | "register";
     setTab: (tab: "login" | "register") => void;
@@ -17,7 +19,9 @@ export default function AuthTabs({ tab, setTab }: AuthTabsProps) {
                 }`}
             >
                 Вход
+
             </button>
+
             <button
                 onClick={() => setTab("register")}
                 className={`flex-1 py-4 font-medium transition-colors text-base sm:text-lg ${
