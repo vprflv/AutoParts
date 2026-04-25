@@ -1,17 +1,15 @@
+// src/features/auth/components/LoginForm.tsx
 "use client";
 
-
-
-import {useAuthForm} from "@/src/features/auth/hooks/useAuthForm";
-import Link from "next/link";
-import {useState} from "react";
+import { useAuthForm } from "@/src/features/auth/hooks/useAuthForm";
+import { useState, useEffect } from "react";
 
 interface LoginFormProps {
     onClose: () => void;
     setTab: (tab: "login" | "register" | "forgot") => void;
 }
 
-export default function LoginForm({ onClose, setTab  }: LoginFormProps) {
+export default function LoginForm({ onClose, setTab }: LoginFormProps) {
     const {
         email,
         setEmail,
@@ -22,7 +20,30 @@ export default function LoginForm({ onClose, setTab  }: LoginFormProps) {
         handleSubmit,
         validateField,
     } = useAuthForm();
+
     const [rememberMe, setRememberMe] = useState(false);
+
+    // Автозаполнение сохранённого email
+    useEffect(() => {
+        const savedEmail = localStorage.getItem("rememberedEmail");
+        if (savedEmail) {
+            setEmail(savedEmail);
+            setRememberMe(true);
+        }
+    }, [setEmail]);
+
+    const onFormSubmit = async () => {
+        const success = await handleSubmit();
+
+        if (success) {
+            if (rememberMe) {
+                localStorage.setItem("rememberedEmail", email);
+            } else {
+                localStorage.removeItem("rememberedEmail");
+            }
+            onClose();
+        }
+    };
 
     return (
         <div className="space-y-6">
@@ -49,7 +70,6 @@ export default function LoginForm({ onClose, setTab  }: LoginFormProps) {
                 />
             </div>
 
-            {/* Запомнить меня + Забыл пароль */}
             <div className="flex items-center justify-between">
                 <label className="flex items-center gap-3 cursor-pointer">
                     <input
@@ -71,14 +91,12 @@ export default function LoginForm({ onClose, setTab  }: LoginFormProps) {
             </div>
 
             <button
-                onClick={handleSubmit}
+                onClick={onFormSubmit}
                 disabled={isLoading}
-                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-zinc-700 py-4 rounded-2xl font-medium text-lg transition-all mt-4"
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-zinc-700 py-4 rounded-2xl font-medium text-lg transition-all"
             >
                 {isLoading ? "Подождите..." : "Войти"}
             </button>
-
-
         </div>
     );
 }
