@@ -46,7 +46,7 @@ export const useCartStore = create<CartStore>((set, get) => ({
         const stock = currentItem.stock || 999;
 
         if (newQuantity < 1) {
-            // Если количество стало 0 или меньше — полностью удаляем товар
+
             set((state) => ({
                 items: state.items.filter((i) => i.id !== id),
             }));
