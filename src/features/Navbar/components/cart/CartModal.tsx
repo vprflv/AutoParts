@@ -19,6 +19,11 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
     const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
     if (!isOpen) return null;
 
+    const handleOrderSuccess = () => {
+        setIsOrderModalOpen(false);
+        onClose();
+    };
+
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4 md:p-6">
             <div className="fixed inset-0 bg-black/70" onClick={onClose} />
@@ -70,6 +75,8 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
             <OrderModal
                 isOpen={isOrderModalOpen}
                 onClose={() => setIsOrderModalOpen(false)}
+                redirectAfterSuccess={false}
+                onSuccess={handleOrderSuccess}
             />
         </div>
     );

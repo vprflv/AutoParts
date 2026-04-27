@@ -35,3 +35,15 @@ export interface User {
   avatar?: string;
 }
 
+export interface Vehicle {
+  id: string;
+  vin: string;
+  bodyNumber?: string;
+  brand: string;
+  model: string;
+  year: number;
+  engine?: string;
+  isDefault: boolean;
+  notes?: string;
+}
+

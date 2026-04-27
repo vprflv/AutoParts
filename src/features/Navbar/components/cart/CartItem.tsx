@@ -1,9 +1,8 @@
-// src/features/Navbar/components/CartItem.tsx
+// src/features/Navbar/components/cart/CartItem.tsx
 "use client";
 
-import Image from "next/image";
-import { Plus, Minus, Trash2 } from "lucide-react";
 import { useCartStore } from "@/src/store/useCartStore";
+import { Trash2, Minus, Plus } from "lucide-react";
 
 interface CartItemProps {
     item: any;
@@ -11,66 +10,72 @@ interface CartItemProps {
 }
 
 export default function CartItem({ item, isLast }: CartItemProps) {
-    const { updateQuantity, removeItem } = useCartStore();
+    const { removeItem, updateQuantity } = useCartStore();
+    const isOutOfStock = item.stock <= 0;
+
+    const handleQuantityChange = (newQuantity: number) => {
+        if (isOutOfStock) return; // нельзя менять количество если нет в наличии
+        updateQuantity(item.id, newQuantity);
+    };
 
     return (
-        <div className={`pb-6 ${!isLast ? 'border-b border-zinc-800' : ''}`}>
-            <div className="flex flex-col sm:flex-row gap-4 bg-zinc-800 p-5 rounded-2xl">
-                {/* Фото */}
-                <div className="w-full sm:w-28 h-40 sm:h-28 relative rounded-2xl overflow-hidden flex-shrink-0">
-                    <Image
-                        src={item.image}
-                        alt={item.name}
-                        fill
-                        className="object-cover"
-                    />
-                </div>
-
-                {/* Информация */}
-                <div className="flex-1 min-w-0 flex flex-col">
-                    <p className="font-medium leading-tight line-clamp-2 text-base">
-                        {item.name}
-                    </p>
-                    <p className="text-xl font-semibold mt-2">
-                        {item.price.toLocaleString("ru-RU")} ₽
-                    </p>
-
-                    {/* Количество и удаление */}
-                    <div className="mt-4 flex items-center justify-between">
-                        <div className="flex items-center border border-zinc-700 rounded-2xl overflow-hidden">
-                            <button
-                                onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
-                                className="px-4 py-2.5 hover:bg-zinc-700 active:bg-zinc-600 transition-colors"
-                            >
-                                <Minus className="w-4 h-4" />
-                            </button>
-                            <span className="px-6 font-medium text-lg">{item.quantity}</span>
-                            <button
-                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                className="px-4 py-2.5 hover:bg-zinc-700 active:bg-zinc-600 transition-colors"
-                            >
-                                <Plus className="w-4 h-4" />
-                            </button>
-                        </div>
-
-                        {/* Иконка удаления на больших экранах */}
-                        <button
-                            onClick={() => removeItem(item.id)}
-                            className="hidden sm:block text-red-500 hover:text-red-600 p-2 transition-colors"
-                        >
-                            <Trash2 className="w-6 h-6" />
-                        </button>
+        <div className={`flex gap-5 bg-zinc-900 rounded-2xl p-5 ${!isLast ? 'border-b border-zinc-800' : ''}`}>
+            {/* Изображение */}
+            <div className="w-24 h-24 bg-zinc-800 rounded-xl overflow-hidden flex-shrink-0">
+                {item.image ? (
+                    <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                ) : (
+                    <div className="w-full h-full bg-zinc-700 flex items-center justify-center text-4xl">
+                        📦
                     </div>
-                </div>
+                )}
             </div>
 
-            {/* Кнопка "Удалить товар" только на мобильных */}
-            <button
-                onClick={() => removeItem(item.id)}
-                className="sm:hidden w-full mt-3 text-red-500 hover:text-red-600 py-2 text-sm font-medium transition-colors"
-            >
-                Удалить товар
-            </button>
+            {/* Информация о товаре */}
+            <div className="flex-1 min-w-0">
+                <p className="font-medium leading-tight">{item.name}</p>
+                <p className="text-sm text-zinc-500 mt-1">{item.oem}</p>
+
+                {/* Статус наличия */}
+                {isOutOfStock ? (
+                    <p className="text-red-500 text-sm font-medium mt-2">Нет в наличии</p>
+                ) : (
+                    <p className="text-emerald-500 text-sm mt-2">В наличии: {item.stock} шт.</p>
+                )}
+
+                <div className="mt-4 flex items-center justify-between">
+                    <div className="text-2xl font-semibold">
+                        {item.price.toLocaleString()} ₽
+                    </div>
+
+                    {/* Контроль количества или только удаление */}
+                    {isOutOfStock ? (
+                        <button
+                            onClick={() => removeItem(item.id)}
+                            className="text-red-500 hover:text-red-600 p-3 transition"
+                        >
+                            <Trash2 size={22} />
+                        </button>
+                    ) : (
+                        <div className="flex items-center gap-3 bg-zinc-800 rounded-xl px-2 py-1">
+                            <button
+                                onClick={() => handleQuantityChange(item.quantity - 1)}
+                                className="p-2 hover:bg-zinc-700 rounded-lg transition"
+                            >
+                                <Minus size={18} />
+                            </button>
+                            <span className="w-8 text-center font-medium">{item.quantity}</span>
+                            <button
+                                onClick={() => handleQuantityChange(item.quantity + 1)}
+                                className="p-2 hover:bg-zinc-700 rounded-lg transition"
+                                disabled={item.quantity >= item.stock}
+                            >
+                                <Plus size={18} />
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
         </div>
     );
 }

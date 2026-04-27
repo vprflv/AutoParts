@@ -1,7 +1,7 @@
 // hooks/useProducts.ts
 import { useQuery } from "@tanstack/react-query";
 import { products } from "@/src/lib/mockData";
-import { useDebounce } from "./useDebounce";
+import { useDebounce } from "../features/Navbar/hooks/useDebounce";
 import {Product, ProductsFilter} from "@/src/types";
 
 

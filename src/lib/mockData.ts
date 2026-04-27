@@ -43,7 +43,7 @@ export const products: Product[] = [
         category: "Электрика",
         brand: "NGK",
         images: ["https://picsum.photos/id/106/800/600"],
-        stock: 0,
+        stock: 12,
         applicability: ["Toyota Camry 2018", "Toyota Corolla 2019-2022", "Honda Civic"],
     },
 
@@ -66,7 +66,7 @@ export const products: Product[] = [
         category: "Электрика",
         brand: "Bosch",
         images: ["https://picsum.photos/id/103/800/600"],
-        stock: 0,
+        stock: 12,
         applicability: ["Toyota Camry 2018", "Toyota Corolla 2019-2022", "Honda Civic"],
     },
     {

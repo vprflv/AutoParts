@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from "react";
 import Navbar from "@/src/features/Navbar/components/Navbar";
-import { useProducts } from "@/src/features/Navbar/hooks/useProducts";
+import { useProducts } from "@/src/hooks/useProducts";
 import Filters from "@/src/features/catalog/Filters";
 import ProductCard from "@/src/features/catalog/ProductCard";
 import ProductCardSkeleton from "@/src/features/catalog/ProductCardSkeleton";

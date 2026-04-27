@@ -4,8 +4,13 @@ import { z } from "zod";
 import { useAuthStore } from "@/src/store/useAuthStore";
 
 const registerSchema = z.object({
-    name: z.string().min(2, "Имя должно содержать минимум 2 символа"),
+    name: z.string()
+        .min(1, "Имя обязательно")
+        .max(50, "Имя слишком длинное")
+        .trim(),
+
     email: z.string().email("Введите корректный email"),
+
     password: z.string()
         .min(8, "Пароль должен содержать минимум 8 символов")
         .regex(/[A-Z]/, "Пароль должен содержать хотя бы одну заглавную букву")
@@ -20,6 +25,7 @@ const loginSchema = z.object({
 
 export function useAuthForm() {
     const [tab, setTab] = useState<"login" | "register" | "forgot">("login");
+
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -31,57 +37,67 @@ export function useAuthForm() {
         password: "",
         policy: ""
     });
+
     const [isLoading, setIsLoading] = useState(false);
 
     const { login, register } = useAuthStore();
 
-    // ✅ Добавили валидацию отдельного поля
     const validateField = (field: "name" | "email" | "password") => {
         try {
-            if (tab === "register" && field === "name") {
+            if (field === "name") {
+                // Простая и надёжная проверка имени
+                if (!name || name.trim() === "") {
+                    setErrors(prev => ({ ...prev, name: "Имя обязательно" }));
+                    return;
+                }
                 registerSchema.shape.name.parse(name);
-                setErrors(prev => ({ ...prev, name: "" }));
-            } else if (field === "email") {
-                const schema = tab === "register" ? registerSchema.shape.email : loginSchema.shape.email;
-                schema.parse(email);
-                setErrors(prev => ({ ...prev, email: "" }));
-            } else if (field === "password") {
-                const schema = tab === "register" ? registerSchema.shape.password : loginSchema.shape.password;
-                schema.parse(password);
-                setErrors(prev => ({ ...prev, password: "" }));
             }
+            else if (field === "email") {
+                const schema = z.string().email("Введите корректный email");
+                schema.parse(email);
+            }
+            else if (field === "password") {
+                const schema = registerSchema.shape.password;
+                schema.parse(password);
+            }
+
+            setErrors(prev => ({ ...prev, [field]: "" }));
         } catch (err: any) {
-            const message = err?.issues?.[0]?.message || err?.errors?.[0]?.message || "Неверное значение";
+            const message = err?.issues?.[0]?.message || err?.message || "Неверное значение";
             setErrors(prev => ({ ...prev, [field]: message }));
         }
     };
 
     const validateForm = (): boolean => {
+        const newErrors = { name: "", email: "", password: "", policy: "" };
+
+        // Проверка имени (всегда для регистрации)
+        if (!name || name.trim() === "") {
+            newErrors.name = "Имя обязательно";
+        }
+
+        // Проверка email и password
         try {
-            if (tab === "register") {
-                registerSchema.parse({ name, email, password });
-                if (!agreePolicy) {
-                    setErrors(prev => ({ ...prev, policy: "Необходимо согласиться с политикой" }));
-                    return false;
-                }
-            } else {
-                loginSchema.parse({ email, password });
-            }
-
-            setErrors({ name: "", email: "", password: "", policy: "" });
-            return true;
+            registerSchema.parse({
+                name: name.trim(),
+                email,
+                password
+            });
         } catch (err: any) {
-            const newErrors = { name: "", email: "", password: "", policy: "" };
-
-            if (err?.errors) {
-                err.errors.forEach((error: any) => {
-                    const field = error.path[0] as keyof typeof newErrors;
-                    if (field) newErrors[field] = error.message;
+            if (err?.issues) {
+                err.issues.forEach((issue: any) => {
+                    const field = issue.path[0] as keyof typeof newErrors;
+                    if (field) newErrors[field] = issue.message;
                 });
             }
-            setErrors(newErrors);
-            return false;
         }
+
+        if (!agreePolicy) {
+            newErrors.policy = "Необходимо согласиться с политикой";
+        }
+
+        setErrors(newErrors);
+        return Object.values(newErrors).every(err => err === "");
     };
 
     const handleSubmit = async (): Promise<boolean> => {
@@ -96,15 +112,9 @@ export function useAuthForm() {
         let success = false;
 
         if (tab === "login") {
-            success = await login(email, password); // сделал async на случай будущих API-запросов
-            if (!success) {
-                setErrors(prev => ({ ...prev, email: "Неверный email или пароль" }));
-            }
+            success = await login(email, password);
         } else if (tab === "register") {
-            success = await register(name, email, password);
-            if (!success) {
-                setErrors(prev => ({ ...prev, email: "Пользователь с таким email уже существует" }));
-            }
+            success = await register(name.trim(), email, password);
         }
 
         setIsLoading(false);
@@ -112,20 +122,14 @@ export function useAuthForm() {
     };
 
     return {
-        tab,
-        setTab,
-        name,
-        setName,
-        email,
-        setEmail,
-        password,
-        setPassword,
-        agreePolicy,
-        setAgreePolicy,
+        tab, setTab,
+        name, setName,
+        email, setEmail,
+        password, setPassword,
+        agreePolicy, setAgreePolicy,
         errors,
         isLoading,
         validateField,
-        validateForm,
         handleSubmit,
     };
 }

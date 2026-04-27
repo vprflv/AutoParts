@@ -1,21 +1,8 @@
 // src/components/modals/AddVehicleModal.tsx
 "use client";
 
-import { useState, useEffect } from "react";
 import { X } from "lucide-react";
-import { z } from "zod";
-import { useProfileStore } from "@/src/store/useProfileStore";
-import toast from "react-hot-toast";
-
-const vehicleSchema = z.object({
-    vin: z.string().length(17, "VIN должен содержать ровно 17 символов"),
-    bodyNumber: z.string().optional(),
-    brand: z.string().min(1, "Укажите марку автомобиля"),
-    model: z.string().min(1, "Укажите модель автомобиля"),
-    year: z.string().length(4, "Год должен состоять из 4 цифр"),
-    engine: z.string().optional(),
-    notes: z.string().optional(),
-});
+import { useVehicleForm } from "@/src/features/profile/hooks/useVehicleForm";
 
 interface AddVehicleModalProps {
     isOpen: boolean;
@@ -23,99 +10,42 @@ interface AddVehicleModalProps {
     vehicleToEdit?: any;
 }
 
-export default function AddVehicleModal({ isOpen, onClose, vehicleToEdit }: AddVehicleModalProps) {
-    const [formData, setFormData] = useState({
-        vin: "",
-        bodyNumber: "",
-        brand: "",
-        model: "",
-        year: new Date().getFullYear().toString(),
-        engine: "",
-        notes: "",
-    });
-
-    const [errors, setErrors] = useState<Record<string, string>>({});
-    const [isLoading, setIsLoading] = useState(false);
-
-    const { addVehicle, updateVehicle } = useProfileStore();
-    const isEditMode = !!vehicleToEdit;
-
-    // Заполняем форму при редактировании
-    useEffect(() => {
-        if (vehicleToEdit && isOpen) {
-            setFormData({
-                vin: vehicleToEdit.vin || "",
-                bodyNumber: vehicleToEdit.bodyNumber || "",
-                brand: vehicleToEdit.brand || "",
-                model: vehicleToEdit.model || "",
-                year: vehicleToEdit.year?.toString() || "",
-                engine: vehicleToEdit.engine || "",
-                notes: vehicleToEdit.notes || "",
-            });
-        }
-    }, [vehicleToEdit, isOpen]);
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-
-        if (errors[name]) {
-            setErrors(prev => ({ ...prev, [name]: "" }));
-        }
-    };
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsLoading(true);
-        setErrors({});
-
-        try {
-            const validated = vehicleSchema.parse(formData);
-
-            const vehicleData = {
-                ...validated,
-                year: parseInt(validated.year),
-            };
-
-            if (isEditMode && vehicleToEdit?.id) {
-                updateVehicle(vehicleToEdit.id, vehicleData);
-                toast.success("Автомобиль успешно обновлён!");
-            } else {
-                addVehicle({ ...vehicleData, isDefault: false });
-                toast.success("Автомобиль успешно добавлен в гараж!");
-            }
-
-            onClose();
-        } catch (err: any) {
-            const newErrors: Record<string, string> = {};
-            err.errors?.forEach((error: any) => {
-                newErrors[error.path[0]] = error.message;
-            });
-            setErrors(newErrors);
-        } finally {
-            setIsLoading(false);
-        }
-    };
+export default function AddVehicleModal({
+                                            isOpen,
+                                            onClose,
+                                            vehicleToEdit,
+                                        }: AddVehicleModalProps) {
+    const {
+        formData,
+        errors,
+        isLoading,
+        isEditMode,
+        handleChange,
+        handleSubmit,
+    } = useVehicleForm(vehicleToEdit, onClose);
 
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-zinc-900 rounded-3xl w-full max-w-lg border border-zinc-700">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
+            <div className="bg-zinc-900 rounded-3xl w-full max-w-lg md:max-w-md border border-zinc-700 max-h-[95vh] overflow-hidden flex flex-col">
                 {/* Заголовок */}
-                <div className="flex items-center justify-between border-b border-zinc-700 px-6 py-5">
-                    <h2 className="text-2xl font-semibold">
+                <div className="flex items-center justify-between border-b border-zinc-700 px-5 sm:px-6 py-5 flex-shrink-0">
+                    <h2 className="text-xl sm:text-2xl font-semibold">
                         {isEditMode ? "Редактировать автомобиль" : "Добавить автомобиль"}
                     </h2>
                     <button
                         onClick={onClose}
-                        className="text-zinc-400 hover:text-white transition-colors"
+                        className="text-zinc-400 hover:text-white p-2 -mr-2 transition-colors"
                     >
-                        <X size={24} />
+                        <X size={26} />
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-6 space-y-5">
+                <form
+                    onSubmit={handleSubmit}
+                    className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6"
+                >
                     {/* VIN */}
                     <div>
                         <label className="text-sm text-zinc-400 block mb-1.5">
@@ -127,10 +57,10 @@ export default function AddVehicleModal({ isOpen, onClose, vehicleToEdit }: AddV
                             value={formData.vin}
                             onChange={handleChange}
                             maxLength={17}
-                            className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-3 focus:outline-none focus:border-blue-600 font-mono uppercase"
+                            className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-blue-600 font-mono uppercase text-base"
                             placeholder="WBA3A5C52EP608912"
                         />
-                        {errors.vin && <p className="text-red-500 text-sm mt-1">{errors.vin}</p>}
+                        {errors.vin && <p className="text-red-500 text-sm mt-1.5">{errors.vin}</p>}
                     </div>
 
                     {/* Марка + Модель */}
@@ -144,10 +74,10 @@ export default function AddVehicleModal({ isOpen, onClose, vehicleToEdit }: AddV
                                 name="brand"
                                 value={formData.brand}
                                 onChange={handleChange}
-                                className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-3 focus:outline-none focus:border-blue-600"
+                                className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-blue-600 text-base"
                                 placeholder="BMW"
                             />
-                            {errors.brand && <p className="text-red-500 text-sm mt-1">{errors.brand}</p>}
+                            {errors.brand && <p className="text-red-500 text-sm mt-1.5">{errors.brand}</p>}
                         </div>
 
                         <div>
@@ -159,10 +89,10 @@ export default function AddVehicleModal({ isOpen, onClose, vehicleToEdit }: AddV
                                 name="model"
                                 value={formData.model}
                                 onChange={handleChange}
-                                className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-3 focus:outline-none focus:border-blue-600"
+                                className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-blue-600 text-base"
                                 placeholder="3 Series (F30)"
                             />
-                            {errors.model && <p className="text-red-500 text-sm mt-1">{errors.model}</p>}
+                            {errors.model && <p className="text-red-500 text-sm mt-1.5">{errors.model}</p>}
                         </div>
                     </div>
 
@@ -178,10 +108,10 @@ export default function AddVehicleModal({ isOpen, onClose, vehicleToEdit }: AddV
                                 value={formData.year}
                                 onChange={handleChange}
                                 maxLength={4}
-                                className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-3 focus:outline-none focus:border-blue-600"
+                                className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-blue-600 text-base"
                                 placeholder="2020"
                             />
-                            {errors.year && <p className="text-red-500 text-sm mt-1">{errors.year}</p>}
+                            {errors.year && <p className="text-red-500 text-sm mt-1.5">{errors.year}</p>}
                         </div>
 
                         <div>
@@ -191,7 +121,7 @@ export default function AddVehicleModal({ isOpen, onClose, vehicleToEdit }: AddV
                                 name="engine"
                                 value={formData.engine}
                                 onChange={handleChange}
-                                className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-3 focus:outline-none focus:border-blue-600"
+                                className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-blue-600 text-base"
                                 placeholder="2.0d (B47)"
                             />
                         </div>
@@ -205,7 +135,7 @@ export default function AddVehicleModal({ isOpen, onClose, vehicleToEdit }: AddV
                             name="bodyNumber"
                             value={formData.bodyNumber}
                             onChange={handleChange}
-                            className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-3 focus:outline-none focus:border-blue-600"
+                            className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-blue-600 text-base"
                             placeholder="3A5C52EP608912"
                         />
                     </div>
@@ -218,16 +148,16 @@ export default function AddVehicleModal({ isOpen, onClose, vehicleToEdit }: AddV
                             value={formData.notes}
                             onChange={handleChange}
                             rows={3}
-                            className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-3 focus:outline-none focus:border-blue-600 resize-y"
+                            className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-blue-600 resize-y text-base"
                             placeholder="Основная машина / Машина жены и т.д."
                         />
                     </div>
 
-                    {/* Кнопка отправки */}
+                    {/* Кнопка */}
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-zinc-700 py-4 rounded-2xl font-medium text-lg transition-all mt-6"
+                        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-zinc-700 py-4 sm:py-5 rounded-2xl font-medium text-lg transition-all active:scale-[0.985] mt-4"
                     >
                         {isLoading
                             ? (isEditMode ? "Сохраняем изменения..." : "Добавляем автомобиль...")

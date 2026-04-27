@@ -1,19 +1,21 @@
+// src/app/profile/components/GarageSection.tsx
 "use client";
 
 import { useState } from "react";
 import { Car, Plus, Edit2 } from "lucide-react";
-import { useProfileStore } from "@/src/store/useProfileStore";
+import { useProfileVehicleStore } from "@/src/store/useProfileVehicleStore";
 import toast from "react-hot-toast";
 import AddVehicleModal from "./AddVehicleModal";
+import {Vehicle} from "@/src/types";
 
 export default function GarageSection({
                                           vehicles,
-                                          onAddClick
+                                          onAddClick,
                                       }: {
-    vehicles: any[];
-    onAddClick: () => void;   // ← для открытия модалки добавления
+    vehicles: Vehicle[];
+    onAddClick: () => void;
 }) {
-    const { setDefaultVehicle, deleteVehicle } = useProfileStore();
+    const { setDefaultVehicle, deleteVehicle } = useProfileVehicleStore();
 
     const [vehicleToEdit, setVehicleToEdit] = useState<any>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -30,11 +32,13 @@ export default function GarageSection({
 
     return (
         <>
-            <div className="flex justify-between items-center mb-8">
-                <h3 className="text-2xl font-semibold">Мой гараж ({vehicles.length})</h3>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
+                <h3 className="text-2xl sm:text-3xl font-semibold">
+                    Мой гараж ({vehicles.length})
+                </h3>
                 <button
-                    onClick={onAddClick}          // ← должна работать
-                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 px-5 py-3 rounded-2xl text-sm font-medium transition"
+                    onClick={onAddClick}
+                    className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 px-5 py-3.5 sm:py-3 rounded-2xl text-sm font-medium transition w-full sm:w-auto"
                 >
                     <Plus size={20} />
                     Добавить автомобиль
@@ -48,30 +52,30 @@ export default function GarageSection({
                     <p className="text-sm mt-2">Добавьте своё ТС для быстрого подбора запчастей</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                     {vehicles.map((vehicle) => (
                         <div
                             key={vehicle.id}
-                            className="bg-zinc-800/50 rounded-3xl p-7 hover:bg-zinc-800 transition-all group border border-zinc-700/50"
+                            className="bg-zinc-800/50 rounded-3xl p-5 sm:p-7 border border-zinc-700/50 transition-all"
                         >
                             <div className="flex justify-between items-start">
-                                <div>
+                                <div className="flex-1">
                                     <div className="flex items-center gap-3">
-                                        <p className="text-2xl font-bold">
+                                        <p className="text-xl sm:text-2xl font-bold">
                                             {vehicle.brand} {vehicle.model}
                                         </p>
                                         {vehicle.isDefault && (
-                                            <span className="text-xs bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-full font-medium">
+                                            <span className="text-xs bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-full font-medium whitespace-nowrap">
                                                 Основной
                                             </span>
                                         )}
                                     </div>
-                                    <p className="text-zinc-400 mt-1">{vehicle.year} год</p>
+                                    <p className="text-zinc-400 mt-1 text-sm sm:text-base">{vehicle.year} год</p>
                                 </div>
 
-                                <div className="text-right">
+                                <div className="text-right ml-4">
                                     <p className="text-xs text-zinc-500 uppercase tracking-widest">VIN</p>
-                                    <p className="font-mono text-sm">{vehicle.vin}</p>
+                                    <p className="font-mono text-sm break-all">{vehicle.vin}</p>
                                 </div>
                             </div>
 
@@ -93,7 +97,8 @@ export default function GarageSection({
                                 <p className="text-xs text-zinc-400 mt-4 italic">«{vehicle.notes}»</p>
                             )}
 
-                            <div className="mt-6 pt-6 border-t border-zinc-700 flex flex-wrap gap-3 opacity-0 group-hover:opacity-100 transition-all">
+                            {/* Действия — всегда видимы на мобильных */}
+                            <div className="mt-6 pt-6 border-t border-zinc-700 flex flex-wrap gap-3">
                                 {!vehicle.isDefault && (
                                     <button
                                         onClick={() => {

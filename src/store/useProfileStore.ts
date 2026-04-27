@@ -2,87 +2,83 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-interface Vehicle {
+export interface OrderItem {
     id: string;
-    vin: string;
-    bodyNumber?: string;
+    name: string;
+    article: string;
     brand: string;
-    model: string;
-    year: number;
-    engine?: string;
-    isDefault: boolean;
-    notes?: string;
+    qty: number;
+    price: number;
+    stock:number;
 }
 
-export const useProfileStore = create(
+export interface Order {
+    id: string;
+    date: string;
+    status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
+    total: number;
+    itemsCount: number;
+    items: OrderItem[];
+    deliveryAddress: string;
+    trackingNumber?: string;
+    comment?: string;
+}
+
+interface ProfileStore {
+    orders: Order[];
+    loadMockOrders: () => void;
+}
+
+export const useProfileStore = create<ProfileStore>()(
     persist(
         (set, get) => ({
-            addresses: [],
             orders: [],
-            wishlist: [],
-            vehicles: [],
 
-            loadMockData: () => {
-                const currentVehicles = get().vehicles;
-
-                if (currentVehicles.length === 0) {
-                    console.log("🚀 Загружаем мок-данные для гаража"); // для отладки
+            loadMockOrders: () => {
+                if (get().orders.length === 0) {
                     set({
-                        vehicles: [
+                        orders: [
                             {
-                                id: "veh_1",
-                                vin: "WBA3A5C52EP608912",
-                                bodyNumber: "3A5C52EP608912",
-                                brand: "BMW",
-                                model: "3 Series (F30)",
-                                year: 2020,
-                                engine: "2.0d (B47)",
-                                isDefault: true,
-                                notes: "Основная машина",
+                                id: "ORD-20260425-001",
+                                date: "2026-04-25",
+                                status: "delivered",
+                                total: 12450,
+                                itemsCount: 3,
+                                items: [
+                                    { id: "3", name: "Свечи зажигания NGK Iridium", article: "NGK-12345IR", brand: "NGK", qty: 1, price: 2450 },
+                                    { id: "p2", name: "Свечи зажигания NGK", article: "BKR6E-11", brand: "NGK", qty: 4, price: 890 },
+                                    { id: "p3", name: "Тормозные колодки Bosch", article: "0 986 494 512", brand: "Bosch", qty: 1, price: 4250 },
+                                ],
+                                deliveryAddress: "Москва, ул. Ленина 45, кв. 12",
+                                trackingNumber: "TRK-987654321",
                             },
                             {
-                                id: "veh_2",
-                                vin: "VF3CA5FU8DJ123456",
-                                bodyNumber: "",
-                                brand: "Peugeot",
-                                model: "308",
-                                year: 2022,
-                                engine: "1.5 BlueHDi",
-                                isDefault: false,
-                                notes: "Машина жены",
+                                id: "ORD-20260422-002",
+                                date: "2026-04-22",
+                                status: "shipped",
+                                total: 6730,
+                                itemsCount: 1,
+                                items: [
+                                    { id: "p4", name: "Аккумулятор Varta Silver Dynamic", article: "574 400 068", brand: "Varta", qty: 1, price: 6730 },
+                                ],
+                                deliveryAddress: "Москва, ул. Ленина 45, кв. 12",
+                                trackingNumber: "TRK-1122334455",
+                            },
+                            {
+                                id: "ORD-20260418-003",
+                                date: "2026-04-18",
+                                status: "pending",
+                                total: 2890,
+                                itemsCount: 2,
+                                items: [],
+                                deliveryAddress: "Москва, ул. Ленина 45, кв. 12",
                             },
                         ],
                     });
                 }
             },
-
-            addVehicle: (vehicle: any) =>
-                set((state: any) => ({
-                    vehicles: [...state.vehicles, { ...vehicle, id: "veh_" + Date.now() }],
-                })),
-            setDefaultVehicle: (id: string) =>
-                set((state: any) => ({
-                    vehicles: state.vehicles.map((v: any) => ({
-                        ...v,
-                        isDefault: v.id === id,
-                    })),
-                })),
-            updateVehicle: (id: string, updates: any) =>
-                set((state: any) => ({
-                    vehicles: state.vehicles.map((v: any) =>
-                        v.id === id ? { ...v, ...updates } : v
-                    ),
-                })),
-
-            deleteVehicle: (id: string) =>
-                set((state: any) => ({
-                    vehicles: state.vehicles.filter((v: any) => v.id !== id),
-                })),
-
         }),
 
-        {
-            name: "profile-storage",
-        }
+        { name: "profile-storage" }
     )
 );

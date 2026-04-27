@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useProducts } from "@/src/features/Navbar/hooks/useProducts";
+import { useProducts } from "@/src/hooks/useProducts";
 import { ArrowLeft } from "lucide-react";
 import {ProductGallery} from "@/src/features/parts-detail/components/ProductGallery";
 import ProductActions from "@/src/features/parts-detail/components/ProductActions";
