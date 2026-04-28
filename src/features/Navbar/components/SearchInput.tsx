@@ -1,3 +1,4 @@
+// src/features/Navbar/components/SearchInput.tsx
 "use client";
 
 import { useState } from "react";
@@ -12,7 +13,7 @@ interface SearchInputProps {
 export default function SearchInput({
                                         value,
                                         onChange,
-                                        placeholder = "Поиск по названию, OEM, бренду или автомобилю..."
+                                        placeholder = "Поиск по названию, OEM, бренду, кросс-номеру или автомобилю..."
                                     }: SearchInputProps) {
     const [isFocused, setIsFocused] = useState(false);
 
@@ -23,18 +24,12 @@ export default function SearchInput({
 
                 <input
                     type="text"
-                    name="search_query"
-                    id="main-search-input"
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
                     onFocus={() => setIsFocused(true)}
                     onBlur={() => setIsFocused(false)}
                     placeholder={placeholder}
                     autoComplete="off"
-                    autoCorrect="off"
-                    autoCapitalize="off"
-                    spellCheck="false"
-                    data-form-type="search"
                     className="w-full bg-zinc-900 border border-zinc-700 rounded-2xl pl-12 pr-12 py-3.5 text-base
                      placeholder:text-zinc-500 focus:outline-none focus:border-blue-600 transition-colors"
                 />

@@ -11,7 +11,7 @@ const ProductSchema = z.object({
     stock: z.number().int().nonnegative(),
     category: z.string().default("Разное"),
     applicability: z.array(z.string()).default([]),
-    crossNumbers: z.array(z.string()).default([]),
+    crossNumbers: z.string().default(""),     // ← string, как в базе
     description: z.string().optional(),
 });
 
@@ -32,10 +32,7 @@ export async function parseExcelFile(
                 const toUpdate: ImportProduct[] = [];
                 const errors: string[] = [];
 
-                // Нормализуем существующие OEM для надёжного сравнения
-                const existingOemSet = new Set(
-                    existingOems.map(o => String(o).trim().toUpperCase())
-                );
+                const existingOemSet = new Set(existingOems.map(o => String(o).trim().toUpperCase()));
 
                 jsonData.forEach((row: any, index: number) => {
                     try {
@@ -48,6 +45,9 @@ export async function parseExcelFile(
                             return;
                         }
 
+                        const crossStr = String(row.Кросс || row.cross || row["Аналоги"] || row["Cross"] || "")
+                            .trim();
+
                         const product: ImportProduct = {
                             name: String(row.Название || row.name || row["Наименование"] || "").trim(),
                             oem,
@@ -59,17 +59,17 @@ export async function parseExcelFile(
                                 .split(/[;,|]/)
                                 .map(s => s.trim())
                                 .filter(Boolean),
-                            crossNumbers: String(row.Кросс || row.cross || row["Аналоги"] || "")
+                            crossNumbers: crossStr
                                 .split(/[;,|]/)
                                 .map(s => s.trim().toUpperCase())
-                                .filter(s => s && s !== oem),
+                                .filter(s => s && s !== oem)
+                                .join(';'),
                             images: [],
                             description: row.Описание || row.description || undefined,
                         };
 
                         ProductSchema.parse(product);
 
-                        // Самое важное сравнение
                         if (existingOemSet.has(oem)) {
                             toUpdate.push(product);
                         } else {

@@ -7,22 +7,14 @@ import { useSearchParams } from "next/navigation";
 
 const supabase = createClient();
 
-export interface ProductsResponse {
-    products: Product[];
-    total: number;
-    page: number;
-    totalPages: number;
-}
-
 export const useProducts = (filters: ProductsFilter) => {
     const searchParams = useSearchParams();
-
     const page = parseInt(searchParams.get("page") || "1");
     const limit = 12;
 
     const debouncedSearch = useDebounce(filters.search || "", 300);
 
-    return useQuery<ProductsResponse>({
+    return useQuery({
         queryKey: ["products", {
             search: debouncedSearch,
             brand: filters.brand,
@@ -38,7 +30,13 @@ export const useProducts = (filters: ProductsFilter) => {
 
             if (debouncedSearch) {
                 const term = `%${debouncedSearch}%`;
-                query = query.or(`name.ilike.${term},oem.ilike.${term},brand.ilike.${term}`);
+
+                query = query.or(
+                    `name.ilike.${term},` +
+                    `oem.ilike.${term},` +
+                    `brand.ilike.${term},` +
+                    `crossNumbers.ilike.${term}`
+                );
             }
 
             if (filters.brand) query = query.eq("brand", filters.brand);
@@ -57,7 +55,10 @@ export const useProducts = (filters: ProductsFilter) => {
 
             const { data, error, count } = await query.range(from, to);
 
-            if (error) throw error;
+            if (error) {
+                console.error("Ошибка поиска товаров:", error);
+                throw error;
+            }
 
             return {
                 products: data || [],
