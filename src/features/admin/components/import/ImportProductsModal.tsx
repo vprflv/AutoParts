@@ -1,12 +1,12 @@
-
 "use client";
 
 import { useState } from "react";
-import { X } from "lucide-react";
-import {useAdminProducts} from "@/src/features/admin/hooks/useAdminProducts";
-import ImportUploadStep from "@/src/features/admin/components/import/ImportUploadStep";
-import ImportPreviewStep from "@/src/features/admin/components/import/ImportPreviewStep";
-
+import { X, Loader2 } from "lucide-react";
+import { useImportProductsMutation } from "@/src/features/admin/hooks/useImportProductsMutation";
+import { useProductImport } from "@/src/features/admin/hooks/product-import";
+import ImportUploadStep from "./ImportUploadStep";
+import ImportPreviewStep from "./ImportPreviewStep";
+import { toast } from "react-hot-toast";
 
 interface ImportProductsModalProps {
     isOpen: boolean;
@@ -14,40 +14,54 @@ interface ImportProductsModalProps {
 }
 
 export default function ImportProductsModal({ isOpen, onClose }: ImportProductsModalProps) {
-    const { addOrUpdateProducts, products: existingProducts } = useAdminProducts();
+    const importMutation = useImportProductsMutation();
+    const { parseImportFile } = useProductImport();
 
-    const [step, setStep] = useState<"upload" | "preview">("upload");
+    const [step, setStep] = useState<"upload" | "preview" | "saving">("upload");
     const [previewData, setPreviewData] = useState<any>(null);
     const [excelFile, setExcelFile] = useState<File | null>(null);
-    const [imageFiles, setImageFiles] = useState<File[]>([]);
+    const [isParsing, setIsParsing] = useState(false);
 
-    // Полный сброс формы при возврате на шаг загрузки
-    const handleBackToUpload = () => {
-        setStep("upload");
-        setPreviewData(null);
-        setExcelFile(null);      // ← важно!
-        setImageFiles([]);       // ← важно!
-    };
+    // Упрощённая функция — только Excel
+    const handlePreviewReady = async (excel: File) => {
+        setExcelFile(excel);
+        setIsParsing(true);
 
-    const handlePreviewReady = (data: any) => {
-        setPreviewData(data);
-        setStep("preview");
-    };
-
-    const handleConfirmImport = () => {
-        if (previewData) {
-            addOrUpdateProducts([...previewData.toAdd, ...previewData.toUpdate]);
-            alert(`Импорт завершён!\nДобавлено: ${previewData.toAdd.length}\nОбновлено: ${previewData.toUpdate.length}`);
-            onClose();
+        try {
+            const data = await parseImportFile(excel);
+            setPreviewData(data);
+            setStep("preview");
+        } catch (err: any) {
+            toast.error(err.message || "Не удалось обработать Excel файл");
+            console.error(err);
+        } finally {
+            setIsParsing(false);
         }
     };
 
-    // Сброс при закрытии модалки
+    const handleConfirmImport = async () => {
+        if (!excelFile) return;
+
+        setStep("saving");
+
+        try {
+            await importMutation.mutateAsync({
+                excelFile,
+                // imageFiles больше не передаём
+            });
+
+            setTimeout(() => onClose(), 1400);
+        } catch (err) {
+            setStep("preview");
+        }
+    };
+
     const handleClose = () => {
+        if (importMutation.isPending) return;
+
         setStep("upload");
         setPreviewData(null);
         setExcelFile(null);
-        setImageFiles([]);
         onClose();
     };
 
@@ -60,35 +74,48 @@ export default function ImportProductsModal({ isOpen, onClose }: ImportProductsM
                 <div className="px-8 py-6 border-b border-zinc-800 flex items-center justify-between">
                     <div>
                         <h2 className="text-2xl font-semibold">
-                            {step === "upload" ? "Импорт товаров" : "Предпросмотр импорта"}
+                            {step === "upload" && "Импорт товаров из Excel"}
+                            {step === "preview" && "Предпросмотр импорта"}
+                            {step === "saving" && "Выполняется импорт..."}
                         </h2>
-                        <p className="text-zinc-400 text-sm">
-                            {step === "preview" && previewData &&
-                                `Новых: ${previewData.toAdd.length} | Обновлений: ${previewData.toUpdate.length}`}
-                        </p>
+                        {previewData && step === "preview" && (
+                            <p className="text-zinc-400 text-sm mt-1">
+                                Новых: <span className="text-emerald-400">{previewData.toAdd?.length || 0}</span> |
+                                Обновлений: <span className="text-amber-400">{previewData.toUpdate?.length || 0}</span>
+                            </p>
+                        )}
                     </div>
-                    <button onClick={handleClose} className="text-zinc-400 hover:text-white">
+                    <button onClick={handleClose} className="text-zinc-400 hover:text-white transition-colors">
                         <X size={28} />
                     </button>
                 </div>
 
-                {/* Содержимое */}
+                {/* Контент */}
                 <div className="flex-1 overflow-auto">
-                    {step === "upload" ? (
+                    {step === "upload" && (
                         <ImportUploadStep
-                            onPreviewReady={handlePreviewReady}
+                            onPreviewReady={handlePreviewReady}   // Теперь принимает только excel
                             excelFile={excelFile}
                             setExcelFile={setExcelFile}
-                            imageFiles={imageFiles}
-                            setImageFiles={setImageFiles}
-                            existingProducts={existingProducts}
+                            isLoading={isParsing}
                         />
-                    ) : (
+                    )}
+
+                    {step === "preview" && previewData && (
                         <ImportPreviewStep
                             previewData={previewData}
                             onConfirm={handleConfirmImport}
-                            onBack={handleBackToUpload}     // ← используем полный сброс
+                            onBack={() => setStep("upload")}
+                            isLoading={importMutation.isPending}
                         />
+                    )}
+
+                    {step === "saving" && (
+                        <div className="flex flex-col items-center justify-center h-full py-20">
+                            <Loader2 size={64} className="animate-spin text-zinc-400 mb-6" />
+                            <p className="text-xl text-zinc-300">Выполняется импорт товаров...</p>
+                            <p className="text-zinc-500 mt-2">Сохранение в базу данных</p>
+                        </div>
                     )}
                 </div>
             </div>

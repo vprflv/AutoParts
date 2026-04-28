@@ -1,13 +1,12 @@
-// hooks/useProducts.ts
+// src/hooks/useProducts.ts
 import { useQuery } from "@tanstack/react-query";
-import { products } from "@/src/lib/mockData";
+import { createClient } from "@/src/lib/supabase/client";
 import { useDebounce } from "../features/Navbar/hooks/useDebounce";
-import {Product, ProductsFilter} from "@/src/types";
+import { Product, ProductsFilter } from "@/src/types";
 
+const supabase = createClient();
 
-
-export const useProducts = (filters:ProductsFilter
-) => {
+export const useProducts = (filters: ProductsFilter) => {
     const debouncedSearch = useDebounce(filters.search || "", 300);
 
     return useQuery({
@@ -21,48 +20,44 @@ export const useProducts = (filters:ProductsFilter
             },
         ],
         queryFn: async (): Promise<Product[]> => {
-            await new Promise((r) => setTimeout(r, 200));
+            let query = supabase
+                .from("products")
+                .select("*");
 
-            let filtered = [...products];
-
-            // 1. Поиск по нескольким полям
             if (debouncedSearch) {
-                const terms = debouncedSearch.toLowerCase().trim().split(/\s+/);
-
-                filtered = filtered.filter((product) => {
-                    return terms.every((term) =>
-                        product.name.toLowerCase().includes(term) ||
-                        product.oem.toLowerCase().includes(term) ||
-                        product.brand.toLowerCase().includes(term) ||
-                        (product.applicability && product.applicability.some((car) =>
-                            car.toLowerCase().includes(term)
-                        ))
-                    );
-                });
+                const searchTerm = `%${debouncedSearch}%`;
+                query = query.or(
+                    `name.ilike.${searchTerm},oem.ilike.${searchTerm},brand.ilike.${searchTerm}`
+                );
             }
 
-            // 2. Фильтр по бренду
             if (filters.brand) {
-                filtered = filtered.filter((p) => p.brand === filters.brand);
+                query = query.eq("brand", filters.brand);
             }
 
-            // 3. Фильтр "Только в наличии"
             if (filters.onlyInStock) {
-                filtered = filtered.filter((p) => p.stock > 0);
+                query = query.gt("stock", 0);
             }
 
-            // 4. Сортировка по цене
             if (filters.sort === "price_asc") {
-                filtered.sort((a, b) => a.price - b.price);
+                query = query.order("price", { ascending: true });
             } else if (filters.sort === "price_desc") {
-                filtered.sort((a, b) => b.price - a.price);
+                query = query.order("price", { ascending: false });
+            } else {
+                query = query.order("created_at", { ascending: false });
             }
 
+            const { data, error } = await query;
 
-            return filtered;
+            if (error) {
+                console.error("Ошибка загрузки товаров:", error);
+                throw error;
+            }
+
+            return data || [];
         },
-        staleTime: 1000 * 60 * 5,
-        gcTime: 1000 * 60 * 10,
-        refetchOnWindowFocus: false,
+        staleTime: 0,
+        gcTime: 0,
+        refetchOnWindowFocus: true,
     });
 };

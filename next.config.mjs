@@ -10,7 +10,15 @@ const nextConfig = {
             {
                 protocol: 'https',
                 hostname: 'picsum.photos',
-                pathname: '/id/**',   // для твоих ссылок вида /id/1015/300/300
+                pathname: '/id/**',
+            },
+            {
+                protocol: 'https',
+                hostname: 'htfngurhtimmmdqhsdsm.supabase.co',
+            },
+            {
+                protocol: 'https',
+                hostname: '*.supabase.co',
             },
         ],
     },

@@ -2,12 +2,13 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Search, Edit2, Trash2 } from "lucide-react";
+import {Plus, Search, Edit2, Trash2, Upload} from "lucide-react";
 import Image from "next/image";
 import { useAdminProducts } from "@/src/features/admin/hooks/useAdminProducts";
 import ImportProductsModal from "@/src/features/admin/components/import/ImportProductsModal";
 import {Product} from "@/src/types";
 import EditProductModal from "@/src/features/admin/components/EditProductModal";
+import BulkPhotoUploadModal from "@/src/features/admin/components/import/BulkPhotoUploadModal";
 
 
 export default function AdminProducts() {
@@ -17,7 +18,7 @@ export default function AdminProducts() {
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-
+    const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
 
 
     // Фильтрация товаров
@@ -50,17 +51,20 @@ export default function AdminProducts() {
                         onClick={() => setIsImportModalOpen(true)}
                         className="flex items-center gap-3 bg-emerald-600 hover:bg-emerald-700 px-6 py-3 rounded-2xl font-medium transition-colors"
                     >
-                        <Plus className="w-5 h-5" />
+                        <Plus className="w-5 h-5"/>
                         Импорт из Excel
                     </button>
 
                     <button
-                        onClick={() => alert("Добавление одного товара — скоро будет")}
-                        className="flex items-center gap-3 bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-2xl font-medium transition-colors"
+                        onClick={() => setIsBulkModalOpen(true)}
+                        className="bg-zinc-800 hover:bg-zinc-700 px-5 py-3 rounded-2xl flex items-center gap-2"
                     >
-                        <Plus className="w-5 h-5" />
-                        Добавить вручную
+                        <Upload size={20}/>
+                        Загрузить фото отдельно
                     </button>
+
+
+
                 </div>
             </div>
 
@@ -164,6 +168,10 @@ export default function AdminProducts() {
                     setEditingProduct(null);
                 }}
                 product={editingProduct}
+            />
+            <BulkPhotoUploadModal
+                isOpen={isBulkModalOpen}
+                onClose={() => setIsBulkModalOpen(false)}
             />
         </div>
     );

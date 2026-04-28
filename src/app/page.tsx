@@ -42,18 +42,13 @@ export default function ProductsPage() {
         return Array.from(new Set(allProducts.map((p) => p.brand))).sort();
     }, []);
 
-    // Логика скрытия плавающей кнопки при достижении пагинации
     useEffect(() => {
         const observer = new IntersectionObserver(
-            ([entry]) => {
-                setHideFloatingButton(entry.isIntersecting);
-            },
-            { threshold: 0.3 }   // чуть увеличил порог, чтобы раньше пряталась
+            ([entry]) => setHideFloatingButton(entry.isIntersecting),
+            { threshold: 0.3 }
         );
 
-        if (paginationRef.current) {
-            observer.observe(paginationRef.current);
-        }
+        if (paginationRef.current) observer.observe(paginationRef.current);
 
         return () => observer.disconnect();
     }, [totalPages]);
@@ -71,7 +66,7 @@ export default function ProductsPage() {
     const handleReset = () => {
         setFilters({
             search: filters.search,
-            brand: undefined,
+            brand: "",
             onlyInStock: false,
             sort: "default",
         });
@@ -83,7 +78,6 @@ export default function ProductsPage() {
             <Navbar onSearchChange={handleSearchChange} searchValue={filters.search} />
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 md:py-10">
-                {/* Мобильные кнопки */}
                 <div className="lg:hidden flex gap-3 mb-6">
                     <button
                         onClick={() => setIsFiltersOpen(!isFiltersOpen)}
@@ -103,10 +97,7 @@ export default function ProductsPage() {
                 </div>
 
                 <div className="flex flex-col lg:flex-row gap-8 lg:gap-10">
-                    <div className={`
-                        w-full lg:w-80 flex-shrink-0 transition-all duration-300
-                        ${isFiltersOpen ? 'block' : 'hidden lg:block'}
-                    `}>
+                    <div className={`w-full lg:w-80 flex-shrink-0 transition-all duration-300 ${isFiltersOpen ? 'block' : 'hidden lg:block'}`}>
                         <Filters
                             filters={filters}
                             setFilters={handleFilterChange}
@@ -156,7 +147,6 @@ export default function ProductsPage() {
                 </div>
             </div>
 
-            {/* Плавающая кнопка "Оставить заявку" */}
             <button
                 onClick={() => setIsFeedbackOpen(true)}
                 className={`hidden lg:block fixed bottom-8 right-8 bg-blue-600 hover:bg-blue-700 text-white px-6 py-4 rounded-2xl flex items-center gap-3 shadow-2xl transition-all active:scale-95 z-50 font-medium text-base
