@@ -3,41 +3,46 @@ import { useQuery } from "@tanstack/react-query";
 import { createClient } from "@/src/lib/supabase/client";
 import { useDebounce } from "../features/Navbar/hooks/useDebounce";
 import { Product, ProductsFilter } from "@/src/types";
+import { useSearchParams } from "next/navigation";
 
 const supabase = createClient();
 
+export interface ProductsResponse {
+    products: Product[];
+    total: number;
+    page: number;
+    totalPages: number;
+}
+
 export const useProducts = (filters: ProductsFilter) => {
+    const searchParams = useSearchParams();
+
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = 12;
+
     const debouncedSearch = useDebounce(filters.search || "", 300);
 
-    return useQuery({
-        queryKey: [
-            "products",
-            {
-                search: debouncedSearch,
-                brand: filters.brand,
-                onlyInStock: filters.onlyInStock,
-                sort: filters.sort,
-            },
-        ],
-        queryFn: async (): Promise<Product[]> => {
+    return useQuery<ProductsResponse>({
+        queryKey: ["products", {
+            search: debouncedSearch,
+            brand: filters.brand,
+            onlyInStock: filters.onlyInStock,
+            sort: filters.sort,
+            page,
+            limit,
+        }],
+        queryFn: async () => {
             let query = supabase
                 .from("products")
-                .select("*");
+                .select("*", { count: "exact" });
 
             if (debouncedSearch) {
-                const searchTerm = `%${debouncedSearch}%`;
-                query = query.or(
-                    `name.ilike.${searchTerm},oem.ilike.${searchTerm},brand.ilike.${searchTerm}`
-                );
+                const term = `%${debouncedSearch}%`;
+                query = query.or(`name.ilike.${term},oem.ilike.${term},brand.ilike.${term}`);
             }
 
-            if (filters.brand) {
-                query = query.eq("brand", filters.brand);
-            }
-
-            if (filters.onlyInStock) {
-                query = query.gt("stock", 0);
-            }
+            if (filters.brand) query = query.eq("brand", filters.brand);
+            if (filters.onlyInStock) query = query.gt("stock", 0);
 
             if (filters.sort === "price_asc") {
                 query = query.order("price", { ascending: true });
@@ -47,17 +52,21 @@ export const useProducts = (filters: ProductsFilter) => {
                 query = query.order("created_at", { ascending: false });
             }
 
-            const { data, error } = await query;
+            const from = (page - 1) * limit;
+            const to = from + limit - 1;
 
-            if (error) {
-                console.error("Ошибка загрузки товаров:", error);
-                throw error;
-            }
+            const { data, error, count } = await query.range(from, to);
 
-            return data || [];
+            if (error) throw error;
+
+            return {
+                products: data || [],
+                total: count || 0,
+                page,
+                totalPages: Math.ceil((count || 0) / limit),
+            };
         },
         staleTime: 0,
         gcTime: 0,
-        refetchOnWindowFocus: true,
     });
 };

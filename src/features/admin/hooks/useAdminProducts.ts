@@ -1,7 +1,9 @@
+// src/hooks/useAdminProducts.ts
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { createClient } from "@/src/lib/supabase/client";
+import { Product } from "@/src/types";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { products as mockProducts } from "@/src/lib/mockData";
-import {Product} from "@/src/types";
+const supabase = createClient();
 
 export function useAdminProducts() {
     const queryClient = useQueryClient();
@@ -9,57 +11,55 @@ export function useAdminProducts() {
     const { data: products = [], isLoading } = useQuery({
         queryKey: ["adminProducts"],
         queryFn: async (): Promise<Product[]> => {
-            await new Promise((r) => setTimeout(r, 150));
-            return [...mockProducts];
+            const { data, error } = await supabase
+                .from("products")
+                .select("*")
+                .order("created_at", { ascending: false });
+
+            if (error) throw error;
+            return data || [];
         },
-        staleTime: 1000 * 60 * 5,
+        staleTime: 1000 * 60 * 2,
     });
 
-    // Добавление / обновление товаров по OEM
-    const addOrUpdateProducts = (newProducts: Product[]) => {
-        queryClient.setQueryData(["adminProducts"], (old: Product[] | undefined) => {
-            const existingMap = new Map((old || []).map(p => [p.oem, p]));
+    // Добавление / обновление товаров
+    const addOrUpdateProducts = useMutation({
+        mutationFn: async (newProducts: Product[]) => {
+            const { error } = await supabase
+                .from("products")
+                .upsert(newProducts);   // ← убрали onConflict
 
-            newProducts.forEach(newProduct => {
-                existingMap.set(newProduct.oem, {
-                    ...existingMap.get(newProduct.oem), // сохраняем старые данные, если есть
-                    ...newProduct,                      // перезаписываем новыми
-                });
-            });
-
-            return Array.from(existingMap.values());
-        });
-
-        // Также обновляем основной кэш каталога
-        queryClient.setQueryData(["products"], (old: Product[] | undefined) => {
-            const existingMap = new Map((old || []).map(p => [p.oem, p]));
-
-            newProducts.forEach(newProduct => {
-                existingMap.set(newProduct.oem, {
-                    ...existingMap.get(newProduct.oem),
-                    ...newProduct,
-                });
-            });
-
-            return Array.from(existingMap.values());
-        });
-    };
+            if (error) throw error;
+            return newProducts;
+        },
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ["adminProducts"] });
+            await queryClient.invalidateQueries({ queryKey: ["products"] });
+        },
+    });
 
     // Удаление товара
-    const deleteProduct = (id: string) => {
-        queryClient.setQueryData(["adminProducts"], (old: Product[] | undefined) =>
-            old ? old.filter(p => p.id !== id) : []
-        );
+    const deleteProduct = useMutation({
+        mutationFn: async (id: string) => {
+            const { error } = await supabase
+                .from("products")
+                .delete()
+                .eq("id", id);
 
-        queryClient.setQueryData(["products"], (old: Product[] | undefined) =>
-            old ? old.filter(p => p.id !== id) : []
-        );
-    };
+            if (error) throw error;
+        },
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ["adminProducts"] });
+            await queryClient.invalidateQueries({ queryKey: ["products"] });
+        },
+    });
 
     return {
         products,
         isLoading,
-        deleteProduct,
-        addOrUpdateProducts,
+        addOrUpdateProducts: addOrUpdateProducts.mutate,
+        deleteProduct: deleteProduct.mutate,
+        isAddingOrUpdating: addOrUpdateProducts.isPending,
+        isDeleting: deleteProduct.isPending,
     };
 }

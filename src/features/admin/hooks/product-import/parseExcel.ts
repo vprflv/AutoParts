@@ -17,7 +17,7 @@ const ProductSchema = z.object({
 
 export async function parseExcelFile(
     excelFile: File,
-    existingOems: string[] = []   // ← только существующие OEM
+    existingOems: string[] = []
 ): Promise<ImportResult> {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -31,31 +31,45 @@ export async function parseExcelFile(
                 const toAdd: ImportProduct[] = [];
                 const toUpdate: ImportProduct[] = [];
                 const errors: string[] = [];
-                const existingOemSet = new Set(existingOems.map(o => o.toUpperCase()));
+
+                // Нормализуем существующие OEM для надёжного сравнения
+                const existingOemSet = new Set(
+                    existingOems.map(o => String(o).trim().toUpperCase())
+                );
 
                 jsonData.forEach((row: any, index: number) => {
                     try {
-                        const oem = String(row.OEM || row.oem || row["ОЕМ"] || "").trim().toUpperCase();
+                        let oem = String(row.OEM || row.oem || row["ОЕМ"] || row["Код"] || "")
+                            .trim()
+                            .toUpperCase();
+
                         if (!oem) {
                             errors.push(`Строка ${index + 2}: отсутствует OEM`);
                             return;
                         }
 
                         const product: ImportProduct = {
-                            name: String(row.Название || row.name || "").trim(),
+                            name: String(row.Название || row.name || row["Наименование"] || "").trim(),
                             oem,
                             brand: String(row.Бренд || row.brand || "").trim(),
-                            price: Number(row.Цена || row.price || 0),
-                            stock: Number(row.Остаток || row.stock || 0),
+                            price: Number(row.Цена || row.price || row["Цена"] || 0),
+                            stock: Number(row.Остаток || row.stock || row["Количество"] || 0),
                             category: String(row.Категория || row.category || "Разное").trim(),
-                            applicability: String(row.Применяемость || "").split(/[;,]/).map(s => s.trim()).filter(Boolean),
-                            crossNumbers: String(row.Кросс || row.cross || "").split(/[;,]/).map(s => s.trim().toUpperCase()).filter(s => s && s !== oem),
+                            applicability: String(row.Применяемость || row.applicability || "")
+                                .split(/[;,|]/)
+                                .map(s => s.trim())
+                                .filter(Boolean),
+                            crossNumbers: String(row.Кросс || row.cross || row["Аналоги"] || "")
+                                .split(/[;,|]/)
+                                .map(s => s.trim().toUpperCase())
+                                .filter(s => s && s !== oem),
                             images: [],
-                            description: row.Описание || row.description,
+                            description: row.Описание || row.description || undefined,
                         };
 
                         ProductSchema.parse(product);
 
+                        // Самое важное сравнение
                         if (existingOemSet.has(oem)) {
                             toUpdate.push(product);
                         } else {

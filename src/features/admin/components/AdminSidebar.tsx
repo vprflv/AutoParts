@@ -3,12 +3,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Package, MessageSquare, ShoppingCart, LogOut } from "lucide-react";
+import { LayoutDashboard, Package, Image, MessageSquare, ShoppingCart, LogOut } from "lucide-react";
 import { useAuthStore } from "@/src/store/useAuthStore";
 
 const menuItems = [
     { href: "/admin/dashboard", label: "Дашборд", icon: LayoutDashboard },
     { href: "/admin/products", label: "Товары", icon: Package },
+    { href: "/admin/photos", label: "Фото", icon: Image },
     { href: "/admin/feedback", label: "Заявки", icon: MessageSquare },
     { href: "/admin/orders", label: "Заказы", icon: ShoppingCart },
 ];
