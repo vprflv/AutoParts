@@ -8,7 +8,7 @@ export interface ImportProduct {
     category: string;
     images: string[];
     applicability: string[];
-    crossNumbers: string[];
+    crossNumbers: string;
     description?: string;
 }
 

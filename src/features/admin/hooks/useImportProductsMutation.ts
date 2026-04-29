@@ -10,10 +10,10 @@ export function useImportProductsMutation() {
     return useMutation({
         mutationFn: async ({ excelFile, imageFiles }: {
             excelFile: File;
-            imageFiles: File[]
+            imageFiles?: File[]
         }) => {
-            const preview = await parseImportFile(excelFile, imageFiles);
-            const result = await saveToDatabase(preview.toAdd, preview.toUpdate, imageFiles);
+            const preview = await parseImportFile(excelFile);
+            const result = await saveToDatabase(preview.toAdd, preview.toUpdate);
             return { preview, result };
         },
 

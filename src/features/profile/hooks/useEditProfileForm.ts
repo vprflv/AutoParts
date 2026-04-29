@@ -29,7 +29,7 @@ export function useEditProfileForm() {
                 phone: user.phone || "",
                 email: user.email,
             });
-            setPreviewUrl(user.avatar || null);
+            setPreviewUrl( null);
         }
     }, [user]);
 

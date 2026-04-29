@@ -4,6 +4,7 @@ import { Search, Users, Send, ShoppingBag } from "lucide-react";
 
 interface SocialLoginButtonsProps {
     onSocialClick: (provider: string) => void;
+    title?: string;
 }
 
 const providers = [
@@ -13,7 +14,7 @@ const providers = [
     { name: "Avito", color: "#FF8A00", icon: ShoppingBag },
 ];
 
-export default function SocialLoginButtons({ onSocialClick,title }: SocialLoginButtonsProps) {
+export default function SocialLoginButtons({ onSocialClick}: SocialLoginButtonsProps) {
     return (
         <div className="space-y-4">
             <div className="relative flex items-center justify-center my-4">

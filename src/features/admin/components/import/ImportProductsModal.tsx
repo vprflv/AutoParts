@@ -47,7 +47,6 @@ export default function ImportProductsModal({ isOpen, onClose }: ImportProductsM
         try {
             await importMutation.mutateAsync({
                 excelFile,
-                // imageFiles больше не передаём
             });
 
             setTimeout(() => onClose(), 1400);

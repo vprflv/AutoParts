@@ -58,7 +58,7 @@ export async function saveToDatabase(toAdd: ImportProduct[], toUpdate: ImportPro
 
                 return {
                     ...product,
-                    images: [...new Set([...oldImages, ...newStorageImages])]
+                    images: Array.from(new Set([...oldImages, ...newStorageImages]))
                 };
             });
 

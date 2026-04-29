@@ -59,6 +59,8 @@ export default function CartPage() {
                 isOpen={isOrderModalOpen}
                 onClose={() => setIsOrderModalOpen(false)}
                 redirectAfterSuccess={true}
+                onSuccess={() => {
+                }}
             />
         </div>
     );

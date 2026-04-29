@@ -32,7 +32,6 @@ export interface User {
   name: string;
   email: string;
   phone?: string;
-  avatar?: string;
 }
 
 export interface Vehicle {
@@ -40,7 +39,7 @@ export interface Vehicle {
   brand: string;
   model: string;
   year: number;
-  engine: string;
+  engine?: string;
   vin?: string;
   createdAt: string;
 }

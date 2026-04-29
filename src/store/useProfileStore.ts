@@ -140,7 +140,7 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
             return false;
         }
 
-        const items = order.items || order.order_items || [];
+        const items = order.items || (order as any).order_items || [];
 
         if (items.length === 0) {
             toast.error("В заказе нет товаров для повторения");
@@ -159,7 +159,6 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
                     name: item.name,
                     oem: item.oem || "",
                     price: item.price,
-                    quantity: item.qty || item.quantity || 1,
                     image: item.image || "/images/placeholder.svg",           // берём фото, если оно есть
                     stock: 999,
                 });

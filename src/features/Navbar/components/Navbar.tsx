@@ -71,17 +71,10 @@ export default function Navbar({ onSearchChange, searchValue }: NavbarProps) {
                             {user ? (
                                 <Menu as="div" className="relative">
                                     <Menu.Button className="flex items-center gap-3 p-2 pr-3 hover:bg-zinc-900 rounded-2xl transition-colors focus:outline-none">
-                                        {user.avatar ? (
-                                            <img
-                                                src={user.avatar}
-                                                alt={user.name}
-                                                className="w-8 h-8 rounded-full object-cover border border-zinc-700"
-                                            />
-                                        ) : (
+
                                             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold">
                                                 {user.name?.[0] || "А"}
                                             </div>
-                                        )}
                                         <div className="hidden sm:block text-left">
                                             <p className="text-sm font-medium text-white leading-none">
                                                 {user.name}

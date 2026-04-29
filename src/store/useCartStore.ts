@@ -22,7 +22,7 @@ interface CartStore {
     totalPrice: () => number;
     getItemQuantity: (id: string) => number;
     isInCart: (id: string) => boolean;
-    isHydrated: boolean;
+    isHydrated?: boolean;
 }
 
 export const useCartStore = create<CartStore>()(
@@ -85,5 +85,6 @@ export const useCartStore = create<CartStore>()(
             name: "cart-storage",                    // ключ в localStorage
             storage: createJSONStorage(() => localStorage),
         }
+
     )
 );
