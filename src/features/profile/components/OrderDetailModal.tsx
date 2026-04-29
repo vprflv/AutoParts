@@ -1,106 +1,109 @@
+// src/features/profile/components/OrderDetailModal.tsx
 "use client";
-
-import { X, Truck, CheckCircle, Clock, MapPin, Calendar, RotateCw } from "lucide-react";
-import { Order } from "@/src/store/useProfileStore";
-import { useOrderDetail } from "@/src/features/profile/hooks/useOrderDetail";
+import { X, Truck, CheckCircle, Clock, XCircle } from "lucide-react";
 
 interface OrderDetailModalProps {
-    order: Order | null;
+    order: any;
     isOpen: boolean;
     onClose: () => void;
 }
 
 export default function OrderDetailModal({ order, isOpen, onClose }: OrderDetailModalProps) {
-    const { isDelivered, handleRepeatOrder } = useOrderDetail(order);
-
     if (!isOpen || !order) return null;
 
+    const getStatus = (status: string) => {
+        switch (status) {
+            case "delivered": return { text: "Доставлен", color: "text-emerald-400", icon: CheckCircle };
+            case "shipped": return { text: "В пути", color: "text-blue-400", icon: Truck };
+            case "confirmed": return { text: "Подтверждён", color: "text-amber-400", icon: Clock };
+            case "pending": return { text: "В обработке", color: "text-amber-400", icon: Clock };
+            case "cancelled": return { text: "Отменён", color: "text-red-400", icon: XCircle };
+            default: return { text: status, color: "text-zinc-400", icon: Clock };
+        }
+    };
+
+    const status = getStatus(order.status);
+    const StatusIcon = status.icon;
 
     return (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-zinc-900 rounded-3xl w-full max-w-2xl border border-zinc-700 max-h-[95vh] overflow-hidden flex flex-col">
-                {/* Заголовок */}
-                <div className="flex items-center justify-between border-b border-zinc-700 px-5 py-4 sm:px-6 sm:py-5">
+        <div className="fixed inset-0 z-[500] flex items-center justify-center bg-black/80 p-4">
+            <div className="bg-zinc-900 rounded-3xl w-full max-w-lg max-h-[92vh] overflow-hidden flex flex-col">
+                {/* Header */}
+                <div className="flex items-center justify-between px-6 py-5 border-b border-zinc-800">
                     <div>
-                        <h2 className="text-xl sm:text-2xl font-semibold">Заказ {order.id}</h2>
-                        <p className="text-xs sm:text-sm text-zinc-400 mt-1">{order.date}</p>
+                        <h2 className="text-xl font-semibold">Заказ #{order.id.slice(0, 8)}</h2>
+                        <p className="text-sm text-zinc-400">
+                            {new Date(order.created_at).toLocaleDateString("ru-RU", {
+                                day: "numeric",
+                                month: "long",
+                                year: "numeric",
+                            })}
+                        </p>
                     </div>
                     <button onClick={onClose} className="text-zinc-400 hover:text-white">
-                        <X size={22} className="sm:w-6 sm:h-6" />
+                        <X size={28} />
                     </button>
                 </div>
 
-                <div className="flex-1 overflow-auto p-5 sm:p-6 space-y-6 sm:space-y-8">
+                <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                    {/* Статус */}
+                    <div className={`flex items-center gap-3 px-5 py-3 rounded-2xl bg-zinc-800/70 ${status.color}`}>
+                        <StatusIcon size={24} />
+                        <span className="font-medium">{status.text}</span>
+                    </div>
 
-                    {/* Товары */}
+                    {/* Сумма */}
+                    <div className="bg-zinc-800 rounded-2xl p-5">
+                        <div className="flex justify-between items-baseline">
+                            <span className="text-zinc-400">Итого</span>
+                            <span className="text-3xl font-bold">{order.total.toLocaleString("ru-RU")} ₽</span>
+                        </div>
+                    </div>
+
+                    {/* Адрес */}
                     <div>
-                        <h3 className="text-base sm:text-lg font-medium mb-3 sm:mb-4">
-                            Товары в заказе ({order.itemsCount})
-                        </h3>
-                        <div className="space-y-3 sm:space-y-4">
-                            {order.items.map((item: any) => (
-                                <div key={item.id} className="flex justify-between bg-zinc-800/50 rounded-2xl p-4">
-                                    <div className="pr-3">
-                                        <p className="text-sm sm:text-base font-medium leading-tight">{item.name}</p>
-                                        <p className="text-xs sm:text-sm text-zinc-500 mt-0.5">
-                                            {item.brand} • {item.article}
-                                        </p>
+                        <p className="text-zinc-400 text-sm mb-2">Адрес доставки</p>
+                        <p className="text-zinc-200 leading-relaxed">{order.delivery_address}</p>
+                    </div>
+
+                    {/* Комментарий */}
+                    {order.comment && (
+                        <div>
+                            <p className="text-zinc-400 text-sm mb-2">Комментарий к заказу</p>
+                            <p className="text-zinc-200 leading-relaxed">{order.comment}</p>
+                        </div>
+                    )}
+
+                    {/* Состав заказа */}
+                    <div>
+                        <p className="text-zinc-400 text-sm mb-3">Состав заказа ({order.items_count} позиций)</p>
+                        <div className="space-y-4">
+                            {order.items?.map((item: any, index: number) => (
+                                <div key={index} className="flex justify-between bg-zinc-800/50 rounded-2xl p-4">
+                                    <div>
+                                        <p className="font-medium">{item.name}</p>
+                                        {item.oem && <p className="text-xs text-zinc-500">OEM: {item.oem}</p>}
                                     </div>
-                                    <div className="text-right text-sm sm:text-base">
-                                        <p>{item.qty} шт.</p>
-                                        <p className="text-zinc-400">{item.price.toLocaleString()} ₽</p>
+                                    <div className="text-right">
+                                        <p className="font-medium">
+                                            {item.price.toLocaleString("ru-RU")} ₽
+                                        </p>
+                                        <p className="text-sm text-zinc-400">× {item.qty}</p>
                                     </div>
                                 </div>
                             ))}
                         </div>
                     </div>
-
-                    {/* Итого */}
-                    <div className="bg-zinc-800/70 rounded-2xl p-4 sm:p-5 flex justify-between items-center text-lg sm:text-xl font-semibold">
-                        <span>Итого</span>
-                        <span>{order.total.toLocaleString()} ₽</span>
-                    </div>
-
-                    {/* Доставка */}
-                    <div className="space-y-4">
-                        <div className="flex gap-4">
-                            <MapPin className="text-zinc-400 mt-1 flex-shrink-0" size={20} />
-                            <div>
-                                <p className="text-xs sm:text-sm text-zinc-400">Адрес доставки</p>
-                                <p className="text-sm sm:text-base text-zinc-200 leading-snug">{order.deliveryAddress}</p>
-                            </div>
-                        </div>
-
-                        {order.trackingNumber && (
-                            <div className="flex gap-4">
-                                <Truck className="text-zinc-400 mt-1 flex-shrink-0" size={20} />
-                                <div>
-                                    <p className="text-xs sm:text-sm text-zinc-400">Трекинг-номер</p>
-                                    <p className="font-mono text-sm sm:text-base text-zinc-200">{order.trackingNumber}</p>
-                                </div>
-                            </div>
-                        )}
-                    </div>
                 </div>
 
-                {/* Нижние кнопки */}
-                <div className="border-t border-zinc-700 p-4 sm:p-6 flex gap-4">
+                {/* Footer */}
+                <div className="p-6 border-t border-zinc-800">
                     <button
                         onClick={onClose}
-                        className="flex-1 py-3.5 sm:py-4 bg-zinc-800 hover:bg-zinc-700 rounded-2xl font-medium text-sm sm:text-base transition"
+                        className="w-full py-4 bg-zinc-800 hover:bg-zinc-700 rounded-2xl font-medium transition-colors"
                     >
                         Закрыть
                     </button>
-
-                    {isDelivered && (
-                        <button
-                            onClick={handleRepeatOrder}
-                            className="flex-1 py-3.5 sm:py-4 bg-blue-600 hover:bg-blue-700 rounded-2xl font-medium flex items-center justify-center gap-2 text-sm sm:text-base transition"
-                        >
-                            <RotateCw size={18} className="sm:w-5 sm:h-5" />
-                            Повторить заказ
-                        </button>
-                    )}
                 </div>
             </div>
         </div>

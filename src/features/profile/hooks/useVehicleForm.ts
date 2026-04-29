@@ -4,25 +4,31 @@ import { z } from "zod";
 import toast from "react-hot-toast";
 import { useProfileVehicleStore } from "@/src/store/useProfileVehicleStore";
 
+// Упрощённая схема — только обязательные поля
 const vehicleSchema = z.object({
     brand: z.string().min(1, "Укажите марку автомобиля"),
     model: z.string().min(1, "Укажите модель автомобиля"),
     year: z.string()
-        .length(4, "Год должен состоять из 4 цифр")
-        .regex(/^\d{4}$/, "Год должен быть числом"),
-    engine: z.string().min(1, "Укажите двигатель"),
-    vin: z.string()
-        .optional()
-        .refine((val) => !val || val.length === 17, "VIN должен содержать 17 символов"),
+        .min(4, "Год должен содержать 4 цифры")
+        .max(4, "Год должен содержать 4 цифры")
+        .regex(/^\d{4}$/, "Год должен состоять только из 4 цифр"),
+
+    // VIN и engine — полностью опциональные
+    vin: z.string().optional(),
+    engine: z.string().optional(),
+    bodyNumber: z.string().optional(),
+    notes: z.string().optional(),
 });
 
 export function useVehicleForm(vehicleToEdit?: any, onSuccess?: () => void) {
     const [formData, setFormData] = useState({
+        vin: "",
+        bodyNumber: "",
         brand: "",
         model: "",
         year: new Date().getFullYear().toString(),
         engine: "",
-        vin: "",
+        notes: "",
     });
 
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -31,20 +37,21 @@ export function useVehicleForm(vehicleToEdit?: any, onSuccess?: () => void) {
 
     const { addVehicle, updateVehicle } = useProfileVehicleStore();
 
-    // Заполнение при редактировании
     useEffect(() => {
         if (vehicleToEdit) {
             setFormData({
+                vin: vehicleToEdit.vin || "",
+                bodyNumber: vehicleToEdit.bodyNumber || "",
                 brand: vehicleToEdit.brand || "",
                 model: vehicleToEdit.model || "",
                 year: vehicleToEdit.year?.toString() || "",
                 engine: vehicleToEdit.engine || "",
-                vin: vehicleToEdit.vin || "",
+                notes: vehicleToEdit.notes || "",
             });
         }
     }, [vehicleToEdit]);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
 
@@ -55,45 +62,41 @@ export function useVehicleForm(vehicleToEdit?: any, onSuccess?: () => void) {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        console.log("🚀 handleSubmit started", formData);
-
         setIsLoading(true);
         setErrors({});
 
         try {
             const validated = vehicleSchema.parse(formData);
-            console.log("✅ Валидация прошла");
 
             const vehicleData = {
-                brand: validated.brand.trim(),
-                model: validated.model.trim(),
+                ...validated,
                 year: parseInt(validated.year),
-                engine: validated.engine.trim(),
-                vin: validated.vin?.trim() || undefined,
             };
 
-            console.log("📤 Отправляем данные:", vehicleData);
-
-            let success = false;
-
             if (isEditMode && vehicleToEdit?.id) {
-                success = await updateVehicle(vehicleToEdit.id, vehicleData);
+                updateVehicle(vehicleToEdit.id, vehicleData);
+                toast.success("Автомобиль успешно обновлён!");
             } else {
-                success = await addVehicle(vehicleData);
+                addVehicle(vehicleData);
+                toast.success("Автомобиль успешно добавлен в гараж!");
             }
 
-            console.log("Результат операции:", success);
-
-            if (success) {
-                toast.success(isEditMode ? "Автомобиль обновлён!" : "Автомобиль добавлен!");
-                onSuccess?.();
-            }
+            onSuccess?.();
+            return true;
         } catch (err: any) {
-            console.error("❌ Ошибка в handleSubmit:", err);
-            // ... обработка ошибок
+            const newErrors: Record<string, string> = {};
+
+            if (err.issues) {
+                err.issues.forEach((issue: any) => {
+                    const field = issue.path[0] as string;
+                    if (field) newErrors[field] = issue.message;
+                });
+            }
+
+            setErrors(newErrors);
+            return false;
         } finally {
             setIsLoading(false);
-            console.log("🏁 handleSubmit finished");
         }
     };
 

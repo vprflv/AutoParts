@@ -1,14 +1,23 @@
-
+// src/features/profile/components/GarageSection.tsx
 "use client";
 
 import { Car, Plus, Edit2, Trash2 } from "lucide-react";
-import { useProfileVehicleStore } from "@/src/store/useProfileVehicleStore";
-import toast from "react-hot-toast";
-import AddVehicleModal from "./AddVehicleModal";
 import { useState } from "react";
+import toast from "react-hot-toast";
 
-export default function GarageSection() {
-    const { vehicles, deleteVehicle } = useProfileVehicleStore();
+import AddVehicleModal from "./AddVehicleModal";
+
+interface GarageSectionProps {
+    vehicles: any[];
+    onAddClick: () => void;
+    onDeleteVehicle: (id: string) => void;     // ← добавили
+}
+
+export default function GarageSection({
+                                          vehicles,
+                                          onAddClick,
+                                          onDeleteVehicle
+                                      }: GarageSectionProps) {
 
     const [vehicleToEdit, setVehicleToEdit] = useState<any>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -31,10 +40,7 @@ export default function GarageSection() {
                 </h3>
 
                 <button
-                    onClick={() => {
-                        setVehicleToEdit(null);
-                        setIsEditModalOpen(true);
-                    }}
+                    onClick={onAddClick}
                     className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 px-5 py-3 rounded-2xl text-sm font-medium transition-colors"
                 >
                     <Plus size={20} />
@@ -55,15 +61,13 @@ export default function GarageSection() {
                             key={vehicle.id}
                             className="bg-zinc-900 rounded-3xl p-6 border border-zinc-700 hover:border-zinc-600 transition-all"
                         >
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <p className="text-xl font-bold">
-                                        {vehicle.brand} {vehicle.model}
-                                    </p>
-                                    <p className="text-zinc-400 mt-1">
-                                        {vehicle.year} год • {vehicle.engine}
-                                    </p>
-                                </div>
+                            <div>
+                                <p className="text-xl font-bold">
+                                    {vehicle.brand} {vehicle.model}
+                                </p>
+                                <p className="text-zinc-400 mt-1">
+                                    {vehicle.year} год • {vehicle.engine}
+                                </p>
                             </div>
 
                             {vehicle.vin && (
@@ -75,7 +79,6 @@ export default function GarageSection() {
                                 </div>
                             )}
 
-                            {/* Кнопки действий */}
                             <div className="mt-6 pt-6 border-t border-zinc-700 flex gap-3">
                                 <button
                                     onClick={() => openEditModal(vehicle)}
@@ -88,11 +91,11 @@ export default function GarageSection() {
                                 <button
                                     onClick={() => {
                                         if (confirm(`Удалить ${vehicle.brand} ${vehicle.model}?`)) {
-                                            deleteVehicle(vehicle.id);
+                                            onDeleteVehicle(vehicle.id);        // ← теперь работает
                                             toast.success("Автомобиль удалён из гаража");
                                         }
                                     }}
-                                    className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-zinc-800 hover:bg-red-900/60 hover:text-red-400 rounded-2xl text-sm font-medium transition-colors text-red-400"
+                                    className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-zinc-800 hover:bg-red-900/60 hover:text-red-400 rounded-2xl text-sm font-medium text-red-400 transition-colors"
                                 >
                                     <Trash2 size={18} />
                                     Удалить
@@ -103,7 +106,6 @@ export default function GarageSection() {
                 </div>
             )}
 
-            {/* Модалка */}
             <AddVehicleModal
                 isOpen={isEditModalOpen}
                 onClose={closeEditModal}

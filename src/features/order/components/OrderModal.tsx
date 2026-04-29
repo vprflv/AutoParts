@@ -71,20 +71,18 @@ export default function OrderModal({
         });
 
         if (success) {
+            clearCart();
+            toast.success("Заказ успешно оформлен! Спасибо за покупку!");
 
-            toast.success("Заказ успешно оформлен! Спасибо за покупку.");
-
-            // Закрываем модалку
             onClose();
-            redirectAfterSuccess = true;
-            // Переход в профиль (опционально)
+
+            onSuccess?.();
+
             if (redirectAfterSuccess) {
                 setTimeout(() => {
                     router.push("/profile?tab=orders");
-                }, 800);
+                }, 700);
             }
-
-            onSuccess()
         }
     };
 

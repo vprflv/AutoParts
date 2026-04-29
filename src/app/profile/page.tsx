@@ -8,13 +8,12 @@ import toast from "react-hot-toast";
 
 import { useAuthStore } from "@/src/store/useAuthStore";
 import { useProfileStore } from "@/src/store/useProfileStore";
-
+import { useProfileVehicleStore } from "@/src/store/useProfileVehicleStore";
 
 import ProfileInfo from "@/src/features/profile/components/ProfileInfo";
 import GarageSection from "@/src/features/profile/components/GarageSection";
 import OrdersList from "@/src/features/profile/components/OrdersList";
 import AddVehicleModal from "@/src/features/profile/components/AddVehicleModal";
-import {useProfileVehicleStore} from "@/src/store/useProfileVehicleStore";
 
 type Tab = "profile" | "garage" | "orders";
 
@@ -28,29 +27,28 @@ export default function ProfilePage() {
     const [isAddVehicleModalOpen, setIsAddVehicleModalOpen] = useState(false);
 
     const { user, logout } = useAuthStore();
-    // const { orders, loadMockOrders } = useProfileStore();
-    const { vehicles, loadVehicles } = useProfileVehicleStore();
+    const { loadOrders } = useProfileStore();
+    const { vehicles, loadVehicles, deleteVehicle } = useProfileVehicleStore();
 
     // Загрузка данных
     useEffect(() => {
-        // loadMockOrders();
+        loadOrders();
         loadVehicles();
-    }, [loadVehicles]);
+    }, [loadOrders, loadVehicles]);
 
-    // Установка таба из URL
+    // Синхронизация таба из URL
     useEffect(() => {
         if (tabFromUrl && ["profile", "garage", "orders"].includes(tabFromUrl)) {
             setActiveTab(tabFromUrl);
         }
     }, [tabFromUrl]);
 
-    const handleLogout = () => {
-        logout();
+    const handleLogout = async () => {
+        await logout();
         toast.success("Вы успешно вышли из аккаунта");
         router.push("/");
     };
 
-    // Защита страницы
     if (!user) {
         return (
             <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
@@ -149,7 +147,13 @@ export default function ProfilePage() {
                     {/* Основной контент */}
                     <div className="flex-1 bg-zinc-900 rounded-3xl p-5 md:p-8 min-h-[600px]">
                         {activeTab === "profile" && <ProfileInfo />}
-                        {activeTab === "garage" && <GarageSection />}
+                        {activeTab === "garage" && (
+                            <GarageSection
+                                vehicles={vehicles}
+                                onAddClick={() => setIsAddVehicleModalOpen(true)}
+                                onDeleteVehicle={deleteVehicle}
+                            />
+                        )}
                         {activeTab === "orders" && <OrdersList />}
                     </div>
                 </div>
