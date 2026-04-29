@@ -1,4 +1,4 @@
-// src/store/useCartStore.ts
+
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
@@ -22,6 +22,7 @@ interface CartStore {
     totalPrice: () => number;
     getItemQuantity: (id: string) => number;
     isInCart: (id: string) => boolean;
+    isHydrated: boolean;
 }
 
 export const useCartStore = create<CartStore>()(
