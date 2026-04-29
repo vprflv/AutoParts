@@ -2,23 +2,25 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
-import { useAuthStore } from "@/src/store/useAuthStore";
-import { useProfileVehicleStore } from "@/src/store/useProfileVehicleStore";
-import { useRouter } from "next/navigation";
-import toast from "react-hot-toast";
+import { useSearchParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import toast from "react-hot-toast";
+
+import { useAuthStore } from "@/src/store/useAuthStore";
+import { useProfileStore } from "@/src/store/useProfileStore";
+
 
 import ProfileInfo from "@/src/features/profile/components/ProfileInfo";
 import GarageSection from "@/src/features/profile/components/GarageSection";
 import OrdersList from "@/src/features/profile/components/OrdersList";
 import AddVehicleModal from "@/src/features/profile/components/AddVehicleModal";
+import {useProfileVehicleStore} from "@/src/store/useProfileVehicleStore";
 
 type Tab = "profile" | "garage" | "orders";
 
 export default function ProfilePage() {
-    const searchParams = useSearchParams();
     const router = useRouter();
+    const searchParams = useSearchParams();
 
     const tabFromUrl = searchParams.get("tab") as Tab | null;
 
@@ -26,24 +28,21 @@ export default function ProfilePage() {
     const [isAddVehicleModalOpen, setIsAddVehicleModalOpen] = useState(false);
 
     const { user, logout } = useAuthStore();
-    const { vehicles, loadMockVehicles } = useProfileVehicleStore();
+    // const { orders, loadMockOrders } = useProfileStore();
+    const { vehicles, loadVehicles } = useProfileVehicleStore();
 
+    // Загрузка данных
     useEffect(() => {
-        loadMockVehicles();
-    }, [loadMockVehicles]);
+        // loadMockOrders();
+        loadVehicles();
+    }, [loadVehicles]);
 
+    // Установка таба из URL
     useEffect(() => {
         if (tabFromUrl && ["profile", "garage", "orders"].includes(tabFromUrl)) {
             setActiveTab(tabFromUrl);
         }
     }, [tabFromUrl]);
-
-    const currentUser = user || {
-        id: "demo-user",
-        name: "Алексей Петров",
-        email: "test@autopart.pro",
-        phone: "+7 (999) 123-45-67",
-    };
 
     const handleLogout = () => {
         logout();
@@ -51,12 +50,29 @@ export default function ProfilePage() {
         router.push("/");
     };
 
+    // Защита страницы
+    if (!user) {
+        return (
+            <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="text-6xl mb-6">⏳</div>
+                    <p className="text-zinc-400 mb-6">Загрузка профиля...</p>
+                    <button
+                        onClick={() => router.push("/auth")}
+                        className="bg-blue-600 hover:bg-blue-700 px-8 py-3.5 rounded-2xl font-medium"
+                    >
+                        Перейти к авторизации
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-zinc-950 pb-12">
             <div className="max-w-7xl mx-auto px-4 pt-6 md:pt-8">
-                {/* Улучшенный заголовок */}
+                {/* Заголовок */}
                 <div className="relative flex items-center justify-center mb-10 md:mb-12">
-                    {/* Кнопка "На главную" слева */}
                     <button
                         onClick={() => router.push("/")}
                         className="absolute left-0 flex items-center gap-2 text-zinc-400 hover:text-white transition-colors"
@@ -65,23 +81,16 @@ export default function ProfilePage() {
                         <span className="hidden sm:inline text-base">На главную</span>
                     </button>
 
-                    {/* Центральный заголовок */}
-                    <div className="text-center">
-                        <h3 className="text-2xl sm:text-2xl md:text-2xl lg:text-3xl font-bold text-white tracking-tighter">
-                            Личный кабинет
-                        </h3>
+                    <h3 className="text-3xl font-bold text-white tracking-tighter">
+                        Личный кабинет
+                    </h3>
 
-                    </div>
-
-                    {/* Кнопка "Выйти" справа */}
-                    {user && (
-                        <button
-                            onClick={handleLogout}
-                            className="absolute right-0 text-red-400 hover:text-red-500 transition-colors font-medium"
-                        >
-                            Выйти
-                        </button>
-                    )}
+                    <button
+                        onClick={handleLogout}
+                        className="absolute right-0 text-red-400 hover:text-red-500 transition-colors font-medium"
+                    >
+                        Выйти
+                    </button>
                 </div>
 
                 {/* Мобильные табы */}
@@ -139,13 +148,8 @@ export default function ProfilePage() {
 
                     {/* Основной контент */}
                     <div className="flex-1 bg-zinc-900 rounded-3xl p-5 md:p-8 min-h-[600px]">
-                        {activeTab === "profile" && <ProfileInfo user={currentUser} />}
-                        {activeTab === "garage" && (
-                            <GarageSection
-                                vehicles={vehicles}
-                                onAddClick={() => setIsAddVehicleModalOpen(true)}
-                            />
-                        )}
+                        {activeTab === "profile" && <ProfileInfo />}
+                        {activeTab === "garage" && <GarageSection />}
                         {activeTab === "orders" && <OrdersList />}
                     </div>
                 </div>

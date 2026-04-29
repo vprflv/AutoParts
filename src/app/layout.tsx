@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Providers } from "./providers";
 import Footer from "@/src/common/components/Footer";
+import AuthProvider from "@/src/providers/AuthProvider";
 
 
 export const metadata: Metadata = {
@@ -18,7 +19,9 @@ export default function RootLayout({
         <html lang="ru" className="dark">
         <body className="bg-background text-foreground antialiased min-h-screen">
         <Providers>
+
             {children}
+
             <Footer />
         </Providers>
         </body>

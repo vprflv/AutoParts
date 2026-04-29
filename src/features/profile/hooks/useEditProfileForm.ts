@@ -1,37 +1,35 @@
 // src/features/profile/hooks/useEditProfileForm.ts
+"use client";
+
 import { useState, useEffect } from "react";
 import { useAuthStore } from "@/src/store/useAuthStore";
-import toast from "react-hot-toast";
+import { toast } from "react-hot-toast";
 
 export function useEditProfileForm() {
     const { user, updateUser } = useAuthStore();
 
     const [formData, setFormData] = useState({
         name: "",
-        email: "",
         phone: "",
-        avatar: "",
+        email: "",
     });
 
-    const [errors, setErrors] = useState({
-        email: "",
-        phone: "",
-    });
-
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
-    const [previewUrl, setPreviewUrl] = useState<string>("");
+    const [errors, setErrors] = useState({
+        name: "",
+        phone: "",
+    });
 
-    // Заполняем данные при открытии
+    // Заполняем форму данными пользователя
     useEffect(() => {
         if (user) {
             setFormData({
                 name: user.name || "",
-                email: user.email || "",
-                phone: user.phone || "+7 (999) 123-45-67",
-                avatar: user.avatar || "",
+                phone: user.phone || "",
+                email: user.email,
             });
-            setPreviewUrl(user.avatar || "");
-            setErrors({ email: "", phone: "" });
+            setPreviewUrl(user.avatar || null);
         }
     }, [user]);
 
@@ -39,73 +37,56 @@ export function useEditProfileForm() {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
 
+        // Очищаем ошибку при вводе
         if (errors[name as keyof typeof errors]) {
             setErrors(prev => ({ ...prev, [name]: "" }));
         }
-    };
-
-    // Простая валидация
-    const validateForm = (): boolean => {
-        const newErrors = { email: "", phone: "" };
-        let isValid = true;
-
-        if (!formData.email.trim()) {
-            newErrors.email = "Email обязателен";
-            isValid = false;
-        } else if (!formData.email.includes("@")) {
-            newErrors.email = "Введите корректный email";
-            isValid = false;
-        }
-
-        if (!formData.phone.trim()) {
-            newErrors.phone = "Телефон обязателен";
-            isValid = false;
-        } else if (formData.phone.length < 10) {
-            newErrors.phone = "Введите корректный номер телефона";
-            isValid = false;
-        }
-
-        setErrors(newErrors);
-        return isValid;
     };
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        if (!file.type.startsWith("image/")) {
-            toast.error("Пожалуйста, загрузите изображение");
-            return;
-        }
+        const objectUrl = URL.createObjectURL(file);
+        setPreviewUrl(objectUrl);
 
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const base64 = event.target?.result as string;
-            setPreviewUrl(base64);
-            setFormData(prev => ({ ...prev, avatar: base64 }));
-        };
-        reader.readAsDataURL(file);
+        // TODO: Загрузка в Supabase Storage позже
+        console.log("📸 Выбран файл аватарки:", file.name);
     };
 
-    const handleSubmit = (e: React.FormEvent, onSuccess?: () => void) => {
+    const validateForm = (): boolean => {
+        const newErrors = { name: "", phone: "" };
+
+        if (!formData.name.trim()) {
+            newErrors.name = "Имя обязательно";
+        }
+
+        setErrors(newErrors);
+        return !newErrors.name;
+    };
+
+    const handleSubmit = async (e: React.FormEvent, onClose: () => void) => {
         e.preventDefault();
+        if (!user) return;
 
         if (!validateForm()) return;
 
         setIsLoading(true);
 
-        setTimeout(() => {
-            updateUser({
-                name: formData.name,
-                email: formData.email,
-                phone: formData.phone,
-                avatar: formData.avatar || undefined,
+        try {
+            await updateUser({
+                name: formData.name.trim(),
+                phone: formData.phone.trim(),
             });
 
-            toast.success("Профиль успешно обновлён!");
-            onSuccess?.();
+            toast.success("Профиль успешно обновлён! ✅");
+            onClose();
+        } catch (err) {
+            toast.error("Не удалось сохранить изменения");
+            console.error(err);
+        } finally {
             setIsLoading(false);
-        }, 700);
+        }
     };
 
     return {

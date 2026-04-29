@@ -43,8 +43,8 @@ export default function ProductCard({ product }: ProductCardProps) {
                     {/* Изображение */}
                     <div className="relative aspect-[4/3] bg-zinc-950 overflow-hidden">
                         <Image
-                            src={product.images[0]}
-                            alt={product.name}
+                            src={product.images[0] || "/placeholder.jpg"}
+                            alt={product.name || "Товар"}
                             fill
                             className="object-cover"
                         />

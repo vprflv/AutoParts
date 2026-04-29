@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useAuthForm } from "@/src/features/auth/hooks/useAuthForm";
 import SocialLoginButtons from "@/src/features/auth/components/SocialLoginButtons";
 import { Eye, EyeOff } from "lucide-react";
+import {toast} from "react-hot-toast";
 
 interface RegisterFormProps {
     onClose: () => void;
@@ -30,7 +31,11 @@ export default function RegisterForm({ onClose }: RegisterFormProps) {
 
     const onFormSubmit = async () => {
         const success = await handleSubmit();
-        if (success) onClose();
+
+        if (success) {
+            toast.success("Регистрация прошла успешно! ✅");
+            onClose();
+        }
     };
 
     const handleSocialLogin = (provider: string) => {

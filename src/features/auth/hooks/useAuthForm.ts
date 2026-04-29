@@ -1,16 +1,16 @@
 // src/features/auth/hooks/useAuthForm.ts
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { z } from "zod";
 import { useAuthStore } from "@/src/store/useAuthStore";
 
-const registerSchema = z.object({
-    name: z.string()
-        .min(1, "Имя обязательно")
-        .max(50, "Имя слишком длинное")
-        .trim(),
-
+const loginSchema = z.object({
     email: z.string().email("Введите корректный email"),
+    password: z.string().min(1, "Введите пароль"),
+});
 
+const registerSchema = z.object({
+    name: z.string().min(1, "Имя обязательно").max(50, "Имя слишком длинное").trim(),
+    email: z.string().email("Введите корректный email"),
     password: z.string()
         .min(8, "Пароль должен содержать минимум 8 символов")
         .regex(/[A-Z]/, "Пароль должен содержать хотя бы одну заглавную букву")
@@ -18,14 +18,7 @@ const registerSchema = z.object({
         .regex(/[0-9]/, "Пароль должен содержать хотя бы одну цифру"),
 });
 
-const loginSchema = z.object({
-    email: z.string().email("Введите корректный email"),
-    password: z.string().min(1, "Введите пароль"),
-});
-
 export function useAuthForm() {
-    const [tab, setTab] = useState<"login" | "register" | "forgot">("login");
-
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -35,54 +28,57 @@ export function useAuthForm() {
         name: "",
         email: "",
         password: "",
-        policy: ""
     });
 
     const [isLoading, setIsLoading] = useState(false);
 
-    const { login, register } = useAuthStore();
+    const { login, register, clearError, error: storeError } = useAuthStore();
+
+    // Красивая обработка ошибок из Supabase
+    useEffect(() => {
+        if (storeError) {
+            let message = storeError;
+
+            if (storeError.includes("Invalid login credentials") ||
+                storeError.includes("invalid credentials")) {
+                message = "Неправильный логин или пароль";
+            } else if (storeError.includes("Email not confirmed")) {
+                message = "Email не подтверждён";
+            } else if (storeError.includes("too many requests") || storeError.includes("429")) {
+                message = "Слишком много попыток. Подождите немного";
+            }
+
+            setErrors(prev => ({ ...prev, email: message }));
+        }
+    }, [storeError]);
 
     const validateField = (field: "name" | "email" | "password") => {
         try {
             if (field === "name") {
-                // Простая и надёжная проверка имени
-                if (!name || name.trim() === "") {
-                    setErrors(prev => ({ ...prev, name: "Имя обязательно" }));
-                    return;
-                }
                 registerSchema.shape.name.parse(name);
+            } else if (field === "email") {
+                z.string().email("Введите корректный email").parse(email);
+            } else if (field === "password") {
+                (name ? registerSchema : loginSchema).shape.password.parse(password);
             }
-            else if (field === "email") {
-                const schema = z.string().email("Введите корректный email");
-                schema.parse(email);
-            }
-            else if (field === "password") {
-                const schema = registerSchema.shape.password;
-                schema.parse(password);
-            }
-
             setErrors(prev => ({ ...prev, [field]: "" }));
         } catch (err: any) {
-            const message = err?.issues?.[0]?.message || err?.message || "Неверное значение";
-            setErrors(prev => ({ ...prev, [field]: message }));
+            setErrors(prev => ({
+                ...prev,
+                [field]: err?.issues?.[0]?.message || "Неверное значение"
+            }));
         }
     };
 
     const validateForm = (): boolean => {
-        const newErrors = { name: "", email: "", password: "", policy: "" };
+        const newErrors = { name: "", email: "", password: "" };
 
-        // Проверка имени (всегда для регистрации)
-        if (!name || name.trim() === "") {
-            newErrors.name = "Имя обязательно";
-        }
-
-        // Проверка email и password
         try {
-            registerSchema.parse({
-                name: name.trim(),
-                email,
-                password
-            });
+            if (name?.trim()) {
+                registerSchema.parse({ name: name.trim(), email, password });
+            } else {
+                loginSchema.parse({ email, password });
+            }
         } catch (err: any) {
             if (err?.issues) {
                 err.issues.forEach((issue: any) => {
@@ -92,17 +88,14 @@ export function useAuthForm() {
             }
         }
 
-        if (!agreePolicy) {
-            newErrors.policy = "Необходимо согласиться с политикой";
-        }
-
         setErrors(newErrors);
-        return Object.values(newErrors).every(err => err === "");
+        return Object.values(newErrors).every(e => e === "");
     };
 
     const handleSubmit = async (): Promise<boolean> => {
         setIsLoading(true);
-        setErrors({ name: "", email: "", password: "", policy: "" });
+        setErrors({ name: "", email: "", password: "" });
+        clearError();
 
         if (!validateForm()) {
             setIsLoading(false);
@@ -111,18 +104,23 @@ export function useAuthForm() {
 
         let success = false;
 
-        if (tab === "login") {
-            success = await login(email, password);
-        } else if (tab === "register") {
-            success = await register(name.trim(), email, password);
-        }
+        try {
+            if (name?.trim()) {
+                success = await register(name.trim(), email, password);
+            } else {
+                success = await login(email, password);
+            }
 
-        setIsLoading(false);
-        return success;
+            return success;
+        } catch (err: any) {
+            console.error("Auth error:", err);
+            return false;
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return {
-        tab, setTab,
         name, setName,
         email, setEmail,
         password, setPassword,

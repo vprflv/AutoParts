@@ -1,85 +1,117 @@
 // src/store/useProfileVehicleStore.ts
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { createClient } from "@/src/lib/supabase/client";
+
+import { useAuthStore } from "./useAuthStore";
+import {toast} from "react-hot-toast";
 import {Vehicle} from "@/src/types";
 
-
-
-interface VehicleStore {
+interface ProfileVehicleStore {
     vehicles: Vehicle[];
+    isLoading: boolean;
+    error: string | null;
 
-    loadMockVehicles: () => void;
-    addVehicle: (vehicle: Omit<Vehicle, "id">) => void;
-    updateVehicle: (id: string, updates: Partial<Vehicle>) => void;
-    deleteVehicle: (id: string) => void;
-    setDefaultVehicle: (id: string) => void;
+    loadVehicles: () => Promise<void>;
+    addVehicle: (data: Omit<Vehicle, "id" | "createdAt">) => Promise<boolean>;
+    updateVehicle: (id: string, updates: Partial<Vehicle>) => Promise<boolean>;
+    deleteVehicle: (id: string) => Promise<boolean>;
 }
 
-export const useProfileVehicleStore = create<VehicleStore>()(
-    persist(
-        (set, get) => ({
-            vehicles: [],
+export const useProfileVehicleStore = create<ProfileVehicleStore>((set, get) => ({
+    vehicles: [],
+    isLoading: false,
+    error: null,
 
-            loadMockVehicles: () => {
-                if (get().vehicles.length === 0) {
-                    console.log("🚀 Загружаем мок-данные автомобилей");
-                    set({
-                        vehicles: [
-                            {
-                                id: "veh_1",
-                                vin: "WBA3A5C52EP608912",
-                                bodyNumber: "3A5C52EP608912",
-                                brand: "BMW",
-                                model: "3 Series (F30)",
-                                year: 2020,
-                                engine: "2.0d (B47)",
-                                isDefault: true,
-                                notes: "Основная машина",
-                            },
-                            {
-                                id: "veh_2",
-                                vin: "VF3CA5FU8DJ123456",
-                                bodyNumber: "",
-                                brand: "Peugeot",
-                                model: "308",
-                                year: 2022,
-                                engine: "1.5 BlueHDi",
-                                isDefault: false,
-                                notes: "Машина жены",
-                            },
-                        ],
-                    });
-                }
-            },
+    loadVehicles: async () => {
+        set({ isLoading: true, error: null });
 
-            addVehicle: (vehicle) =>
-                set((state) => ({
-                    vehicles: [...state.vehicles, { ...vehicle, id: "veh_" + Date.now() } as Vehicle],
-                })),
-
-            updateVehicle: (id, updates) =>
-                set((state) => ({
-                    vehicles: state.vehicles.map((v) =>
-                        v.id === id ? { ...v, ...updates } : v
-                    ),
-                })),
-
-            deleteVehicle: (id) =>
-                set((state) => ({
-                    vehicles: state.vehicles.filter((v) => v.id !== id),
-                })),
-
-            setDefaultVehicle: (id) =>
-                set((state) => ({
-                    vehicles: state.vehicles.map((v) => ({
-                        ...v,
-                        isDefault: v.id === id,
-                    })),
-                })),
-        }),
-
-        {
-            name: "vehicle-storage",
+        const currentUser = useAuthStore.getState().user;
+        if (!currentUser) {
+            set({ vehicles: [], isLoading: false });
+            return;
         }
-    )
-);
+
+        const supabase = createClient();
+
+        try {
+            const { data, error } = await supabase
+                .from("vehicles")
+                .select("*")
+                .eq("user_id", currentUser.id)
+                .order("created_at", { ascending: false });
+
+            if (error) throw error;
+
+            set({ vehicles: data || [] });
+        } catch (err: any) {
+            console.error("Ошибка загрузки автомобилей:", err);
+            set({ error: err.message });
+        } finally {
+            set({ isLoading: false });
+        }
+    },
+
+    addVehicle: async (data) => {
+        const currentUser = useAuthStore.getState().user;
+        if (!currentUser) return false;
+
+        const supabase = createClient();
+
+        try {
+            const { error } = await supabase
+                .from("vehicles")
+                .insert({
+                    user_id: currentUser.id,
+                    brand: data.brand,
+                    model: data.model,
+                    year: data.year,
+                    engine: data.engine,
+                    vin: data.vin,
+                });
+
+            if (error) throw error;
+
+            await get().loadVehicles();
+            toast.success("Автомобиль добавлен!");
+            return true;
+        } catch (err: any) {
+            console.error("Ошибка добавления:", err);
+            toast.error("Не удалось добавить автомобиль");
+            return false;
+        }
+    },
+
+    updateVehicle: async (id: string, updates) => {
+        const supabase = createClient();
+        try {
+            const { error } = await supabase
+                .from("vehicles")
+                .update(updates)
+                .eq("id", id);
+
+            if (error) throw error;
+            await get().loadVehicles();
+            return true;
+        } catch (err) {
+            console.error(err);
+            return false;
+        }
+    },
+
+    deleteVehicle: async (id: string) => {
+        const supabase = createClient();
+        try {
+            const { error } = await supabase
+                .from("vehicles")
+                .delete()
+                .eq("id", id);
+
+            if (error) throw error;
+            await get().loadVehicles();
+            return true;
+        } catch (err) {
+            console.error(err);
+            return false;
+        }
+    },
+}));
