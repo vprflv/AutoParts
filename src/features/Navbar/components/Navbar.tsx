@@ -11,6 +11,7 @@ import CartModal from "./cart/CartModal";
 import AuthModal from "../../auth/components/AuthModal";
 import SearchInput from "@/src/features/Navbar/components/SearchInput";
 import {toast} from "react-hot-toast";
+import Link from "next/link";
 
 interface NavbarProps {
     onSearchChange: (search: string) => void;
@@ -37,15 +38,18 @@ export default function Navbar({ onSearchChange, searchValue }: NavbarProps) {
                     <div className="flex items-center justify-between">
 
                         {/* Логотип */}
+
+                        <Link href='/'>
                         <div className="flex items-center gap-3 flex-shrink-0">
                             <div className="w-9 h-9 bg-blue-600 rounded-2xl flex items-center justify-center text-2xl">
-                                🚗
+
                             </div>
                             <div>
                                 <h1 className="text-xl font-bold tracking-tight">AutoPart</h1>
                                 <p className="text-[10px] text-zinc-500 -mt-1">Pro</p>
                             </div>
                         </div>
+                        </Link>
 
                         {/* Поиск */}
                         <div className="hidden md:block flex-1 max-w-xl mx-8">
