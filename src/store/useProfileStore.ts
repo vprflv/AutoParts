@@ -112,7 +112,7 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
                 oem: item.oem || null,
                 qty: item.qty,
                 price: item.price,
-                image: item.image || null,        // ← добавили
+                image: item.image || null,
             }));
 
             const { error: itemsError } = await supabase
@@ -160,7 +160,7 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
                     oem: item.oem || "",
                     price: item.price,
                     quantity: item.qty || item.quantity || 1,
-                    image: item.image || "",           // берём фото, если оно есть
+                    image: item.image || "/images/placeholder.svg",           // берём фото, если оно есть
                     stock: 999,
                 });
             });

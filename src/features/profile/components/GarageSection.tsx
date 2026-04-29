@@ -10,13 +10,13 @@ import AddVehicleModal from "./AddVehicleModal";
 interface GarageSectionProps {
     vehicles: any[];
     onAddClick: () => void;
-    onDeleteVehicle: (id: string) => void;     // ← добавили
+    onDeleteVehicle: (id: string) => void;
 }
 
 export default function GarageSection({
                                           vehicles,
                                           onAddClick,
-                                          onDeleteVehicle
+                                          onDeleteVehicle,
                                       }: GarageSectionProps) {
 
     const [vehicleToEdit, setVehicleToEdit] = useState<any>(null);
@@ -34,38 +34,41 @@ export default function GarageSection({
 
     return (
         <>
-            <div className="flex justify-between items-center mb-6">
-                <h3 className="text-2xl font-semibold">
+            <div className="flex justify-between items-center mb-5 sm:mb-6">
+                <h3 className="text-xl sm:text-2xl font-semibold">
                     Мой гараж ({vehicles.length})
                 </h3>
 
                 <button
                     onClick={onAddClick}
-                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 px-5 py-3 rounded-2xl text-sm font-medium transition-colors"
+                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl text-sm font-medium transition-colors active:scale-[0.97]"
                 >
-                    <Plus size={20} />
-                    Добавить автомобиль
+                    <Plus size={18} className="sm:w-5 sm:h-5" />
+                    <span className="hidden xs:inline">Добавить автомобиль</span>
+                    <span className="xs:hidden">Добавить</span>
                 </button>
             </div>
 
             {vehicles.length === 0 ? (
-                <div className="text-center py-20 text-zinc-400">
-                    <Car size={60} className="mx-auto mb-4 opacity-40" />
-                    <p className="text-xl">Гараж пока пуст</p>
-                    <p className="text-sm mt-2">Добавьте свой автомобиль для быстрого подбора запчастей</p>
+                <div className="text-center py-16 sm:py-20 text-zinc-400">
+                    <Car size={52} className="mx-auto mb-5 opacity-40" />
+                    <p className="text-lg sm:text-xl">Гараж пока пуст</p>
+                    <p className="text-sm mt-2 max-w-xs mx-auto">
+                        Добавьте свой автомобиль для быстрого подбора запчастей
+                    </p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
                     {vehicles.map((vehicle) => (
                         <div
                             key={vehicle.id}
-                            className="bg-zinc-900 rounded-3xl p-6 border border-zinc-700 hover:border-zinc-600 transition-all"
+                            className="bg-zinc-900 rounded-3xl p-5 sm:p-6 border border-zinc-700 hover:border-zinc-600 transition-all"
                         >
                             <div>
-                                <p className="text-xl font-bold">
+                                <p className="text-lg sm:text-xl font-bold">
                                     {vehicle.brand} {vehicle.model}
                                 </p>
-                                <p className="text-zinc-400 mt-1">
+                                <p className="text-zinc-400 mt-1 text-sm sm:text-base">
                                     {vehicle.year} год • {vehicle.engine}
                                 </p>
                             </div>
@@ -73,7 +76,7 @@ export default function GarageSection({
                             {vehicle.vin && (
                                 <div className="mt-4">
                                     <span className="text-xs text-zinc-500">VIN / Номер кузова</span>
-                                    <p className="font-mono text-sm text-zinc-300 mt-0.5">
+                                    <p className="font-mono text-sm text-zinc-300 mt-0.5 tracking-wider">
                                         {vehicle.vin}
                                     </p>
                                 </div>
@@ -82,22 +85,22 @@ export default function GarageSection({
                             <div className="mt-6 pt-6 border-t border-zinc-700 flex gap-3">
                                 <button
                                     onClick={() => openEditModal(vehicle)}
-                                    className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-zinc-800 hover:bg-zinc-700 rounded-2xl text-sm font-medium transition-colors"
+                                    className="flex-1 flex items-center justify-center gap-2 py-3 sm:py-3.5 bg-zinc-800 hover:bg-zinc-700 rounded-2xl text-sm font-medium transition-colors active:scale-[0.97]"
                                 >
-                                    <Edit2 size={18} />
+                                    <Edit2 size={17} className="sm:w-[18px] sm:h-[18px]" />
                                     Редактировать
                                 </button>
 
                                 <button
                                     onClick={() => {
                                         if (confirm(`Удалить ${vehicle.brand} ${vehicle.model}?`)) {
-                                            onDeleteVehicle(vehicle.id);        // ← теперь работает
+                                            onDeleteVehicle(vehicle.id);
                                             toast.success("Автомобиль удалён из гаража");
                                         }
                                     }}
-                                    className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-zinc-800 hover:bg-red-900/60 hover:text-red-400 rounded-2xl text-sm font-medium text-red-400 transition-colors"
+                                    className="flex-1 flex items-center justify-center gap-2 py-3 sm:py-3.5 bg-zinc-800 hover:bg-red-900/60 hover:text-red-400 rounded-2xl text-sm font-medium text-red-400 transition-colors active:scale-[0.97]"
                                 >
-                                    <Trash2 size={18} />
+                                    <Trash2 size={17} className="sm:w-[18px] sm:h-[18px]" />
                                     Удалить
                                 </button>
                             </div>

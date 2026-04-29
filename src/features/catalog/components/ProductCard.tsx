@@ -5,6 +5,7 @@ import { ShoppingCart, Heart, Plus, Minus } from "lucide-react";
 import { useCartStore } from "@/src/store/useCartStore";
 import Link from "next/link";
 import { Product } from "@/src/types";
+import { useState } from "react";
 
 interface ProductCardProps {
     product: Product;
@@ -16,6 +17,13 @@ export default function ProductCard({ product }: ProductCardProps) {
     const quantityInCart = getItemQuantity(product.id);
     const isProductInCart = quantityInCart > 0;
 
+    const [imageError, setImageError] = useState(false);
+
+    // Надёжный путь к изображению
+    const imageSrc = product.images?.[0] && !imageError
+        ? product.images[0]
+        : "/images/placeholder.svg";
+
     const handleAddToCart = (e: React.MouseEvent) => {
         e.preventDefault();
         addItem({
@@ -23,7 +31,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             name: product.name,
             oem: product.oem,
             price: product.price,
-            image: product.images[0],
+            image: imageSrc,                    // ← используем надёжный путь
             stock: product.stock
         });
     };
@@ -40,17 +48,17 @@ export default function ProductCard({ product }: ProductCardProps) {
         return (
             <Link href={`/products/${product.id}`} className="group block h-full">
                 <div className="bg-zinc-900 border border-zinc-800 rounded-3xl overflow-hidden flex flex-col h-full opacity-75 hover:opacity-90 transition-all">
-                    {/* Изображение */}
                     <div className="relative aspect-[4/3] bg-zinc-950 overflow-hidden">
                         <Image
-                            src={product.images[0] || "/placeholder.jpg"}
+                            src={imageSrc}
                             alt={product.name || "Товар"}
                             fill
                             className="object-cover"
+                            onError={() => setImageError(true)}
                         />
                     </div>
 
-                    {/* Контент */}
+                    {/* Контент без наличия */}
                     <div className="p-5 sm:p-6 flex flex-col flex-1">
                         <div className="flex-1">
                             <p className="text-xs sm:text-sm text-zinc-500">
@@ -81,18 +89,19 @@ export default function ProductCard({ product }: ProductCardProps) {
         );
     }
 
-    // Основная карточка (товар в наличии)
+    // Основная карточка
     return (
         <Link href={`/products/${product.id}`} className="group block h-full">
             <div className="bg-zinc-900 border border-zinc-800 rounded-3xl overflow-hidden hover:border-blue-600 transition-all duration-300 hover:shadow-2xl flex flex-col h-full">
 
-                {/* Изображение */}
+                {/* Изображение с placeholder */}
                 <div className="relative aspect-[4/3] bg-zinc-950 overflow-hidden">
                     <Image
-                        src={product.images[0]}
+                        src={imageSrc}
                         alt={product.name}
                         fill
                         className="object-cover group-hover:scale-105 transition-transform duration-500"
+                        onError={() => setImageError(true)}
                     />
                 </div>
 

@@ -1,4 +1,3 @@
-// src/features/order/components/OrderModal.tsx
 "use client";
 
 import { X, ChevronDown, ChevronUp } from "lucide-react";
@@ -29,7 +28,7 @@ export default function OrderModal({
     const { clearCart } = useCartStore();   // ← важно: деструктурируем здесь
 
     const [agreePolicy, setAgreePolicy] = useState(false);
-
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const {
         formData,
         availableItems,
@@ -37,7 +36,6 @@ export default function OrderModal({
         setDeliveryType,
         showOrderItems,
         setShowOrderItems,
-        isSubmitting,
         totalPrice,
         handleChange,
     } = useOrderForm();
@@ -55,6 +53,8 @@ export default function OrderModal({
             return;
         }
 
+        setIsSubmitting(true);
+
         const success = await createOrder({
             total: totalPrice,
             items: availableItems.map((item) => ({
@@ -62,6 +62,7 @@ export default function OrderModal({
                 oem: item.oem,
                 qty: item.quantity,
                 price: item.price,
+                image: item.image || "",
             })),
             delivery_address: formData.address || "Самовывоз",
             comment: formData.comment,
@@ -70,12 +71,13 @@ export default function OrderModal({
             guest_phone: formData.phone,
         });
 
+        setIsSubmitting(false);
+
         if (success) {
             clearCart();
             toast.success("Заказ успешно оформлен! Спасибо за покупку!");
 
             onClose();
-
             onSuccess?.();
 
             if (redirectAfterSuccess) {
@@ -244,7 +246,7 @@ export default function OrderModal({
                         <button
                             type="submit"
                             disabled={!agreePolicy || isSubmitting || availableItems.length === 0}
-                            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-zinc-700 py-4 rounded-2xl font-semibold text-lg transition-all active:scale-[0.985]"
+                            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-zinc-700 disabled:cursor-not-allowed py-4 rounded-2xl font-semibold text-lg transition-all active:scale-[0.985]"
                         >
                             {isSubmitting ? "Оформляем заказ..." : "Подтвердить заказ"}
                         </button>

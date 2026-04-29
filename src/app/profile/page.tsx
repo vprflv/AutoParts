@@ -55,12 +55,6 @@ export default function ProfilePage() {
                 <div className="text-center">
                     <div className="text-6xl mb-6">⏳</div>
                     <p className="text-zinc-400 mb-6">Загрузка профиля...</p>
-                    <button
-                        onClick={() => router.push("/auth")}
-                        className="bg-blue-600 hover:bg-blue-700 px-8 py-3.5 rounded-2xl font-medium"
-                    >
-                        Перейти к авторизации
-                    </button>
                 </div>
             </div>
         );

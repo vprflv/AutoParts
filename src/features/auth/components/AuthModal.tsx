@@ -25,26 +25,6 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         }
     }, [isOpen]);
 
-    // Если пользователь уже авторизован — показываем кнопку выхода
-    if (user && isOpen) {
-        return (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4">
-                <div className="bg-zinc-900 rounded-3xl w-full max-w-md p-8 text-center">
-                    <p className="text-xl mb-6">Привет, {user.name || "Пользователь"}!</p>
-                    <button
-                        onClick={async () => {
-                            await logout();
-                            onClose();
-                        }}
-                        className="w-full bg-red-600 hover:bg-red-700 py-4 rounded-2xl font-medium transition-colors"
-                    >
-                        Выйти из аккаунта
-                    </button>
-                </div>
-            </div>
-        );
-    }
-
     if (!isOpen) return null;
 
     return (

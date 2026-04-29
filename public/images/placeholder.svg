@@ -1,0 +1,22 @@
+<!-- public/images/placeholder.svg -->
+<svg width="300" height="300" viewBox="0 0 300 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="300" height="300" rx="24" fill="#1F2937"/>
+
+    <!-- Простой силуэт детали -->
+    <rect x="75" y="85" width="150" height="45" rx="8" fill="#374151"/>
+    <rect x="90" y="145" width="120" height="12" rx="6" fill="#4B5563"/>
+    <circle cx="150" cy="195" r="28" fill="#374151"/>
+
+    <!-- Текст -->
+    <text
+            x="150"
+            y="255"
+            text-anchor="middle"
+            fill="#6B7280"
+            font-family="system-ui, sans-serif"
+            font-size="15"
+            font-weight="500"
+    >
+        Нет фото
+    </text>
+</svg>
