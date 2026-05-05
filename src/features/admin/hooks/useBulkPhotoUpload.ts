@@ -22,7 +22,7 @@ export function useBulkPhotoUpload() {
 
             const results = { updated: 0, skipped: 0, errors: 0 };
 
-            // Группируем все файлы по OEM
+            // Группируем файлы по OEM
             const filesByOem = new Map<string, File[]>();
 
             for (const file of files) {
@@ -50,24 +50,33 @@ export function useBulkPhotoUpload() {
                 try {
                     console.log(`📸 Загружаем ${groupFiles.length} фото для ${oem}`);
 
+                    const currentProduct = productMap.get(oem);
+                    let currentImages: string[] = currentProduct?.images || [];
+
                     const uploadedUrls: string[] = [];
 
-                    for (let i = 0; i < groupFiles.length; i++) {
-                        const file = groupFiles[i];
+                    for (const file of groupFiles) {
                         const fileExt = file.name.split(".").pop()?.toLowerCase() || "jpg";
-                        const fileName = `${oem}_${i + 1}.${fileExt}`;
 
-                        // Удаляем старое
-                        await supabase.storage.from("product-images").remove([fileName]).catch(() => {});
+                        // === НОВАЯ ЛОГИКА ИМЁН ===
+                        // Делаем уникальное имя, чтобы не перезаписывать старые фото
+                        const timestamp = Date.now();
+                        const random = Math.floor(Math.random() * 10000);
+                        const safeOem = oem.replace(/[^A-Z0-9]/g, '');
+                        const fileName = `${safeOem}_${timestamp}_${random}.${fileExt}`;
 
+                        // Загружаем (без удаления старых!)
                         const { data, error } = await supabase.storage
                             .from("product-images")
                             .upload(fileName, file, {
                                 cacheControl: "3600",
-                                upsert: true,
+                                upsert: false,        // важно: false
                             });
 
-                        if (error) throw error;
+                        if (error) {
+                            console.error("Upload error:", error);
+                            continue;
+                        }
 
                         const { data: urlData } = supabase.storage
                             .from("product-images")
@@ -76,12 +85,11 @@ export function useBulkPhotoUpload() {
                         uploadedUrls.push(urlData.publicUrl);
                     }
 
-                    // Обновляем товар один раз для всей группы
-                    const currentProduct = productMap.get(oem);
-                    const currentImages = currentProduct?.images || [];
-
-                    const newImages = [...uploadedUrls, ...currentImages]
-                        .filter((url, idx, arr) => arr.indexOf(url) === idx) // убираем дубли
+                    // Добавляем новые URL в начало + убираем дубли + лимит
+                    const newImages = [
+                        ...uploadedUrls,
+                        ...currentImages
+                    ].filter((url, idx, arr) => arr.indexOf(url) === idx)
                         .slice(0, 10); // максимум 10 фото
 
                     await supabase
@@ -101,16 +109,15 @@ export function useBulkPhotoUpload() {
 
         onSuccess: (results) => {
             queryClient.invalidateQueries({ queryKey: ['products'] });
-
             toast.success(
                 `Загрузка завершена!\n` +
-                `✅ Обновлено товаров: ${results.updated}\n` +
+                `✅ Обновлено: ${results.updated}\n` +
                 `⏭ Пропущено: ${results.skipped}`
             );
         },
 
         onError: (err: any) => {
-            toast.error(err.message || "Ошибка загрузки");
+            toast.error(err.message || "Ошибка загрузки фото");
         },
     });
 }

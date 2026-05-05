@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import {ProfileContent} from "@/src/features/profile/ProfileContent";
-  // ← вынеси основной код сюда
+
 
 export default function ProfilePage() {
     return (

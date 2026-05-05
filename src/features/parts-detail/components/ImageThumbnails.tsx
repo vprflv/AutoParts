@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import {getFreshImageUrl} from "@/src/lib/utils/image";
 
 interface ImageThumbnailsProps {
     images: string[];
@@ -28,7 +29,7 @@ export default function ImageThumbnails({
                     }`}
                 >
                     <Image
-                        src={img}
+                        src={getFreshImageUrl(img)}
                         alt={`Миниатюра ${index + 1}`}
                         width={120}
                         height={80}

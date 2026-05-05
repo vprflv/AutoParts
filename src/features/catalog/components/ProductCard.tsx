@@ -6,6 +6,7 @@ import { useCartStore } from "@/src/store/useCartStore";
 import Link from "next/link";
 import { Product } from "@/src/types";
 import { useState } from "react";
+import {getFreshImageUrl} from "@/src/lib/utils/image";
 
 interface ProductCardProps {
     product: Product;
@@ -19,9 +20,12 @@ export default function ProductCard({ product }: ProductCardProps) {
 
     const [imageError, setImageError] = useState(false);
 
+
+    const rawImage = product.images?.[0];
+
     // Надёжный путь к изображению
     const imageSrc = product.images?.[0] && !imageError
-        ? product.images[0]
+        ? getFreshImageUrl(rawImage)
         : "/images/placeholder.svg";
 
     const handleAddToCart = (e: React.MouseEvent) => {

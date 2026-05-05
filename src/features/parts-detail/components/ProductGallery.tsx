@@ -4,6 +4,7 @@ import Image from "next/image";
 import { ChevronLeft, ChevronRight, Expand, X } from "lucide-react";
 import { useState } from "react";
 import ImageThumbnails from "./ImageThumbnails";
+import {getFreshImageUrl} from "@/src/lib/utils/image";
 
 interface ProductGalleryProps {
     images: string[];
@@ -53,7 +54,7 @@ export function ProductGallery({ images }: ProductGalleryProps) {
             >
                 <div className="relative aspect-square md:aspect-[16/13]">
                     <Image
-                        src={images[selectedImageIndex]}
+                        src={getFreshImageUrl(images[selectedImageIndex])}
                         alt="Фото товара"
                         fill
                         className="object-contain"
@@ -130,7 +131,7 @@ export function ProductGallery({ images }: ProductGalleryProps) {
                     <div className="relative w-full max-w-5xl px-4 sm:px-6 flex flex-col items-center">
                         {/* Основное фото */}
                         <Image
-                            src={images[selectedImageIndex]}
+                            src={getFreshImageUrl(images[selectedImageIndex])}
                             alt="Фото товара"
                             width={1400}
                             height={1000}
