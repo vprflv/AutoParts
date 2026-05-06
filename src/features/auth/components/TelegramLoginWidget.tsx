@@ -2,6 +2,15 @@
 
 import { useEffect } from "react";
 
+
+declare global {
+    interface Window {
+        Telegram?: {
+            WebApp: any;
+        };
+    }
+}
+
 interface TelegramLoginWidgetProps {
     botUsername: string;
     onAuth: (user: any) => void;
@@ -9,37 +18,52 @@ interface TelegramLoginWidgetProps {
 
 export default function TelegramLoginWidget({ botUsername, onAuth }: TelegramLoginWidgetProps) {
     useEffect(() => {
-        console.log("📌 Telegram Widget загружается для домена auto-parts-beige.vercel.app");
+        console.log("🔍 TelegramLoginWidget mounted");
 
-        (window as any).onTelegramAuth = (user: any) => {
-            console.log("✅ Telegram Auth Success:", user);
-            onAuth(user);
-        };
+        // Пытаемся получить данные из URL (Telegram иногда передаёт их в query)
+        const urlParams = new URLSearchParams(window.location.search);
+        const initData = urlParams.get('initData') || window.Telegram?.WebApp?.initData;
 
-        const script = document.createElement("script");
-        script.src = "https://telegram.org/js/telegram-widget.js?22";
-        script.async = true;
+        if (initData) {
+            try {
+                const userData = JSON.parse(decodeURIComponent(initData));
+                console.log("✅ Данные из URL:", userData);
+                if (userData.user) onAuth(userData.user);
+            } catch (e) {
+                console.log("Не удалось распарсить initData");
+            }
+        }
 
-        script.setAttribute("data-telegram-login", botUsername.replace("@", ""));
-        script.setAttribute("data-size", "large");
-        script.setAttribute("data-radius", "12");
-        script.setAttribute("data-request-access", "write");
-        script.setAttribute("data-userpic", "true");
+        // Основная проверка
+        if (window.Telegram?.WebApp) {
+            const tg = window.Telegram.WebApp;
+            console.log("✅ Telegram WebApp найден!");
+            console.log("User:", tg.initDataUnsafe?.user);
+            if (tg.initDataUnsafe?.user) {
+                onAuth(tg.initDataUnsafe.user);
+            }
+        } else {
+            console.log("❌ Telegram.WebApp не обнаружен");
+        }
+    }, [onAuth]);
 
-
-        document.body.appendChild(script);
-
-        return () => {
-            const scripts = document.querySelectorAll('script[src*="telegram-widget"]');
-            scripts.forEach(s => s.remove());
-        };
-    }, [botUsername, onAuth]);
+    const openTelegramLogin = () => {
+        const bot = botUsername.replace("@", "");
+        const url = `https://t.me/${bot}?start=login`;
+        window.open(url, "_blank");
+    };
 
     return (
-        <div className="py-8 text-center">
-
-            <p className="text-zinc-400 mb-6">Нажмите кнопку ниже для входа</p>
-            <div id="telegram-widget-container" />
+        <div className="text-center py-8">
+            <button
+                onClick={openTelegramLogin}
+                className="bg-[#229ED9] hover:bg-[#1e7ac0] text-white px-10 py-4 rounded-2xl font-medium text-lg flex items-center gap-3 mx-auto transition-all active:scale-95 shadow-lg"
+            >
+                Войти через Telegram
+            </button>
+            <p className="text-xs text-zinc-500 mt-4">
+                Откроется бот → нажми кнопку "Войти на сайте"
+            </p>
         </div>
     );
 }

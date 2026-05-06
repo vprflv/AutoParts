@@ -1,11 +1,11 @@
-// src/features/auth/components/LoginForm.tsx
 "use client";
 
 import { useState, useEffect } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuthForm } from "@/src/features/auth/hooks/useAuthForm";
 import SocialLoginButtons from "@/src/features/auth/components/SocialLoginButtons";
-import TelegramLoginWidget from "@/features/auth/components/TelegramLoginWidget";
+import TelegramLoginWidget from "@/src/features/auth/components/TelegramLoginWidget";
+import { toast } from "react-hot-toast";
 
 interface LoginFormProps {
     onClose: () => void;
@@ -27,7 +27,8 @@ export default function LoginForm({ onClose, setTab }: LoginFormProps) {
     const [rememberMe, setRememberMe] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [isTelegramWidgetOpen, setIsTelegramWidgetOpen] = useState(false);
-    const [isTelegramOpen, setIsTelegramOpen] = useState(false);
+
+    // Загрузка сохранённого email
     useEffect(() => {
         const savedEmail = localStorage.getItem("rememberedEmail");
         if (savedEmail) {
@@ -53,14 +54,29 @@ export default function LoginForm({ onClose, setTab }: LoginFormProps) {
         }
     };
 
+    const handleTelegramAuth = async (telegramUser: any) => {
+        try {
+            console.log("📨 Отправляем данные Telegram на сервер:", telegramUser);
 
-    const handleTelegramAuth = (user: any) => {
-        console.log("✅ Telegram user received:", user);
+            const response = await fetch('/api/auth/telegram', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ telegramUser }),
+            });
 
-        alert(`Добро пожаловать, ${user.first_name || 'Пользователь'}!`);
+            const result = await response.json();
 
-        setIsTelegramWidgetOpen(false);
-        onClose();
+            if (result.success) {
+                toast.success(`Добро пожаловать, ${telegramUser.first_name}! 👋`);
+                setIsTelegramWidgetOpen(false);
+                onClose();
+            } else {
+                toast.error(result.error || "Ошибка авторизации");
+            }
+        } catch (error) {
+            console.error("Ошибка при отправке на сервер:", error);
+            toast.error("Не удалось связаться с сервером");
+        }
     };
 
     return (
@@ -78,13 +94,11 @@ export default function LoginForm({ onClose, setTab }: LoginFormProps) {
                     } rounded-2xl px-5 py-4 focus:outline-none focus:border-blue-600 text-base md:text-lg transition-all`}
                 />
                 {errors.email && (
-                    <p className="text-red-500 text-sm mt-1.5 px-1">
-                        {errors.email}
-                    </p>
+                    <p className="text-red-500 text-sm mt-1.5 px-1">{errors.email}</p>
                 )}
             </div>
 
-            {/* Пароль с кнопкой "глаз" */}
+            {/* Пароль */}
             <div>
                 <div className="relative">
                     <input
@@ -142,9 +156,10 @@ export default function LoginForm({ onClose, setTab }: LoginFormProps) {
 
             <SocialLoginButtons onSocialClick={handleSocialLogin} />
 
+            {/* Telegram Widget Modal */}
             {isTelegramWidgetOpen && (
                 <div className="fixed inset-0 bg-black/80 z-[70] flex items-center justify-center p-4">
-                    <div className="bg-zinc-900 rounded-3xl p-8 max-w-sm w-full text-center">
+                    <div className="bg-zinc-900 rounded-3xl p-8 max-w-sm w-full text-center border border-zinc-700">
                         <h3 className="text-xl font-semibold mb-6">Вход через Telegram</h3>
 
                         <TelegramLoginWidget
@@ -154,7 +169,7 @@ export default function LoginForm({ onClose, setTab }: LoginFormProps) {
 
                         <button
                             onClick={() => setIsTelegramWidgetOpen(false)}
-                            className="mt-6 text-zinc-400 hover:text-white"
+                            className="mt-6 text-zinc-400 hover:text-white text-sm"
                         >
                             Закрыть
                         </button>
