@@ -4,7 +4,7 @@ import { Search, Users, Send, ShoppingBag } from "lucide-react";
 
 interface SocialLoginButtonsProps {
     onSocialClick: (provider: string) => void;
-    title?: string;
+    onTelegramClick?: () => void;
 }
 
 const providers = [
@@ -14,7 +14,7 @@ const providers = [
     { name: "Avito", color: "#FF8A00", icon: ShoppingBag },
 ];
 
-export default function SocialLoginButtons({ onSocialClick}: SocialLoginButtonsProps) {
+export default function SocialLoginButtons({ onSocialClick, onTelegramClick }: SocialLoginButtonsProps) {
     return (
         <div className="space-y-4">
             <div className="relative flex items-center justify-center my-4">
@@ -22,20 +22,26 @@ export default function SocialLoginButtons({ onSocialClick}: SocialLoginButtonsP
                 <span className="absolute bg-zinc-900 px-4 text-sm text-zinc-500">или через</span>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="flex gap-3 justify-center overflow-x-auto pb-2 scrollbar-hide">
                 {providers.map(({ name, color, icon: Icon }) => (
                     <button
                         key={name}
-                        onClick={() => onSocialClick(name)}
-                        className="flex items-center justify-center gap-3 bg-zinc-800 hover:bg-zinc-700 py-3.5 rounded-2xl font-medium transition-all active:scale-[0.985]"
+                        onClick={() => {
+                            if (name === "Telegram" && onTelegramClick) {
+                                onTelegramClick();
+                            } else {
+                                onSocialClick(name.toLowerCase());
+                            }
+                        }}
+                        className="flex-shrink-0 flex flex-col items-center justify-center gap-2 w-20 py-3 rounded-2xl font-medium transition-all hover:scale-105 active:scale-95"
                     >
                         <div
-                            className="w-8 h-8 rounded-full flex items-center justify-center"
+                            className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-md"
                             style={{ backgroundColor: color }}
                         >
-                            <Icon size={18} className="text-white" />
+                            <Icon size={26} className="text-white" />
                         </div>
-                        <span>{name}</span>
+                        <span className="text-xs text-white text-center">{name}</span>
                     </button>
                 ))}
             </div>

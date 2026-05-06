@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuthForm } from "@/src/features/auth/hooks/useAuthForm";
 import SocialLoginButtons from "@/src/features/auth/components/SocialLoginButtons";
+import TelegramLoginWidget from "@/features/auth/components/TelegramLoginWidget";
 
 interface LoginFormProps {
     onClose: () => void;
@@ -25,7 +26,8 @@ export default function LoginForm({ onClose, setTab }: LoginFormProps) {
 
     const [rememberMe, setRememberMe] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
-
+    const [isTelegramWidgetOpen, setIsTelegramWidgetOpen] = useState(false);
+    const [isTelegramOpen, setIsTelegramOpen] = useState(false);
     useEffect(() => {
         const savedEmail = localStorage.getItem("rememberedEmail");
         if (savedEmail) {
@@ -44,7 +46,21 @@ export default function LoginForm({ onClose, setTab }: LoginFormProps) {
     };
 
     const handleSocialLogin = (provider: string) => {
-        alert(`🔄 Вход через ${provider} будет реализован позже`);
+        if (provider === "telegram") {
+            setIsTelegramWidgetOpen(true);
+        } else {
+            alert(`🔄 Вход через ${provider} будет реализован позже`);
+        }
+    };
+
+
+    const handleTelegramAuth = (user: any) => {
+        console.log("✅ Telegram user received:", user);
+
+        alert(`Добро пожаловать, ${user.first_name || 'Пользователь'}!`);
+
+        setIsTelegramWidgetOpen(false);
+        onClose();
     };
 
     return (
@@ -125,6 +141,26 @@ export default function LoginForm({ onClose, setTab }: LoginFormProps) {
             </button>
 
             <SocialLoginButtons onSocialClick={handleSocialLogin} />
+
+            {isTelegramWidgetOpen && (
+                <div className="fixed inset-0 bg-black/80 z-[70] flex items-center justify-center p-4">
+                    <div className="bg-zinc-900 rounded-3xl p-8 max-w-sm w-full text-center">
+                        <h3 className="text-xl font-semibold mb-6">Вход через Telegram</h3>
+
+                        <TelegramLoginWidget
+                            botUsername="AutoPartLoginBot"
+                            onAuth={handleTelegramAuth}
+                        />
+
+                        <button
+                            onClick={() => setIsTelegramWidgetOpen(false)}
+                            className="mt-6 text-zinc-400 hover:text-white"
+                        >
+                            Закрыть
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import {useState, useMemo, useEffect} from "react";
 import Navbar from "@/src/features/Navbar/components/Navbar";
 import { useProducts } from "@/src/hooks/useProducts";
 import Filters from "@/src/features/catalog/components/Filters";
@@ -31,6 +31,16 @@ export default function HomeContent() {
     const products = data?.products || [];
     const totalPages = data?.totalPages || 1;
     const currentPage = data?.page || 1;
+
+    useEffect(() => {
+        window.scrollTo({
+            top: 0,
+            left: 0,
+            behavior: 'instant',        // 'smooth' — если хочешь плавно
+        });
+    }, [currentPage]);
+
+
 
     const allBrands = useMemo(() => {
         return Array.from(new Set(products.map(p => p.brand))).sort();

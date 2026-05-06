@@ -28,7 +28,7 @@ export default function RegisterForm({ onClose }: RegisterFormProps) {
     } = useAuthForm();
 
     const [showPassword, setShowPassword] = useState(false);
-
+    const [isTelegramWidgetOpen, setIsTelegramWidgetOpen] = useState(false);
     const onFormSubmit = async () => {
         const success = await handleSubmit();
 
@@ -39,7 +39,11 @@ export default function RegisterForm({ onClose }: RegisterFormProps) {
     };
 
     const handleSocialLogin = (provider: string) => {
-        alert(`🔄 Регистрация через ${provider} будет реализована позже`);
+        if (provider === "telegram") {
+            setIsTelegramWidgetOpen(true);
+        } else {
+            alert(`🔄 Вход через ${provider} будет реализован позже`);
+        }
     };
 
     return (

@@ -1,4 +1,4 @@
-// src/features/Navbar/components/cart/CartModal.tsx
+
 "use client";
 
 import { X, ShoppingCart } from "lucide-react";
