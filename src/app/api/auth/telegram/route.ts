@@ -11,16 +11,14 @@ export async function POST(request: NextRequest) {
 
         const supabase = await createServerClientFn();
 
-        console.log(`Пытаемся сохранить пользователя с telegram_id: ${telegramUser.id}`);
-
-        // Проверяем наличие пользователя
+        // Ищем профиль по telegram_id
         let { data: profile } = await supabase
             .from('profiles')
             .select('*')
             .eq('telegram_id', telegramUser.id)
             .single();
 
-        // Если нет — создаём
+        // Если профиля нет — создаём
         if (!profile) {
             const { data: newProfile, error: insertError } = await supabase
                 .from('profiles')
@@ -35,9 +33,6 @@ export async function POST(request: NextRequest) {
 
             if (insertError) throw insertError;
             profile = newProfile;
-            console.log("Создан новый профиль");
-        } else {
-            console.log("Профиль уже существует");
         }
 
         return NextResponse.json({
