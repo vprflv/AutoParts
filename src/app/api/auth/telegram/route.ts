@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import {createClient} from "@/lib/supabase/client";
-
+import { createServerClientFn } from "@/lib/supabase/server";
 
 export async function POST(request: NextRequest) {
     try {
@@ -10,36 +9,40 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: false, error: "Нет telegram_id" }, { status: 400 });
         }
 
-        const supabase = createClient();
+        const supabase = await createServerClientFn();
 
-        // Ищем пользователя по telegram_id
-        let { data: user } = await supabase
-            .from('users')
+        console.log(`Пытаемся сохранить пользователя с telegram_id: ${telegramUser.id}`);
+
+        // Проверяем наличие пользователя
+        let { data: profile } = await supabase
+            .from('profiles')
             .select('*')
             .eq('telegram_id', telegramUser.id)
             .single();
 
-        // Если пользователя нет — создаём
-        if (!user) {
-            const { data: newUser, error } = await supabase
-                .from('users')
+        // Если нет — создаём
+        if (!profile) {
+            const { data: newProfile, error: insertError } = await supabase
+                .from('profiles')
                 .insert({
                     telegram_id: telegramUser.id,
                     name: telegramUser.first_name + (telegramUser.last_name ? ` ${telegramUser.last_name}` : ''),
                     username: telegramUser.username || null,
                     avatar_url: telegramUser.photo_url || null,
-                    // email: null, // можно оставить пустым
                 })
                 .select()
                 .single();
 
-            if (error) throw error;
-            user = newUser;
+            if (insertError) throw insertError;
+            profile = newProfile;
+            console.log("Создан новый профиль");
+        } else {
+            console.log("Профиль уже существует");
         }
 
         return NextResponse.json({
             success: true,
-            user,
+            profile,
             message: "Успешная авторизация через Telegram"
         });
 
@@ -47,7 +50,7 @@ export async function POST(request: NextRequest) {
         console.error("Telegram auth error:", error);
         return NextResponse.json({
             success: false,
-            error: error.message || "Внутренняя ошибка"
+            error: error.message
         }, { status: 500 });
     }
 }

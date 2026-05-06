@@ -54,29 +54,12 @@ export default function LoginForm({ onClose, setTab }: LoginFormProps) {
         }
     };
 
-    const handleTelegramAuth = async (telegramUser: any) => {
-        try {
-            console.log("📨 Отправляем данные Telegram на сервер:", telegramUser);
-
-            const response = await fetch('/api/auth/telegram', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ telegramUser }),
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                toast.success(`Добро пожаловать, ${telegramUser.first_name}! 👋`);
-                setIsTelegramWidgetOpen(false);
-                onClose();
-            } else {
-                toast.error(result.error || "Ошибка авторизации");
-            }
-        } catch (error) {
-            console.error("Ошибка при отправке на сервер:", error);
-            toast.error("Не удалось связаться с сервером");
-        }
+    const handleTelegramAuth = (user: any) => {
+        debugger
+        console.log("✅ Получен пользователь из Telegram:", user);
+        toast.success(`Добро пожаловать, ${user.first_name}!`);
+        setIsTelegramWidgetOpen(false);
+        onClose();
     };
 
     return (

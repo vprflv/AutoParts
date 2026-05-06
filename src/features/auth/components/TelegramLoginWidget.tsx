@@ -2,55 +2,43 @@
 
 import { useEffect } from "react";
 
-
-declare global {
-    interface Window {
-        Telegram?: {
-            WebApp: any;
-        };
-    }
-}
-
 interface TelegramLoginWidgetProps {
     botUsername: string;
     onAuth: (user: any) => void;
 }
 
 export default function TelegramLoginWidget({ botUsername, onAuth }: TelegramLoginWidgetProps) {
+    const sendLog = (message: string, type = 'info') => {
+        fetch('/api/log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message, type }),
+        }).catch(() => {}); // не ждём ответа
+    };
+
     useEffect(() => {
-        console.log("🔍 TelegramLoginWidget mounted");
+        sendLog("TelegramLoginWidget mounted");
 
-        // Пытаемся получить данные из URL (Telegram иногда передаёт их в query)
-        const urlParams = new URLSearchParams(window.location.search);
-        const initData = urlParams.get('initData') || window.Telegram?.WebApp?.initData;
-
-        if (initData) {
-            try {
-                const userData = JSON.parse(decodeURIComponent(initData));
-                console.log("✅ Данные из URL:", userData);
-                if (userData.user) onAuth(userData.user);
-            } catch (e) {
-                console.log("Не удалось распарсить initData");
-            }
-        }
-
-        // Основная проверка
         if (window.Telegram?.WebApp) {
+            debugger
             const tg = window.Telegram.WebApp;
-            console.log("✅ Telegram WebApp найден!");
-            console.log("User:", tg.initDataUnsafe?.user);
+            sendLog("Telegram WebApp detected!", "success");
+
+            tg.ready();
+            tg.expand();
+
             if (tg.initDataUnsafe?.user) {
+                sendLog(`User data received: ${tg.initDataUnsafe.user.first_name} (id: ${tg.initDataUnsafe.user.id})`, "success");
                 onAuth(tg.initDataUnsafe.user);
             }
         } else {
-            console.log("❌ Telegram.WebApp не обнаружен");
+            sendLog("Telegram.WebApp not found", "error");
         }
     }, [onAuth]);
 
     const openTelegramLogin = () => {
         const bot = botUsername.replace("@", "");
-        const url = `https://t.me/${bot}?start=login`;
-        window.open(url, "_blank");
+        window.open(`https://t.me/${bot}?start=login`, "_blank");
     };
 
     return (
@@ -61,9 +49,6 @@ export default function TelegramLoginWidget({ botUsername, onAuth }: TelegramLog
             >
                 Войти через Telegram
             </button>
-            <p className="text-xs text-zinc-500 mt-4">
-                Откроется бот → нажми кнопку "Войти на сайте"
-            </p>
         </div>
     );
 }

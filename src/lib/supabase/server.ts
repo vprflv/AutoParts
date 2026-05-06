@@ -19,7 +19,7 @@ export const createServerClientFn = async () => {
                             cookieStore.set(name, value, options)
                         })
                     } catch {
-                        // Middleware может вызывать ошибку — игнорируем
+
                     }
                 },
             },
