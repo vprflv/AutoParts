@@ -37,6 +37,7 @@ export default function TelegramLoginWidget({ botUsername, onAuth }: TelegramLog
 
     return (
         <div className="py-8 text-center">
+
             <p className="text-zinc-400 mb-6">Нажмите кнопку ниже для входа</p>
             <div id="telegram-widget-container" />
         </div>
