@@ -26,6 +26,7 @@ export default function TelegramLoginWidget({ botUsername, onAuth }: TelegramLog
         script.setAttribute("data-request-access", "write");
         script.setAttribute("data-userpic", "true");
 
+
         document.body.appendChild(script);
 
         return () => {
