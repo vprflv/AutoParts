@@ -2,6 +2,14 @@
 
 import { useEffect } from "react";
 
+declare global {
+    interface Window {
+        Telegram?: {
+            WebApp: any;
+        };
+    }
+}
+
 interface TelegramLoginWidgetProps {
     botUsername: string;
     onAuth: (user: any) => void;
