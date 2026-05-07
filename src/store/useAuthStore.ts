@@ -83,7 +83,10 @@ export const useAuthStore = create<AuthStore>()(
                         body: JSON.stringify({ telegramUser }),
                     });
 
+
                     const result = await response.json();
+
+                    console.log(result)
 
                     if (!result.success) {
                         set({ error: result.error });
