@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/src/lib/supabase/server'; // серверный клиент
+
 import { createClient as createAdminClient } from '@supabase/supabase-js';
+import {createServerClientFn} from "@/lib/supabase/server";
 
 export async function POST(request: NextRequest) {
     try {
@@ -10,7 +11,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: false, error: "Нет telegram_id" }, { status: 400 });
         }
 
-        const supabase = await createClient(); // обычный серверный клиент
+        const supabase = await createServerClientFn();
 
         // === ADMIN CLIENT для создания пользователя в auth.users ===
         const adminSupabase = createAdminClient(
