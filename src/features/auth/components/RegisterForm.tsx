@@ -60,23 +60,26 @@ export default function RegisterForm({ onClose }: RegisterFormProps) {
         if (!isTelegramWidgetOpen) return;
 
         const interval = setInterval(async () => {
-            // Обновляем сессию
+            console.log("🔍 Проверка пользователя...");
+
+            // Принудительно обновляем сессию
             const supabase = createClient();
             await supabase.auth.refreshSession();
 
-            // Загружаем пользователя
             await useAuthStore.getState().loadUser();
 
-            if (useAuthStore.getState().user) {
+            const currentUser = useAuthStore.getState().user;
+            if (currentUser) {
+                console.log("🎉 ПОЛЬЗОВАТЕЛЬ НАЙДЕН!", currentUser);
                 toast.success("✅ Вы успешно вошли через Telegram!");
                 setIsTelegramWidgetOpen(false);
                 onClose();
                 clearInterval(interval);
             }
-        }, 2000);
+        }, 1500);
 
         return () => clearInterval(interval);
-    }, [isTelegramWidgetOpen]);
+    }, [isTelegramWidgetOpen, onClose]);
 
     return (
         <div className="space-y-6">

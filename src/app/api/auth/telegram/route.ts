@@ -14,6 +14,7 @@ export async function POST(request: NextRequest) {
             process.env.SUPABASE_SERVICE_ROLE_KEY!
         );
 
+        // Поиск или создание пользователя
         let { data: { users } } = await adminSupabase.auth.admin.listUsers();
         let authUser = users.find((u: any) => u.user_metadata?.telegram_id === telegramUser.id);
 
@@ -35,14 +36,16 @@ export async function POST(request: NextRequest) {
             authUser = newUser.user;
         }
 
+        // Возвращаем данные для установки сессии
         return NextResponse.json({
             success: true,
             userId: authUser.id,
-            message: "Успешно"
+            user: authUser,
+            // Можно добавить токены позже, пока хотя бы userId
         });
 
     } catch (error: any) {
-        console.error(error);
+        console.error("Telegram route error:", error);
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
 }
