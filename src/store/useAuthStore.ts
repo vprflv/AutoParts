@@ -21,7 +21,7 @@ interface AuthStore {
 
     login: (email: string, password: string) => Promise<boolean>;
     register: (name: string, email: string, password: string) => Promise<boolean>;
-    loginWithTelegram: (telegramUser: any) => Promise<boolean>;   // Новый метод
+    loginWithTelegram: (telegramUser: any) => Promise<boolean>;
     updateUser: (updates: Partial<User>) => Promise<void>;
     logout: () => Promise<void>;
     clearError: () => void;
@@ -40,14 +40,7 @@ export const useAuthStore = create<AuthStore>()(
             isDevMode: false,
             lastUserCheck: 0,
 
-            getCurrentUser: () => {
-                const state = get();
-                const now = Date.now();
-                if (state.user && now - state.lastUserCheck < 8000) {
-                    return state.user;
-                }
-                return state.user;
-            },
+            getCurrentUser: () => get().user,
 
             loadUser: async () => {
                 const now = Date.now();
@@ -107,9 +100,92 @@ export const useAuthStore = create<AuthStore>()(
                 }
             },
 
-            // ... остальные твои методы (login, register, logout и т.д.)
-            // (оставь их как были)
+            login: async (email: string, password: string) => {
+                set({ isLoading: true, error: null });
+                const supabase = createClient();
 
+                try {
+                    const { data, error } = await supabase.auth.signInWithPassword({
+                        email,
+                        password
+                    });
+
+                    if (error) {
+                        set({ error: error.message });
+                        return false;
+                    }
+
+                    await get().loadUser();
+                    return true;
+                } catch (err: any) {
+                    set({ error: err.message || "Неизвестная ошибка" });
+                    return false;
+                } finally {
+                    set({ isLoading: false });
+                }
+            },
+
+            register: async (name: string, email: string, password: string) => {
+                set({ isLoading: true, error: null });
+                const supabase = createClient();
+
+                try {
+                    const { data, error } = await supabase.auth.signUp({
+                        email,
+                        password,
+                        options: { data: { name } },
+                    });
+
+                    if (error) throw error;
+
+                    if (data.user) {
+                        await supabase.from("profiles").insert({
+                            id: data.user.id,
+                            name,
+                            email,
+                        });
+                    }
+
+                    if (data.session) {
+                        await get().loadUser();
+                    }
+
+                    return true;
+                } catch (err: any) {
+                    set({ error: err.message || "Ошибка регистрации" });
+                    return false;
+                } finally {
+                    set({ isLoading: false });
+                }
+            },
+
+            updateUser: async (updates: Partial<User>) => {
+                const currentUser = get().user;
+                if (!currentUser) return;
+
+                const supabase = createClient();
+                try {
+                    await supabase
+                        .from("profiles")
+                        .update(updates)
+                        .eq("id", currentUser.id);
+
+                    set((state) => ({
+                        user: state.user ? { ...state.user, ...updates } : null,
+                    }));
+                } catch (err) {
+                    console.error(err);
+                }
+            },
+
+            logout: async () => {
+                const supabase = createClient();
+                await supabase.auth.signOut();
+                set({ user: null, error: null, lastUserCheck: 0 });
+            },
+
+            clearError: () => set({ error: null }),
+            toggleDevMode: () => set((state) => ({ isDevMode: !state.isDevMode })),
         }),
 
         {
