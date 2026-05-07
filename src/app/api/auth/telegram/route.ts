@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClientFn } from "@/lib/supabase/server";
+import { createClient } from '@/src/lib/supabase/server'; // серверный клиент
+import { createClient as createAdminClient } from '@supabase/supabase-js';
 
 export async function POST(request: NextRequest) {
     try {
@@ -9,35 +10,55 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: false, error: "Нет telegram_id" }, { status: 400 });
         }
 
-        const supabase = await createServerClientFn();
+        const supabase = await createClient(); // обычный серверный клиент
 
-        // Ищем профиль по telegram_id
+        // === ADMIN CLIENT для создания пользователя в auth.users ===
+        const adminSupabase = createAdminClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.SUPABASE_SERVICE_ROLE_KEY! // ← Service Role Key
+        );
+
+        // Ищем, есть ли уже пользователь с таким telegram_id
         let { data: profile } = await supabase
             .from('profiles')
-            .select('*')
+            .select('id')
             .eq('telegram_id', telegramUser.id)
             .single();
 
-        // Если профиля нет — создаём
         if (!profile) {
-            const { data: newProfile, error: insertError } = await supabase
+            // Создаём пользователя в auth.users
+            const { data: authUser, error: authError } = await adminSupabase.auth.admin.createUser({
+                email: `${telegramUser.id}@telegram.user`, // временный email
+                user_metadata: {
+                    telegram_id: telegramUser.id,
+                    first_name: telegramUser.first_name,
+                    username: telegramUser.username,
+                    avatar_url: telegramUser.photo_url,
+                },
+                email_confirm: true
+            });
+
+            if (authError) throw authError;
+
+            // Создаём профиль
+            const { error: profileError } = await supabase
                 .from('profiles')
                 .insert({
+                    id: authUser.user.id,
                     telegram_id: telegramUser.id,
                     name: telegramUser.first_name + (telegramUser.last_name ? ` ${telegramUser.last_name}` : ''),
                     username: telegramUser.username || null,
                     avatar_url: telegramUser.photo_url || null,
-                })
-                .select()
-                .single();
+                });
 
-            if (insertError) throw insertError;
-            profile = newProfile;
+            if (profileError) throw profileError;
+
+            profile = { id: authUser.user.id };
         }
 
         return NextResponse.json({
             success: true,
-            profile,
+            userId: profile.id,
             message: "Успешная авторизация через Telegram"
         });
 

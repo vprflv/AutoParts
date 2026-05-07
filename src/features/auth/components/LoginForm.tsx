@@ -54,12 +54,32 @@ export default function LoginForm({ onClose, setTab }: LoginFormProps) {
         }
     };
 
-    const handleTelegramAuth = (user: any) => {
-        debugger
-        console.log("✅ Получен пользователь из Telegram:", user);
-        toast.success(`Добро пожаловать, ${user.first_name}!`);
-        setIsTelegramWidgetOpen(false);
-        onClose();
+    const handleTelegramAuth = async (telegramUser: any) => {
+        try {
+            const response = await fetch('/api/auth/telegram', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ telegramUser }),
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                toast.success(`Добро пожаловать, ${telegramUser.first_name}! 👋`);
+
+                // Здесь можно сохранить данные пользователя в Zustand или localStorage
+                // Например:
+                // useAuthStore.getState().setUser(result.profile);
+
+                setIsTelegramWidgetOpen(false);
+                onClose(); // закрываем модалку логина
+            } else {
+                toast.error(result.error || "Ошибка авторизации");
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error("Не удалось связаться с сервером");
+        }
     };
 
     return (
