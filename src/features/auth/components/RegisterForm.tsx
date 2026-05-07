@@ -1,11 +1,12 @@
-// src/features/auth/components/RegisterForm.tsx
 "use client";
 
 import { useState } from "react";
 import { useAuthForm } from "@/src/features/auth/hooks/useAuthForm";
 import SocialLoginButtons from "@/src/features/auth/components/SocialLoginButtons";
+import TelegramLoginWidget from "@/src/features/auth/components/TelegramLoginWidget";
 import { Eye, EyeOff } from "lucide-react";
-import {toast} from "react-hot-toast";
+import { toast } from "react-hot-toast";
+import {useAuthStore} from "@/store/useAuthStore";
 
 interface RegisterFormProps {
     onClose: () => void;
@@ -29,9 +30,9 @@ export default function RegisterForm({ onClose }: RegisterFormProps) {
 
     const [showPassword, setShowPassword] = useState(false);
     const [isTelegramWidgetOpen, setIsTelegramWidgetOpen] = useState(false);
+
     const onFormSubmit = async () => {
         const success = await handleSubmit();
-
         if (success) {
             toast.success("Регистрация прошла успешно! ✅");
             onClose();
@@ -42,7 +43,16 @@ export default function RegisterForm({ onClose }: RegisterFormProps) {
         if (provider === "telegram") {
             setIsTelegramWidgetOpen(true);
         } else {
-            alert(`🔄 Вход через ${provider} будет реализован позже`);
+            alert(`🔄 Регистрация через ${provider} будет реализована позже`);
+        }
+    };
+
+    const handleTelegramAuth = async (telegramUser: any) => {
+        const success = await useAuthStore.getState().loginWithTelegram(telegramUser);
+
+        if (success) {
+            setIsTelegramWidgetOpen(false);
+            onClose();
         }
     };
 
@@ -86,7 +96,7 @@ export default function RegisterForm({ onClose }: RegisterFormProps) {
                 )}
             </div>
 
-            {/* Пароль с глазом */}
+            {/* Пароль */}
             <div>
                 <label className="text-sm text-zinc-400 block mb-1.5">
                     Пароль <span className="text-red-500">*</span>
@@ -145,6 +155,27 @@ export default function RegisterForm({ onClose }: RegisterFormProps) {
             </button>
 
             <SocialLoginButtons onSocialClick={handleSocialLogin} />
+
+            {/* Telegram Widget */}
+            {isTelegramWidgetOpen && (
+                <div className="fixed inset-0 bg-black/80 z-[70] flex items-center justify-center p-4">
+                    <div className="bg-zinc-900 rounded-3xl p-8 max-w-sm w-full text-center border border-zinc-700">
+                        <h3 className="text-xl font-semibold mb-6">Регистрация через Telegram</h3>
+
+                        <TelegramLoginWidget
+                            botUsername="AutoPartLoginBot"
+                            onAuth={handleTelegramAuth}
+                        />
+
+                        <button
+                            onClick={() => setIsTelegramWidgetOpen(false)}
+                            className="mt-6 text-zinc-400 hover:text-white text-sm"
+                        >
+                            Закрыть
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

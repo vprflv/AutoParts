@@ -6,6 +6,7 @@ import { useAuthForm } from "@/src/features/auth/hooks/useAuthForm";
 import SocialLoginButtons from "@/src/features/auth/components/SocialLoginButtons";
 import TelegramLoginWidget from "@/src/features/auth/components/TelegramLoginWidget";
 import { toast } from "react-hot-toast";
+import {useAuthStore} from "@/store/useAuthStore";
 
 interface LoginFormProps {
     onClose: () => void;
@@ -55,30 +56,11 @@ export default function LoginForm({ onClose, setTab }: LoginFormProps) {
     };
 
     const handleTelegramAuth = async (telegramUser: any) => {
-        try {
-            const response = await fetch('/api/auth/telegram', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ telegramUser }),
-            });
+        const success = await useAuthStore.getState().loginWithTelegram(telegramUser);
 
-            const result = await response.json();
-
-            if (result.success) {
-                toast.success(`Добро пожаловать, ${telegramUser.first_name}! 👋`);
-
-                // Здесь можно сохранить данные пользователя в Zustand или localStorage
-                // Например:
-                // useAuthStore.getState().setUser(result.profile);
-
-                setIsTelegramWidgetOpen(false);
-                onClose(); // закрываем модалку логина
-            } else {
-                toast.error(result.error || "Ошибка авторизации");
-            }
-        } catch (error) {
-            console.error(error);
-            toast.error("Не удалось связаться с сервером");
+        if (success) {
+            setIsTelegramWidgetOpen(false);
+            onClose();
         }
     };
 
