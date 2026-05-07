@@ -83,30 +83,33 @@ export const useAuthStore = create<AuthStore>()(
                         body: JSON.stringify({ telegramUser }),
                     });
 
-
                     const result = await response.json();
-
-                    console.log(result)
+                    console.log("Ответ от /api/auth/telegram:", result);
 
                     if (!result.success) {
                         set({ error: result.error });
                         return false;
                     }
 
-                    // Прямое сохранение пользователя из Telegram (временное решение)
-                    const newUser: User = {
-                        id: result.userId || result.profile?.id || `tg_${telegramUser.id}`,
-                        email: telegramUser.username ? `${telegramUser.username}@telegram.user` : `${telegramUser.id}@telegram.user`,
-                        name: telegramUser.first_name + (telegramUser.last_name ? ` ${telegramUser.last_name}` : ''),
-                        telegram_id: telegramUser.id,
-                        username: telegramUser.username,
-                        avatar_url: telegramUser.photo_url,
-                    };
+                    // Пытаемся загрузить через Supabase Auth
+                    await get().loadUser();
 
-                    set({ user: newUser });
+                    if (!get().user) {
+                        // Fallback
+                        const newUser: User = {
+                            id: result.userId,
+                            email: `${telegramUser.id}@telegram.local`,
+                            name: telegramUser.first_name + (telegramUser.last_name ? ` ${telegramUser.last_name}` : ''),
+                            telegram_id: telegramUser.id,
+                            username: telegramUser.username,
+                            avatar_url: telegramUser.photo_url,
+                        };
+                        set({ user: newUser });
+                    }
+
                     return true;
-
                 } catch (err: any) {
+                    console.error(err);
                     set({ error: err.message || "Ошибка входа через Telegram" });
                     return false;
                 } finally {
