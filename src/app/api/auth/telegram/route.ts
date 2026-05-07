@@ -5,6 +5,12 @@ export async function POST(request: NextRequest) {
     try {
         const { telegramUser } = await request.json();
 
+        console.log("📥 Получено от бота:", {
+            id: telegramUser?.id,
+            first_name: telegramUser?.first_name,
+            username: telegramUser?.username
+        });
+
         if (!telegramUser?.id) {
             return NextResponse.json({ success: false, error: "Нет telegram_id" }, { status: 400 });
         }
@@ -18,11 +24,10 @@ export async function POST(request: NextRequest) {
         let { data: { users } } = await adminSupabase.auth.admin.listUsers();
         let authUser = users.find((u: any) => u.user_metadata?.telegram_id === telegramUser.id);
 
-        // Если пользователя нет — создаём
         if (!authUser) {
-            console.log(`Создаём нового пользователя Telegram ID: ${telegramUser.id}`);
+            console.log(`🆕 Создаём нового пользователя Telegram ID: ${telegramUser.id}`);
 
-            const { data: newUser, error } = await adminSupabase.auth.admin.createUser({
+            const { data: newUser, error: createError } = await adminSupabase.auth.admin.createUser({
                 email: `${telegramUser.id}@telegram.local`,
                 email_confirm: true,
                 user_metadata: {
@@ -35,12 +40,13 @@ export async function POST(request: NextRequest) {
                 }
             });
 
-            if (error) {
-                console.error("Ошибка createUser:", error);
-                throw error;
+            if (createError) {
+                console.error("❌ Ошибка createUser:", createError);
+                throw createError;
             }
 
             authUser = newUser.user;
+            console.log(`✅ Пользователь создан в auth.users: ${authUser.id}`);
 
             // Создаём профиль
             const { error: profileError } = await adminSupabase
@@ -54,7 +60,14 @@ export async function POST(request: NextRequest) {
                     email: `${telegramUser.id}@telegram.local`
                 });
 
-            if (profileError) console.error("Ошибка создания профиля:", profileError);
+            if (profileError) {
+                console.error("⚠️ Ошибка создания профиля:", profileError);
+                // Не падаем, если профиль не создался — главное auth.user есть
+            } else {
+                console.log("✅ Профиль создан");
+            }
+        } else {
+            console.log(`🔄 Пользователь уже существует: ${authUser.id}`);
         }
 
         return NextResponse.json({
@@ -64,7 +77,7 @@ export async function POST(request: NextRequest) {
         });
 
     } catch (error: any) {
-        console.error("❌ Ошибка в /api/auth/telegram:", error);
+        console.error("❌ Критическая ошибка в route:", error);
         return NextResponse.json({
             success: false,
             error: error.message
