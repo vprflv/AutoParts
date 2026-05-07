@@ -38,3 +38,9 @@ pnpm-lock.yaml
 yarn.lock
 package-lock.json
 bun.lockb
+
+
+# Supabase Edge Functions - игнорируем для Next.js
+supabase/functions/
+!supabase/functions/**/index.ts
+!supabase/functions/**/deno.json

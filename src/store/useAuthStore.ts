@@ -46,17 +46,14 @@ export const useAuthStore = create<AuthStore>()(
                 console.log("🔄 loadUser вызван");
                 const supabase = createClient();
 
-                const { data: { user }, error } = await supabase.auth.getUser();
-
-                console.log("supabase.auth.getUser() вернул:", user ? user.id : null);
+                const { data: { user } } = await supabase.auth.getUser();
+                console.log("supabase.auth.getUser() вернул:", user?.id || "null");
 
                 if (!user) {
-                    console.log("❌ Нет активной сессии");
                     set({ user: null });
                     return;
                 }
 
-                // Загружаем профиль
                 const { data: profile } = await supabase
                     .from("profiles")
                     .select("name, username, avatar_url, telegram_id")
@@ -73,7 +70,7 @@ export const useAuthStore = create<AuthStore>()(
                 };
 
                 set({ user: loadedUser });
-                console.log("✅ Пользователь загружен в Zustand:", loadedUser.name);
+                console.log("✅ Пользователь загружен:", loadedUser.name);
             },
 
             loginWithTelegram: async (telegramUser: any) => {
@@ -87,28 +84,19 @@ export const useAuthStore = create<AuthStore>()(
                     });
 
                     const result = await response.json();
-                    console.log("📥 Ответ от сервера:", result);
+                    console.log("Ответ от /api/auth/telegram:", result);
 
-                    if (!result.success || !result.access_token) {
-                        set({ error: result.error || "Нет токена" });
+                    if (!result.success) {
+                        set({ error: result.error });
                         return false;
                     }
 
+                    // Пытаемся обновить сессию и загрузить пользователя
                     const supabase = createClient();
-
-                    // Устанавливаем сессию
-                    const { error: setError } = await supabase.auth.setSession({
-                        access_token: result.access_token,
-                        refresh_token: result.refresh_token || '',
-                    });
-
-                    if (setError) console.error("setSession error:", setError);
-
+                    await supabase.auth.refreshSession();
                     await get().loadUser();
 
-                    console.log("🎉 Сессия установлена успешно!");
                     return true;
-
                 } catch (err: any) {
                     console.error(err);
                     set({ error: err.message });
@@ -117,6 +105,7 @@ export const useAuthStore = create<AuthStore>()(
                     set({ isLoading: false });
                 }
             },
+
 
             login: async (email: string, password: string) => {
                 set({ isLoading: true, error: null });
