@@ -1,4 +1,3 @@
-// src/features/Navbar/components/Navbar.tsx
 "use client";
 
 import { useState } from "react";
@@ -10,10 +9,8 @@ import { Menu, Transition } from "@headlessui/react";
 import CartModal from "./cart/CartModal";
 import AuthModal from "../../auth/components/AuthModal";
 import SearchInput from "@/src/features/Navbar/components/SearchInput";
-import {toast} from "react-hot-toast";
+import { toast } from "react-hot-toast";
 import Link from "next/link";
-
-
 
 interface NavbarProps {
     onSearchChange: (search: string) => void;
@@ -28,11 +25,15 @@ export default function Navbar({ onSearchChange, searchValue }: NavbarProps) {
     const totalItems = useCartStore((state) => state.totalItems());
     const router = useRouter();
 
-
     const handleLogout = () => {
         logout();
         toast.success("Вы вышли из аккаунта");
     };
+
+    // Для аватарки Telegram пользователя
+    const avatarUrl = user?.avatar_url;
+    const displayName = user?.name || "Пользователь";
+    const displayEmail = user?.email || user?.username || "";
 
     return (
         <>
@@ -41,18 +42,16 @@ export default function Navbar({ onSearchChange, searchValue }: NavbarProps) {
                     <div className="flex items-center justify-between">
 
                         {/* Логотип */}
-
                         <Link href='/'>
-                        <div className="flex items-center gap-3 flex-shrink-0">
-                            <div className="w-9 h-9 bg-blue-600 rounded-2xl flex items-center justify-center text-2xl">
-
+                            <div className="flex items-center gap-3 flex-shrink-0">
+                                <div className="w-9 h-9 bg-blue-600 rounded-2xl flex items-center justify-center text-2xl">
+                                    🚗
+                                </div>
+                                <div>
+                                    <h1 className="text-xl font-bold tracking-tight">AutoPart</h1>
+                                    <p className="text-[10px] text-zinc-500 -mt-1">Pro</p>
+                                </div>
                             </div>
-                            <div>
-                                <h1 className="text-xl font-bold tracking-tight">AutoPart</h1>
-
-                                <p className="text-[10px] text-zinc-500 -mt-1">Pro</p>
-                            </div>
-                        </div>
                         </Link>
 
                         {/* Поиск */}
@@ -68,7 +67,7 @@ export default function Navbar({ onSearchChange, searchValue }: NavbarProps) {
                                 className="relative p-3 hover:bg-zinc-900 rounded-2xl transition-colors"
                             >
                                 <ShoppingCart className="w-6 h-6" />
-                                { totalItems > 0 && (
+                                {totalItems > 0 && (
                                     <div
                                         suppressHydrationWarning
                                         className="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-medium w-5 h-5 rounded-full flex items-center justify-center">
@@ -77,19 +76,31 @@ export default function Navbar({ onSearchChange, searchValue }: NavbarProps) {
                                 )}
                             </button>
 
-                            {/* Профиль с выпадающим меню */}
+                            {/* Профиль */}
                             {user ? (
                                 <Menu as="div" className="relative">
                                     <Menu.Button className="flex items-center gap-3 p-2 pr-3 hover:bg-zinc-900 rounded-2xl transition-colors focus:outline-none">
 
+                                        {/* Аватарка */}
+                                        {avatarUrl ? (
+                                            <img
+                                                src={avatarUrl}
+                                                alt={displayName}
+                                                className="w-8 h-8 rounded-full object-cover border border-zinc-700"
+                                            />
+                                        ) : (
                                             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold">
-                                                {user.name?.[0] || "А"}
+                                                {displayName?.[0] || "А"}
                                             </div>
+                                        )}
+
                                         <div className="hidden sm:block text-left">
                                             <p className="text-sm font-medium text-white leading-none">
-                                                {user.name}
+                                                {displayName}
                                             </p>
-                                            <p className="text-xs text-zinc-500">{user.email}</p>
+                                            <p className="text-xs text-zinc-500">
+                                                {displayEmail || (user.telegram_id && `ID: ${user.telegram_id}`)}
+                                            </p>
                                         </div>
                                     </Menu.Button>
 
@@ -143,7 +154,6 @@ export default function Navbar({ onSearchChange, searchValue }: NavbarProps) {
                                     </Transition>
                                 </Menu>
                             ) : (
-                                /* Неавторизованный пользователь */
                                 <button
                                     onClick={() => setIsAuthOpen(true)}
                                     className="p-3 hover:bg-zinc-900 rounded-2xl transition-colors"
