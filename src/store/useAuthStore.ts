@@ -90,8 +90,19 @@ export const useAuthStore = create<AuthStore>()(
                         return false;
                     }
 
-                    await get().loadUser();
+                    // Прямое сохранение пользователя из Telegram (временное решение)
+                    const newUser: User = {
+                        id: result.userId || result.profile?.id || `tg_${telegramUser.id}`,
+                        email: telegramUser.username ? `${telegramUser.username}@telegram.user` : `${telegramUser.id}@telegram.user`,
+                        name: telegramUser.first_name + (telegramUser.last_name ? ` ${telegramUser.last_name}` : ''),
+                        telegram_id: telegramUser.id,
+                        username: telegramUser.username,
+                        avatar_url: telegramUser.photo_url,
+                    };
+
+                    set({ user: newUser });
                     return true;
+
                 } catch (err: any) {
                     set({ error: err.message || "Ошибка входа через Telegram" });
                     return false;

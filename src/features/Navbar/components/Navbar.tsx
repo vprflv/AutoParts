@@ -82,24 +82,24 @@ export default function Navbar({ onSearchChange, searchValue }: NavbarProps) {
                                     <Menu.Button className="flex items-center gap-3 p-2 pr-3 hover:bg-zinc-900 rounded-2xl transition-colors focus:outline-none">
 
                                         {/* Аватарка */}
-                                        {avatarUrl ? (
+                                        {user.avatar_url ? (
                                             <img
-                                                src={avatarUrl}
-                                                alt={displayName}
+                                                src={user.avatar_url}
+                                                alt={user.name || ""}
                                                 className="w-8 h-8 rounded-full object-cover border border-zinc-700"
                                             />
                                         ) : (
                                             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold">
-                                                {displayName?.[0] || "А"}
+                                                {user.name?.[0] || "T"}
                                             </div>
                                         )}
 
                                         <div className="hidden sm:block text-left">
                                             <p className="text-sm font-medium text-white leading-none">
-                                                {displayName}
+                                                {user.name || "Telegram User"}
                                             </p>
                                             <p className="text-xs text-zinc-500">
-                                                {displayEmail || (user.telegram_id && `ID: ${user.telegram_id}`)}
+                                                {user.telegram_id ? `Telegram` : user.email}
                                             </p>
                                         </div>
                                     </Menu.Button>
