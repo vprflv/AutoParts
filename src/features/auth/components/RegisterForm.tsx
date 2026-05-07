@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import {useEffect, useState} from "react";
 import { useAuthForm } from "@/src/features/auth/hooks/useAuthForm";
 import SocialLoginButtons from "@/src/features/auth/components/SocialLoginButtons";
 import TelegramLoginWidget from "@/src/features/auth/components/TelegramLoginWidget";
 import { Eye, EyeOff } from "lucide-react";
 import { toast } from "react-hot-toast";
 import {useAuthStore} from "@/store/useAuthStore";
+import {createClient} from "@/lib/supabase/client";
 
 interface RegisterFormProps {
     onClose: () => void;
@@ -55,6 +56,27 @@ export default function RegisterForm({ onClose }: RegisterFormProps) {
             onClose();
         }
     };
+    useEffect(() => {
+        if (!isTelegramWidgetOpen) return;
+
+        const interval = setInterval(async () => {
+            // Обновляем сессию
+            const supabase = createClient();
+            await supabase.auth.refreshSession();
+
+            // Загружаем пользователя
+            await useAuthStore.getState().loadUser();
+
+            if (useAuthStore.getState().user) {
+                toast.success("✅ Вы успешно вошли через Telegram!");
+                setIsTelegramWidgetOpen(false);
+                onClose();
+                clearInterval(interval);
+            }
+        }, 2000);
+
+        return () => clearInterval(interval);
+    }, [isTelegramWidgetOpen]);
 
     return (
         <div className="space-y-6">
