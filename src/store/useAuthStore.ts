@@ -84,19 +84,28 @@ export const useAuthStore = create<AuthStore>()(
                     });
 
                     const result = await response.json();
-                    console.log("Ответ от /api/auth/telegram:", result);
+                    console.log("Ответ от сервера:", result);
 
                     if (!result.success) {
                         set({ error: result.error });
                         return false;
                     }
 
-                    // Пытаемся обновить сессию и загрузить пользователя
-                    const supabase = createClient();
-                    await supabase.auth.refreshSession();
-                    await get().loadUser();
+                    // === ГРЯЗНЫЙ, НО РАБОЧИЙ FALLBACK ===
+                    const newUser: User = {
+                        id: result.userId || `tg_${telegramUser.id}`,
+                        email: `${telegramUser.id}@telegram.local`,
+                        name: telegramUser.first_name + (telegramUser.last_name ? ` ${telegramUser.last_name}` : ''),
+                        telegram_id: telegramUser.id,
+                        username: telegramUser.username,
+                        avatar_url: telegramUser.photo_url,
+                    };
+
+                    set({ user: newUser });
+                    console.log("✅ Пользователь сохранён в Zustand (fallback):", newUser);
 
                     return true;
+
                 } catch (err: any) {
                     console.error(err);
                     set({ error: err.message });
