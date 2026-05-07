@@ -27,7 +27,7 @@ interface AuthStore {
     clearError: () => void;
     loadUser: () => Promise<void>;
     toggleDevMode: () => void;
-
+    setUser: (user: User) => void;
     getCurrentUser: () => User | null;
 }
 
@@ -114,6 +114,8 @@ export const useAuthStore = create<AuthStore>()(
                     set({ isLoading: false });
                 }
             },
+
+            setUser: (newUser: User) => set({ user: newUser }),
 
 
             login: async (email: string, password: string) => {
