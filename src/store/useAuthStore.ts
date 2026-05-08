@@ -17,6 +17,7 @@ interface AuthStore {
     isLoading: boolean;
     error: string | null;
 
+    updateUser: (updates: Partial<User>) => Promise<void>;
     login: (email: string, password: string) => Promise<boolean>;
     register: (name: string, email: string, password: string) => Promise<boolean>;
     loginWithTelegram: (telegramUser: any) => Promise<boolean>;
@@ -60,6 +61,24 @@ export const useAuthStore = create<AuthStore>()(
                 };
 
                 set({ user: loadedUser });
+            },
+            updateUser: async (updates: Partial<User>) => {
+                const currentUser = get().user;
+                if (!currentUser) return;
+
+                const supabase = createClient();
+                try {
+                    await supabase
+                        .from("profiles")
+                        .update(updates)
+                        .eq("id", currentUser.id);
+
+                    set((state) => ({
+                        user: state.user ? { ...state.user, ...updates } : null,
+                    }));
+                } catch (err) {
+                    console.error(err);
+                }
             },
 
             loginWithTelegram: async (telegramUser: any) => {
