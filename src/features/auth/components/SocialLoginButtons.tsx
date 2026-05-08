@@ -8,10 +8,10 @@ interface SocialLoginButtonsProps {
 }
 
 const providers = [
-    { name: "Yandex", color: "#FF0000", icon: Search },
-    { name: "VK", color: "#4C75A3", icon: Users },
-    { name: "Telegram", color: "#229ED9", icon: Send },
-    { name: "Avito", color: "#FF8A00", icon: ShoppingBag },
+    { name: "Telegram (Бот)", color: "#229ED9", icon: Send },
+    // { name: "Yandex", color: "#FF0000", icon: Search },
+    // { name: "VK", color: "#4C75A3", icon: Users },
+    // { name: "Avito", color: "#FF8A00", icon: ShoppingBag },
 ];
 
 export default function SocialLoginButtons({ onSocialClick, onTelegramClick }: SocialLoginButtonsProps) {
@@ -27,10 +27,10 @@ export default function SocialLoginButtons({ onSocialClick, onTelegramClick }: S
                     <button
                         key={name}
                         onClick={() => {
-                            if (name === "Telegram" && onTelegramClick) {
+                            if (name.includes("Telegram") && onTelegramClick) {
                                 onTelegramClick();
                             } else {
-                                onSocialClick(name.toLowerCase());
+                                onSocialClick(name.toLowerCase().replace("(бот)", "").trim());
                             }
                         }}
                         className="flex-shrink-0 flex flex-col items-center justify-center gap-2 w-20 py-3 rounded-2xl font-medium transition-all hover:scale-105 active:scale-95"
@@ -41,7 +41,7 @@ export default function SocialLoginButtons({ onSocialClick, onTelegramClick }: S
                         >
                             <Icon size={26} className="text-white" />
                         </div>
-                        <span className="text-xs text-white text-center">{name}</span>
+                        <span className="text-xs text-white text-center leading-tight">{name}</span>
                     </button>
                 ))}
             </div>

@@ -25,15 +25,15 @@ export default function Navbar({ onSearchChange, searchValue }: NavbarProps) {
     const totalItems = useCartStore((state) => state.totalItems());
     const router = useRouter();
 
-    const handleLogout = () => {
-        logout();
+    const handleLogout = async () => {
+        await logout();
         toast.success("Вы вышли из аккаунта");
     };
 
-    // Для аватарки Telegram пользователя
-    const avatarUrl = user?.avatar_url;
-    const displayName = user?.name || "Пользователь";
-    const displayEmail = user?.email || user?.username || "";
+    // Улучшенная логика для Telegram пользователя
+    const avatarUrl = user?.avatar_url || (user?.telegram_id ? `https://t.me/i/userpic/320/${user.username || user.id}.jpg` : null);
+    const displayName = user?.name || user?.username || "Пользователь";
+    const isTelegramUser = !!user?.telegram_id;
 
     return (
         <>
@@ -42,10 +42,10 @@ export default function Navbar({ onSearchChange, searchValue }: NavbarProps) {
                     <div className="flex items-center justify-between">
 
                         {/* Логотип */}
-                        <Link href='/'>
+                        <Link href="/">
                             <div className="flex items-center gap-3 flex-shrink-0">
-                                <div className="w-9 h-9 bg-blue-600 rounded-2xl flex items-center justify-center text-2xl">
-                                    🚗
+                                <div className="w-9 h-9 bg-blue-600 rounded-3xl flex items-center justify-center text-2xl">
+
                                 </div>
                                 <div>
                                     <h1 className="text-xl font-bold tracking-tight">AutoPart</h1>
@@ -68,9 +68,7 @@ export default function Navbar({ onSearchChange, searchValue }: NavbarProps) {
                             >
                                 <ShoppingCart className="w-6 h-6" />
                                 {totalItems > 0 && (
-                                    <div
-                                        suppressHydrationWarning
-                                        className="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-medium w-5 h-5 rounded-full flex items-center justify-center">
+                                    <div className="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-medium w-5 h-5 rounded-full flex items-center justify-center">
                                         {totalItems}
                                     </div>
                                 )}
@@ -82,24 +80,26 @@ export default function Navbar({ onSearchChange, searchValue }: NavbarProps) {
                                     <Menu.Button className="flex items-center gap-3 p-2 pr-3 hover:bg-zinc-900 rounded-2xl transition-colors focus:outline-none">
 
                                         {/* Аватарка */}
-                                        {user.avatar_url ? (
+                                        {avatarUrl ? (
                                             <img
-                                                src={user.avatar_url}
-                                                alt={user.name || ""}
+                                                src={avatarUrl}
+                                                alt={displayName}
                                                 className="w-8 h-8 rounded-full object-cover border border-zinc-700"
                                             />
                                         ) : (
                                             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold">
-                                                {user.name?.[0] || "T"}
+                                                {displayName?.[0] || "T"}
                                             </div>
                                         )}
 
                                         <div className="hidden sm:block text-left">
                                             <p className="text-sm font-medium text-white leading-none">
-                                                {user.name || "Telegram User"}
+                                                {displayName}
                                             </p>
                                             <p className="text-xs text-zinc-500">
-                                                {user.telegram_id ? `Telegram` : user.email}
+                                                {user.telegram_id
+                                                    ? `@${user.username || 'telegram'}`
+                                                    : user.email}
                                             </p>
                                         </div>
                                     </Menu.Button>
@@ -121,18 +121,6 @@ export default function Navbar({ onSearchChange, searchValue }: NavbarProps) {
                                                     >
                                                         <UserCircle className="w-5 h-5" />
                                                         Личный кабинет
-                                                    </button>
-                                                )}
-                                            </Menu.Item>
-
-                                            <Menu.Item>
-                                                {({ active }) => (
-                                                    <button
-                                                        onClick={() => router.push("/profile?tab=orders")}
-                                                        className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm ${active ? "bg-zinc-800" : ""}`}
-                                                    >
-                                                        <Package className="w-5 h-5" />
-                                                        Мои заказы
                                                     </button>
                                                 )}
                                             </Menu.Item>

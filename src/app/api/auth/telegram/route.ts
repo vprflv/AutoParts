@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
             if (error) throw error;
             authUser = newUser.user;
 
-            // Создаём профиль
+
             await admin.from('profiles').insert({
                 id: authUser.id,
                 telegram_id: telegramUser.id,
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
             console.log("🔄 Пользователь уже существует");
         }
 
-        const magicLink = `https://joyride-resilient-blinked.ngrok-free.dev/auth/telegram?userId=${authUser.id}`;
+        const magicLink = `https://auto-parts-beige.vercel.app/auth/telegram?userId=${authUser.id}`;
 
         return NextResponse.json({
             success: true,

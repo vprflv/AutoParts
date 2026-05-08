@@ -4,9 +4,10 @@ import { useState, useEffect } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuthForm } from "@/src/features/auth/hooks/useAuthForm";
 import SocialLoginButtons from "@/src/features/auth/components/SocialLoginButtons";
-import TelegramLoginWidget from "@/src/features/auth/components/TelegramLoginWidget";
+import TelegramLoginWidget from "@/features/auth/components/telegram/TelegramLoginWidget";
 import { toast } from "react-hot-toast";
 import {useAuthStore} from "@/store/useAuthStore";
+import TelegramModal from "@/features/auth/components/telegram/TelegramModal";
 
 interface LoginFormProps {
     onClose: () => void;
@@ -143,23 +144,10 @@ export default function LoginForm({ onClose, setTab }: LoginFormProps) {
 
             {/* Telegram Widget Modal */}
             {isTelegramWidgetOpen && (
-                <div className="fixed inset-0 bg-black/80 z-[70] flex items-center justify-center p-4">
-                    <div className="bg-zinc-900 rounded-3xl p-8 max-w-sm w-full text-center border border-zinc-700">
-                        <h3 className="text-xl font-semibold mb-6">Вход через Telegram</h3>
-
-                        <TelegramLoginWidget
-                            botUsername="AutoPartLoginBot"
-                            onAuth={handleTelegramAuth}
-                        />
-
-                        <button
-                            onClick={() => setIsTelegramWidgetOpen(false)}
-                            className="mt-6 text-zinc-400 hover:text-white text-sm"
-                        >
-                            Закрыть
-                        </button>
-                    </div>
-                </div>
+                <TelegramModal
+                    isOpen={isTelegramWidgetOpen}
+                    onClose={() => setIsTelegramWidgetOpen(false)}
+                />
             )}
         </div>
     );

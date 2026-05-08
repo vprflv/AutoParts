@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAuthForm } from "@/src/features/auth/hooks/useAuthForm";
 import SocialLoginButtons from "@/src/features/auth/components/SocialLoginButtons";
-import TelegramLoginWidget from "@/src/features/auth/components/TelegramLoginWidget";
+import TelegramLoginWidget from "@/features/auth/components/telegram/TelegramLoginWidget";
 import { Eye, EyeOff } from "lucide-react";
 import { toast } from "react-hot-toast";
-import { useAuthStore } from "@/store/useAuthStore";
+import TelegramModal from "@/features/auth/components/telegram/TelegramModal";
 
 interface RegisterFormProps {
     onClose: () => void;
@@ -30,28 +30,6 @@ export default function RegisterForm({ onClose }: RegisterFormProps) {
 
     const [showPassword, setShowPassword] = useState(false);
     const [isTelegramWidgetOpen, setIsTelegramWidgetOpen] = useState(false);
-
-    // Polling для Telegram
-    useEffect(() => {
-        if (!isTelegramWidgetOpen) return;
-
-        console.log("🔄 Telegram Polling запущен");
-
-        const interval = setInterval(async () => {
-            await useAuthStore.getState().loadUser();
-            const user = useAuthStore.getState().user;
-
-            if (user) {
-                console.log("🎉 Пользователь найден в сторе:", user.name);
-                toast.success(`✅ Добро пожаловать, ${user.name}!`);
-                setIsTelegramWidgetOpen(false);
-                onClose();
-                clearInterval(interval);
-            }
-        }, 1800);
-
-        return () => clearInterval(interval);
-    }, [isTelegramWidgetOpen, onClose]);
 
     const onFormSubmit = async () => {
         const success = await handleSubmit();
@@ -131,7 +109,7 @@ export default function RegisterForm({ onClose }: RegisterFormProps) {
                 {errors.password && <p className="text-red-500 text-sm mt-1.5 px-1">{errors.password}</p>}
             </div>
 
-            {/* Чекбокс политики */}
+            {/* Политика */}
             <div className="flex items-start gap-3 pt-2 px-1">
                 <input
                     type="checkbox"
@@ -165,20 +143,10 @@ export default function RegisterForm({ onClose }: RegisterFormProps) {
 
             {/* Telegram Modal */}
             {isTelegramWidgetOpen && (
-                <div className="fixed inset-0 bg-black/80 z-[70] flex items-center justify-center p-4">
-                    <div className="bg-zinc-900 rounded-3xl p-8 max-w-sm w-full text-center border border-zinc-700">
-                        <h3 className="text-xl font-semibold mb-6">Регистрация / Вход через Telegram</h3>
-
-                        <TelegramLoginWidget botUsername="AutoPartLoginBot" />
-
-                        <button
-                            onClick={() => setIsTelegramWidgetOpen(false)}
-                            className="mt-6 text-zinc-400 hover:text-white text-sm"
-                        >
-                            Закрыть
-                        </button>
-                    </div>
-                </div>
+                <TelegramModal
+                    isOpen={isTelegramWidgetOpen}
+                    onClose={() => setIsTelegramWidgetOpen(false)}
+                />
             )}
         </div>
     );

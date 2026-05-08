@@ -4,7 +4,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { useAuthStore } from '@/store/useAuthStore';
-import { createClient } from '@/src/lib/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 
 export function TelegramAuthContent() {
     const searchParams = useSearchParams();

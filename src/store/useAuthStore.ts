@@ -16,19 +16,14 @@ interface AuthStore {
     user: User | null;
     isLoading: boolean;
     error: string | null;
-    isDevMode: boolean;
-    lastUserCheck: number;
 
     login: (email: string, password: string) => Promise<boolean>;
     register: (name: string, email: string, password: string) => Promise<boolean>;
     loginWithTelegram: (telegramUser: any) => Promise<boolean>;
-    updateUser: (updates: Partial<User>) => Promise<void>;
     logout: () => Promise<void>;
-    clearError: () => void;
     loadUser: () => Promise<void>;
-    toggleDevMode: () => void;
     setUser: (user: User) => void;
-    getCurrentUser: () => User | null;
+    clearError: () => void;
 }
 
 export const useAuthStore = create<AuthStore>()(
@@ -37,17 +32,12 @@ export const useAuthStore = create<AuthStore>()(
             user: null,
             isLoading: false,
             error: null,
-            isDevMode: false,
-            lastUserCheck: 0,
 
-            getCurrentUser: () => get().user,
+            setUser: (newUser: User) => set({ user: newUser }),
 
             loadUser: async () => {
-                console.log("🔄 loadUser вызван");
                 const supabase = createClient();
-
                 const { data: { user } } = await supabase.auth.getUser();
-                console.log("supabase.auth.getUser() вернул:", user?.id || "null");
 
                 if (!user) {
                     set({ user: null });
@@ -70,7 +60,6 @@ export const useAuthStore = create<AuthStore>()(
                 };
 
                 set({ user: loadedUser });
-                console.log("✅ Пользователь загружен:", loadedUser.name);
             },
 
             loginWithTelegram: async (telegramUser: any) => {
@@ -84,26 +73,13 @@ export const useAuthStore = create<AuthStore>()(
                     });
 
                     const result = await response.json();
-                    console.log("Ответ от сервера:", result);
 
                     if (!result.success) {
                         set({ error: result.error });
                         return false;
                     }
 
-                    // === ГРЯЗНЫЙ, НО РАБОЧИЙ FALLBACK ===
-                    const newUser: User = {
-                        id: result.userId || `tg_${telegramUser.id}`,
-                        email: `${telegramUser.id}@telegram.local`,
-                        name: telegramUser.first_name + (telegramUser.last_name ? ` ${telegramUser.last_name}` : ''),
-                        telegram_id: telegramUser.id,
-                        username: telegramUser.username,
-                        avatar_url: telegramUser.photo_url,
-                    };
-
-                    set({ user: newUser });
-                    console.log("✅ Пользователь сохранён в Zustand (fallback):", newUser);
-
+                    await get().loadUser();
                     return true;
 
                 } catch (err: any) {
@@ -115,18 +91,12 @@ export const useAuthStore = create<AuthStore>()(
                 }
             },
 
-            setUser: (newUser: User) => set({ user: newUser }),
-
-
             login: async (email: string, password: string) => {
                 set({ isLoading: true, error: null });
                 const supabase = createClient();
 
                 try {
-                    const { data, error } = await supabase.auth.signInWithPassword({
-                        email,
-                        password
-                    });
+                    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
                     if (error) {
                         set({ error: error.message });
@@ -136,7 +106,7 @@ export const useAuthStore = create<AuthStore>()(
                     await get().loadUser();
                     return true;
                 } catch (err: any) {
-                    set({ error: err.message || "Неизвестная ошибка" });
+                    set({ error: err.message });
                     return false;
                 } finally {
                     set({ isLoading: false });
@@ -164,46 +134,24 @@ export const useAuthStore = create<AuthStore>()(
                         });
                     }
 
-                    if (data.session) {
-                        await get().loadUser();
-                    }
+                    if (data.session) await get().loadUser();
 
                     return true;
                 } catch (err: any) {
-                    set({ error: err.message || "Ошибка регистрации" });
+                    set({ error: err.message });
                     return false;
                 } finally {
                     set({ isLoading: false });
                 }
             },
 
-            updateUser: async (updates: Partial<User>) => {
-                const currentUser = get().user;
-                if (!currentUser) return;
-
-                const supabase = createClient();
-                try {
-                    await supabase
-                        .from("profiles")
-                        .update(updates)
-                        .eq("id", currentUser.id);
-
-                    set((state) => ({
-                        user: state.user ? { ...state.user, ...updates } : null,
-                    }));
-                } catch (err) {
-                    console.error(err);
-                }
-            },
-
             logout: async () => {
                 const supabase = createClient();
                 await supabase.auth.signOut();
-                set({ user: null, error: null, lastUserCheck: 0 });
+                set({ user: null, error: null });
             },
 
             clearError: () => set({ error: null }),
-            toggleDevMode: () => set((state) => ({ isDevMode: !state.isDevMode })),
         }),
 
         {
@@ -211,7 +159,6 @@ export const useAuthStore = create<AuthStore>()(
             storage: createJSONStorage(() => localStorage),
             partialize: (state) => ({
                 user: state.user,
-                isDevMode: state.isDevMode
             }),
         }
     )
