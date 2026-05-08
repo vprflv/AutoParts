@@ -7,13 +7,16 @@ export function useTelegramAuth(isOpen: boolean, onClose: () => void) {
     const processed = useRef(new Set<string>());
 
     useEffect(() => {
-        if (!isOpen) return;
+        if (!isOpen) {
+            processed.current.clear();
+            return;
+        }
 
         console.log("🔄 Telegram Auth Polling запущен");
 
         const interval = setInterval(async () => {
             try {
-                // 1. Пробуем обычную загрузку
+                // 1. Обычная загрузка через сессию
                 await useAuthStore.getState().loadUser();
                 let user = useAuthStore.getState().user;
 
@@ -24,11 +27,11 @@ export function useTelegramAuth(isOpen: boolean, onClose: () => void) {
                         .from('profiles')
                         .select('*')
                         .order('created_at', { ascending: false })
-                        .limit(1);
+                        .limit(5); // берём последние 5 на всякий случай
 
-                    const profile = profiles?.[0];
+                    const profile = profiles?.find(p => p.telegram_id);
 
-                    if (profile && profile.telegram_id && !processed.current.has(profile.id)) {
+                    if (profile && !processed.current.has(profile.id)) {
                         const newUser = {
                             id: profile.id,
                             name: profile.name,
@@ -41,16 +44,22 @@ export function useTelegramAuth(isOpen: boolean, onClose: () => void) {
                         useAuthStore.setState({ user: newUser });
                         processed.current.add(profile.id);
 
-                        console.log("🎉 Пользователь найден через polling!", newUser.name);
-                        toast.success("✅ Вы успешно вошли через Telegram!");
+                        console.log("🎉 Пользователь найден и сохранён в Zustand!", newUser);
+                        toast.success(`✅ Добро пожаловать, ${newUser.name}!`);
                         onClose();
                         clearInterval(interval);
                     }
+                } else {
+                    // Если пользователь уже есть — сразу закрываем
+                    console.log("✅ Пользователь уже в сторе");
+                    toast.success(`✅ Добро пожаловать, ${user.name}!`);
+                    onClose();
+                    clearInterval(interval);
                 }
             } catch (err) {
                 console.error("Polling error:", err);
             }
-        }, 1800); // чуть меньше 2 секунд
+        }, 1500);
 
         return () => clearInterval(interval);
     }, [isOpen, onClose]);

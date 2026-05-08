@@ -1,44 +1,179 @@
 "use client";
 
-import { useState } from "react";
-import { useTelegramAuth } from "@/hooks/useTelegramAuth";
+import { useState, useEffect } from "react";
+import { useAuthForm } from "@/src/features/auth/hooks/useAuthForm";
+import SocialLoginButtons from "@/src/features/auth/components/SocialLoginButtons";
+import TelegramLoginWidget from "@/src/features/auth/components/TelegramLoginWidget";
+import { Eye, EyeOff } from "lucide-react";
+import { toast } from "react-hot-toast";
+import { useAuthStore } from "@/store/useAuthStore";
 
 interface RegisterFormProps {
     onClose: () => void;
 }
 
 export default function RegisterForm({ onClose }: RegisterFormProps) {
+    const {
+        name,
+        setName,
+        email,
+        setEmail,
+        password,
+        setPassword,
+        agreePolicy,
+        setAgreePolicy,
+        errors,
+        isLoading,
+        handleSubmit,
+        validateField,
+    } = useAuthForm();
+
+    const [showPassword, setShowPassword] = useState(false);
     const [isTelegramWidgetOpen, setIsTelegramWidgetOpen] = useState(false);
 
-    // Подключаем polling
-    useTelegramAuth(isTelegramWidgetOpen, onClose);
+    // Polling для Telegram
+    useEffect(() => {
+        if (!isTelegramWidgetOpen) return;
 
-    const openTelegram = () => {
-        window.open("https://t.me/AutoPartLoginBot?start=login", "_blank");
-        setIsTelegramWidgetOpen(true);
+        console.log("🔄 Telegram Polling запущен");
+
+        const interval = setInterval(async () => {
+            await useAuthStore.getState().loadUser();
+            const user = useAuthStore.getState().user;
+
+            if (user) {
+                console.log("🎉 Пользователь найден в сторе:", user.name);
+                toast.success(`✅ Добро пожаловать, ${user.name}!`);
+                setIsTelegramWidgetOpen(false);
+                onClose();
+                clearInterval(interval);
+            }
+        }, 1800);
+
+        return () => clearInterval(interval);
+    }, [isTelegramWidgetOpen, onClose]);
+
+    const onFormSubmit = async () => {
+        const success = await handleSubmit();
+        if (success) {
+            toast.success("Регистрация прошла успешно! ✅");
+            onClose();
+        }
+    };
+
+    const handleSocialLogin = (provider: string) => {
+        if (provider === "telegram") {
+            setIsTelegramWidgetOpen(true);
+        } else {
+            toast(`🔄 ${provider} скоро будет`, { icon: "⏳" });
+        }
     };
 
     return (
-        <div className="space-y-6 p-6">
-            <h2 className="text-2xl font-bold">Регистрация</h2>
+        <div className="space-y-6">
+            {/* Имя */}
+            <div>
+                <label className="text-sm text-zinc-400 block mb-1.5">
+                    Имя <span className="text-red-500">*</span>
+                </label>
+                <input
+                    type="text"
+                    placeholder="Ваше имя"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    onBlur={() => validateField("name")}
+                    className={`w-full bg-zinc-800 border rounded-2xl px-5 py-4 focus:outline-none focus:border-blue-600 text-base md:text-lg transition-all
+                        ${errors.name ? "border-red-500" : "border-zinc-700"}`}
+                />
+                {errors.name && <p className="text-red-500 text-sm mt-1.5 px-1">{errors.name}</p>}
+            </div>
+
+            {/* Email */}
+            <div>
+                <label className="text-sm text-zinc-400 block mb-1.5">
+                    Email <span className="text-red-500">*</span>
+                </label>
+                <input
+                    type="email"
+                    placeholder="Email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    onBlur={() => validateField("email")}
+                    className={`w-full bg-zinc-800 border rounded-2xl px-5 py-4 focus:outline-none focus:border-blue-600 text-base md:text-lg transition-all
+                        ${errors.email ? "border-red-500" : "border-zinc-700"}`}
+                />
+                {errors.email && <p className="text-red-500 text-sm mt-1.5 px-1">{errors.email}</p>}
+            </div>
+
+            {/* Пароль */}
+            <div>
+                <label className="text-sm text-zinc-400 block mb-1.5">
+                    Пароль <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                    <input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Пароль"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        onBlur={() => validateField("password")}
+                        className={`w-full bg-zinc-800 border rounded-2xl px-5 py-4 focus:outline-none focus:border-blue-600 text-base md:text-lg transition-all
+                            ${errors.password ? "border-red-500" : "border-zinc-700"}`}
+                    />
+                    <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200 transition-colors"
+                    >
+                        {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
+                </div>
+                {errors.password && <p className="text-red-500 text-sm mt-1.5 px-1">{errors.password}</p>}
+            </div>
+
+            {/* Чекбокс политики */}
+            <div className="flex items-start gap-3 pt-2 px-1">
+                <input
+                    type="checkbox"
+                    id="policy"
+                    checked={agreePolicy}
+                    onChange={(e) => setAgreePolicy(e.target.checked)}
+                    className="mt-1.5 w-5 h-5 accent-blue-600 bg-zinc-800 border-zinc-700 rounded flex-shrink-0"
+                    required
+                />
+                <label
+                    htmlFor="policy"
+                    className="text-sm md:text-base text-zinc-400 leading-relaxed cursor-pointer"
+                >
+                    Я согласен с{" "}
+                    <span className="text-blue-500 hover:underline">
+                        политикой конфиденциальности
+                    </span>{" "}
+                    и даю согласие на обработку персональных данных
+                </label>
+            </div>
 
             <button
-                onClick={openTelegram}
-                className="w-full bg-[#229ED9] hover:bg-[#1e7ac0] text-white py-4 rounded-2xl text-lg font-medium"
+                onClick={onFormSubmit}
+                disabled={isLoading || !agreePolicy}
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-zinc-700 py-4 rounded-2xl font-medium text-lg md:text-xl transition-all active:scale-[0.985]"
             >
-                Войти через Telegram
+                {isLoading ? "Подождите..." : "Зарегистрироваться"}
             </button>
 
+            <SocialLoginButtons onSocialClick={handleSocialLogin} />
+
+            {/* Telegram Modal */}
             {isTelegramWidgetOpen && (
-                <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4">
-                    <div className="bg-zinc-900 p-8 rounded-3xl max-w-sm w-full text-center">
-                        <h3 className="text-xl mb-4">Ожидаем вход через Telegram</h3>
-                        <p className="mb-2">Напишите <strong>/start</strong> боту</p>
-                        <p className="text-sm text-zinc-400">Автоматическая проверка...</p>
+                <div className="fixed inset-0 bg-black/80 z-[70] flex items-center justify-center p-4">
+                    <div className="bg-zinc-900 rounded-3xl p-8 max-w-sm w-full text-center border border-zinc-700">
+                        <h3 className="text-xl font-semibold mb-6">Регистрация / Вход через Telegram</h3>
+
+                        <TelegramLoginWidget botUsername="AutoPartLoginBot" />
 
                         <button
                             onClick={() => setIsTelegramWidgetOpen(false)}
-                            className="mt-6 text-zinc-400 hover:text-white"
+                            className="mt-6 text-zinc-400 hover:text-white text-sm"
                         >
                             Закрыть
                         </button>
