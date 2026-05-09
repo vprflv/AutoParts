@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "react-hot-toast";
+import { createClient } from "@/src/lib/supabase/client";
 
 interface ForgotPasswordFormProps {
     onClose: () => void;
@@ -19,19 +20,24 @@ export default function ForgotPasswordForm({ onClose, setTab }: ForgotPasswordFo
 
         setIsSubmitting(true);
 
-        // Симуляция отправки письма
-        await new Promise(resolve => setTimeout(resolve, 1200));
+        try {
+            const supabase = createClient();
 
-        toast.success("Ссылка для сброса пароля отправлена на почту!Проверьте папку «Спам», если письмо не пришло")
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/reset-password`,
+            });
 
-        setIsSuccess(true);
-        setIsSubmitting(false);
+            if (error) throw error;
 
-        // Через 3 секунды возвращаемся на форму входа
-        setTimeout(() => {
-            setTab("login");
-            onClose();
-        }, 2500);
+            setIsSuccess(true);
+            toast.success("Ссылка для сброса пароля отправлена на почту!");
+
+        } catch (error: any) {
+            console.error(error);
+            toast.error(error.message || "Не удалось отправить письмо");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -46,6 +52,9 @@ export default function ForgotPasswordForm({ onClose, setTab }: ForgotPasswordFo
                         Мы отправили ссылку для сброса пароля на{" "}
                         <span className="text-white font-medium">{email}</span>
                     </p>
+                    <p className="text-sm text-zinc-500 mt-4">
+                        Проверьте папку «Спам», если письмо не пришло
+                    </p>
                 </div>
             ) : (
                 <form onSubmit={handleSubmit} className="space-y-6">
@@ -58,7 +67,7 @@ export default function ForgotPasswordForm({ onClose, setTab }: ForgotPasswordFo
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
-                            className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-blue-600 text-base md:text-lg transition-all"
+                            className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-cyan-400 text-base md:text-lg transition-all"
                             placeholder="you@example.com"
                         />
                         <p className="text-xs md:text-sm text-zinc-500 mt-2 px-1">
@@ -69,7 +78,7 @@ export default function ForgotPasswordForm({ onClose, setTab }: ForgotPasswordFo
                     <button
                         type="submit"
                         disabled={isSubmitting || !email}
-                        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-zinc-700 py-4 rounded-2xl font-semibold text-lg md:text-xl transition-all active:scale-[0.985]"
+                        className="btn-neon disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         {isSubmitting ? "Отправляем..." : "Отправить ссылку"}
                     </button>
