@@ -16,98 +16,81 @@ export default function ResetPasswordContent() {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
-    const [isChecking, setIsChecking] = useState(true);
+    const [debugInfo, setDebugInfo] = useState<string>("");
 
     useEffect(() => {
-        const validateRecoveryLink = async () => {
+        const debug = async () => {
             const supabase = createClient();
+            const type = searchParams.get("type");
+            const hasAccessToken = searchParams.has("access_token");
+            const hash = window.location.hash;
+
+            let info = `Type: ${type}\nHas access_token: ${hasAccessToken}\nHash exists: ${hash.length > 10}`;
 
             try {
-                // Пытаемся получить и обновить сессию
-                const { data: { session }, error } = await supabase.auth.getSession();
-
-                const type = searchParams.get("type");
-
-                // Если есть recovery type — разрешаем
-                if (type === "recovery") {
-                    setIsChecking(false);
-                    return;
-                }
-
-                // Если сессии нет и типа recovery нет — ошибка
-                if (!session) {
-                    toast.error("Ссылка недействительна или устарела");
-                    setTimeout(() => router.push("/auth"), 2000);
-                } else {
-                    setIsChecking(false);
-                }
-            } catch (err) {
-                console.error(err);
-                toast.error("Ошибка проверки ссылки");
-                setTimeout(() => router.push("/auth"), 1500);
+                const { data: { session } } = await supabase.auth.getSession();
+                info += `\nSession exists: ${!!session}`;
+                if (session) info += ` | User: ${session.user?.email}`;
+            } catch (e) {
+                info += `\nSession error: ${e}`;
             }
+
+            console.log("🔍 Reset Password Debug:", info);
+            setDebugInfo(info);
+
+            // Основная логика
+            if (type === "recovery" || hasAccessToken) {
+                console.log("✅ Recovery link detected");
+                return;
+            }
+
+            // Если ничего не подошло
+            console.log("❌ No recovery indicators found");
+            toast.error("Ссылка недействительна или устарела");
+            setTimeout(() => router.push("/auth"), 2500);
         };
 
-        validateRecoveryLink();
+        debug();
     }, [router, searchParams]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-
-        if (password.length < 6) {
-            toast.error("Пароль должен быть не менее 6 символов");
-            return;
-        }
-        if (password !== confirmPassword) {
-            toast.error("Пароли не совпадают");
-            return;
-        }
+        if (password.length < 6) return toast.error("Пароль минимум 6 символов");
+        if (password !== confirmPassword) return toast.error("Пароли не совпадают");
 
         setIsLoading(true);
 
         try {
             const supabase = createClient();
             const { error } = await supabase.auth.updateUser({ password });
-
             if (error) throw error;
 
             setIsSuccess(true);
             toast.success("Пароль успешно изменён!");
-
-            setTimeout(() => router.push("/auth"), 1800);
+            setTimeout(() => router.push("/auth"), 2000);
         } catch (error: any) {
-            toast.error(error.message || "Не удалось сменить пароль");
+            toast.error(error.message || "Ошибка смены пароля");
         } finally {
             setIsLoading(false);
         }
     };
 
-    if (isChecking) {
-        return (
-            <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
-                <div className="text-cyan-400">Проверка ссылки...</div>
-            </div>
-        );
-    }
-
-    if (isSuccess) {
-        return (
-            <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
-                <div className="text-center">
-                    <div className="text-6xl mb-6">🎉</div>
-                    <h1 className="text-3xl font-bold mb-3">Пароль изменён</h1>
-                    <p className="text-zinc-400">Перенаправляем...</p>
-                </div>
-            </div>
-        );
-    }
-
     return (
         <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
+            <div className="fixed bottom-4 left-4 bg-black/80 text-[10px] p-3 rounded-xl max-w-[300px] text-white z-50 overflow-auto max-h-40">
+                <pre>{debugInfo}</pre>
+            </div>
             <div className="w-full max-w-md">
                 <div className="bg-zinc-900 rounded-3xl border border-zinc-700 p-8 md:p-10">
                     <h1 className="text-3xl font-bold text-center mb-2">Новый пароль</h1>
-                    <p className="text-zinc-400 text-center mb-8">Придумайте новый пароль</p>
+                    <p className="text-zinc-400 text-center mb-8">Введите новый пароль</p>
+
+                    {/* Диагностика (временно) */}
+                    {debugInfo && (
+                        <pre className="text-[10px] bg-black/50 p-3 rounded-xl text-zinc-500 mb-6 overflow-auto max-h-40">
+                            {debugInfo}
+                        </pre>
+                    )}
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div>
@@ -121,11 +104,7 @@ export default function ResetPasswordContent() {
                                     className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-cyan-400"
                                     placeholder="Новый пароль"
                                 />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white"
-                                >
+                                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-5 top-1/2 -translate-y-1/2 text-zinc-400">
                                     {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                                 </button>
                             </div>
@@ -142,11 +121,7 @@ export default function ResetPasswordContent() {
                                     className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-cyan-400"
                                     placeholder="Повторите пароль"
                                 />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                    className="absolute right-5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white"
-                                >
+                                <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-5 top-1/2 -translate-y-1/2 text-zinc-400">
                                     {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                                 </button>
                             </div>
