@@ -64,7 +64,7 @@ export function ProfileContent() {
         <div className="min-h-screen bg-zinc-950 pb-12">
             <div className="max-w-7xl mx-auto px-4 pt-6 md:pt-8">
                 {/* Заголовок */}
-                <div className="relative flex items-center justify-center mb-10 md:mb-12">
+                <div className="relative  flex items-center justify-center mb-10 md:mb-12">
                     <button
                         onClick={() => router.push("/")}
                         className="absolute left-0 flex items-center gap-2 text-zinc-400 hover:text-white transition-colors"
@@ -73,9 +73,9 @@ export function ProfileContent() {
                         <span className="hidden sm:inline text-base">На главную</span>
                     </button>
 
-                    <h3 className="text-3xl font-bold text-white tracking-tighter">
+                    <div className="text-2xl font-bold text-white ">
                         Личный кабинет
-                    </h3>
+                    </div>
 
                     <button
                         onClick={handleLogout}

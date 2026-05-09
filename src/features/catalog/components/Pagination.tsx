@@ -11,33 +11,39 @@ export default function Pagination({ currentPage, totalPages, onPageChange }: Pa
 
     return (
         <div className="mt-12 flex justify-center">
-            <div className="flex items-center gap-2 bg-zinc-900 px-5 py-3 rounded-2xl">
+            <div className="flex items-center gap-2 bg-zinc-900 px-4 py-3 rounded-3xl border border-zinc-700 shadow-inner">
+
+                {/* Кнопка Назад */}
                 <button
                     onClick={() => onPageChange(currentPage - 1)}
                     disabled={currentPage === 1}
-                    className="px-5 py-2.5 rounded-xl hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+                    className="px-6 py-3 rounded-2xl hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all text-sm font-medium flex items-center gap-2"
                 >
                     ← Назад
                 </button>
 
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
-                    <button
-                        key={pageNum}
-                        onClick={() => onPageChange(pageNum)}
-                        className={`min-w-[40px] h-10 rounded-xl flex items-center justify-center transition-all text-sm ${
-                            pageNum === currentPage
-                                ? "bg-blue-600 text-white font-medium"
-                                : "hover:bg-zinc-800"
-                        }`}
-                    >
-                        {pageNum}
-                    </button>
-                ))}
+                {/* Номера страниц */}
+                <div className="flex items-center gap-1 px-2">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                        <button
+                            key={pageNum}
+                            onClick={() => onPageChange(pageNum)}
+                            className={`min-w-[42px] h-11 rounded-2xl flex items-center justify-center text-sm font-medium transition-all ${
+                                pageNum === currentPage
+                                    ? " text-cyan-300 underline shadow-neon-main font-semibold"
+                                    : "hover:bg-zinc-800  text-white "
+                            }`}
+                        >
+                            {pageNum}
+                        </button>
+                    ))}
+                </div>
 
+                {/* Кнопка Вперёд */}
                 <button
                     onClick={() => onPageChange(currentPage + 1)}
                     disabled={currentPage === totalPages}
-                    className="px-5 py-2.5 rounded-xl hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+                    className="px-6 py-3 rounded-2xl hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all text-sm font-medium flex items-center gap-2"
                 >
                     Вперёд →
                 </button>

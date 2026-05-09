@@ -19,7 +19,8 @@ export default function SearchInput({
     return (
         <div className="relative w-full max-w-2xl">
             <div className="relative group">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400 pointer-events-none transition-colors group-focus-within:text-purple-400" />
+                {/* Иконка поиска */}
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400 pointer-events-none transition-colors group-focus-within:text-cyan-400" />
 
                 <input
                     type="text"
@@ -31,11 +32,14 @@ export default function SearchInput({
                     autoComplete="off"
                     className="w-full bg-zinc-900 border border-zinc-700 rounded-2xl
                              pl-12 pr-12 py-3.5 text-base placeholder:text-zinc-500
-                             focus:outline-none focus:border-purple-500
-                             transition-all duration-300
-                             focus:shadow-neon-purple focus:ring-1 focus:ring-purple-500/30"
+                             focus:outline-none
+                             focus:border-cyan-400
+                             focus:ring-2 focus:ring-cyan-400/30
+                             focus:shadow-[0_0_0_4px_rgba(34,211,238,0.15)]
+                             transition-all duration-300"
                 />
 
+                {/* Кнопка очистки */}
                 {value && (
                     <button
                         type="button"

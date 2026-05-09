@@ -24,7 +24,7 @@ export default function ImageThumbnails({
                     onClick={() => onSelect(index)}
                     className={`flex-shrink-0 w-28 h-20 rounded-2xl overflow-hidden border-2 transition-all duration-200
                         ${selectedIndex === index
-                        ? "border-blue-600 scale-110 -mx-1"   
+                        ? "border-cyan-600 "   
                         : "border-transparent hover:border-zinc-600"
                     }`}
                 >

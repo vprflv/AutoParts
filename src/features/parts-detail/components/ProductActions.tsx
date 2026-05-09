@@ -1,4 +1,3 @@
-
 "use client";
 
 import { ShoppingCart, Plus, Minus } from "lucide-react";
@@ -24,7 +23,7 @@ export default function ProductActions({ product }: ProductActionsProps) {
             name: product.name,
             oem: product.oem,
             price: product.price,
-            image: product.images[0],
+            image: product.images?.[0] || "/images/placeholder.svg",
             stock: product.stock,
         });
     };
@@ -38,45 +37,51 @@ export default function ProductActions({ product }: ProductActionsProps) {
     };
 
     return (
-        <div className="space-y-3 pt-2">
+        <div className="space-y-4 pt-2">
             {isProductInCart ? (
-                <div className="flex items-center justify-between bg-zinc-800 rounded-2xl p-2.5">
+                /* Счётчик количества */
+                <div className="flex items-center justify-between bg-zinc-800 rounded-2xl p-2">
                     <button
                         onClick={() => handleQuantityChange(quantityInCart - 1)}
-                        className="w-11 h-11 flex items-center justify-center text-zinc-400 hover:text-white rounded-xl hover:bg-zinc-700 active:bg-zinc-700"
+                        className="w-12 h-12 flex items-center justify-center text-zinc-400 hover:text-white rounded-xl hover:bg-zinc-700 transition-all active:scale-95"
                     >
                         <Minus className="w-5 h-5" />
                     </button>
 
-                    <span className="font-semibold text-xl min-w-[3rem] text-center">
+                    <span className="font-semibold text-2xl text-white min-w-[3rem] text-center">
                         {quantityInCart}
                     </span>
 
                     <button
                         onClick={() => handleQuantityChange(quantityInCart + 1)}
                         disabled={quantityInCart >= product.stock}
-                        className="w-11 h-11 flex items-center justify-center text-zinc-400 hover:text-white rounded-xl hover:bg-zinc-700 active:bg-zinc-700 disabled:opacity-50"
+                        className="w-12 h-12 flex items-center justify-center text-zinc-400 hover:text-white rounded-xl hover:bg-zinc-700 transition-all active:scale-95 disabled:opacity-50"
                     >
                         <Plus className="w-5 h-5" />
                     </button>
                 </div>
             ) : (
+                /* Кнопка "Добавить в корзину" — однотонная с неоновым свечением */
                 <button
                     onClick={handleAddToCart}
                     disabled={product.stock === 0}
-                    className="w-full py-4 sm:py-5 bg-blue-600 hover:bg-blue-700 disabled:bg-zinc-700 disabled:text-zinc-400 rounded-2xl font-semibold text-base sm:text-lg transition-all active:scale-[0.985]"
+                    className=" btn-neon w-full py-4
+               rounded-2xl font-semibold text-lg transition-all active:scale-[0.985]
+              "
                 >
                     <div className="flex items-center justify-center gap-3">
-                        <ShoppingCart className="w-5 h-5" />
-                        {product.stock === 0 ? "Товар закончился" : "Добавить в корзину"}
+                        <ShoppingCart className="w-6 h-6" />
+                        {product.stock === 0 ? "Нет в наличии" : "Добавить в корзину"}
                     </div>
                 </button>
             )}
 
+            {/* Кнопка "Перейти в корзину" */}
             {isProductInCart && (
                 <button
                     onClick={() => setIsCartOpen(true)}
-                    className="w-full py-4 border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white rounded-2xl font-semibold text-base sm:text-lg transition-all"
+                    className="w-full py-4 border-2 border-cyan-500 text-cyan-400 hover:bg-cyan-500 hover:text-black
+                               rounded-2xl font-semibold text-lg transition-all active:scale-[0.985]"
                 >
                     Перейти в корзину ({quantityInCart})
                 </button>

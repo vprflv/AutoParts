@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { useAuthForm } from "@/src/features/auth/hooks/useAuthForm";
 import SocialLoginButtons from "@/src/features/auth/components/SocialLoginButtons";
 import TelegramLoginWidget from "@/features/auth/components/telegram/TelegramLoginWidget";
-import { Eye, EyeOff } from "lucide-react";
 import { toast } from "react-hot-toast";
 import TelegramModal from "@/features/auth/components/telegram/TelegramModal";
 
@@ -60,7 +60,7 @@ export default function RegisterForm({ onClose }: RegisterFormProps) {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     onBlur={() => validateField("name")}
-                    className={`w-full bg-zinc-800 border rounded-2xl px-5 py-4 focus:outline-none focus:border-blue-600 text-base md:text-lg transition-all
+                    className={`w-full bg-zinc-800 border rounded-2xl px-5 py-4 focus:outline-none focus:border-cyan-400 text-base md:text-lg transition-all
                         ${errors.name ? "border-red-500" : "border-zinc-700"}`}
                 />
                 {errors.name && <p className="text-red-500 text-sm mt-1.5 px-1">{errors.name}</p>}
@@ -77,7 +77,7 @@ export default function RegisterForm({ onClose }: RegisterFormProps) {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     onBlur={() => validateField("email")}
-                    className={`w-full bg-zinc-800 border rounded-2xl px-5 py-4 focus:outline-none focus:border-blue-600 text-base md:text-lg transition-all
+                    className={`w-full bg-zinc-800 border rounded-2xl px-5 py-4 focus:outline-none focus:border-cyan-400 text-base md:text-lg transition-all
                         ${errors.email ? "border-red-500" : "border-zinc-700"}`}
                 />
                 {errors.email && <p className="text-red-500 text-sm mt-1.5 px-1">{errors.email}</p>}
@@ -95,13 +95,13 @@ export default function RegisterForm({ onClose }: RegisterFormProps) {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         onBlur={() => validateField("password")}
-                        className={`w-full bg-zinc-800 border rounded-2xl px-5 py-4 focus:outline-none focus:border-blue-600 text-base md:text-lg transition-all
+                        className={`w-full bg-zinc-800 border rounded-2xl px-5 py-4 focus:outline-none focus:border-cyan-400 text-base md:text-lg transition-all pr-12
                             ${errors.password ? "border-red-500" : "border-zinc-700"}`}
                     />
                     <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200 transition-colors"
+                        className="absolute right-5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white transition-colors"
                     >
                         {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                     </button>
@@ -116,7 +116,7 @@ export default function RegisterForm({ onClose }: RegisterFormProps) {
                     id="policy"
                     checked={agreePolicy}
                     onChange={(e) => setAgreePolicy(e.target.checked)}
-                    className="mt-1.5 w-5 h-5 accent-blue-600 bg-zinc-800 border-zinc-700 rounded flex-shrink-0"
+                    className="mt-1.5 w-5 h-5 accent-cyan-500 bg-zinc-800 border-zinc-700 rounded focus:ring-cyan-400 cursor-pointer"
                     required
                 />
                 <label
@@ -124,17 +124,18 @@ export default function RegisterForm({ onClose }: RegisterFormProps) {
                     className="text-sm md:text-base text-zinc-400 leading-relaxed cursor-pointer"
                 >
                     Я согласен с{" "}
-                    <span className="text-blue-500 hover:underline">
+                    <span className="text-cyan-400 hover:underline">
                         политикой конфиденциальности
                     </span>{" "}
                     и даю согласие на обработку персональных данных
                 </label>
             </div>
 
+            {/* Кнопка регистрации */}
             <button
                 onClick={onFormSubmit}
                 disabled={isLoading || !agreePolicy}
-                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-zinc-700 py-4 rounded-2xl font-medium text-lg md:text-xl transition-all active:scale-[0.985]"
+                className="btn-neon disabled:cursor-not-allowed disabled:opacity-50"
             >
                 {isLoading ? "Подождите..." : "Зарегистрироваться"}
             </button>

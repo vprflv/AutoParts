@@ -43,11 +43,11 @@ export default function Navbar({ onSearchChange, searchValue }: NavbarProps) {
                         {/* Логотип */}
                         <Link href="/">
                             <div className="flex items-center gap-3 flex-shrink-0 group">
-                                <div className="w-9 h-9 bg-gradient-to-br from-purple-600 to-violet-600 rounded-2xl flex items-center justify-center text-2xl transition-all group-hover:scale-110 group-hover:rotate-12">
-                                    ⚙️
+                                <div className="w-9 h-9 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center text-2xl transition-all group-hover:scale-110 group-hover:rotate-6 shadow-neon-main">
+
                                 </div>
                                 <div>
-                                    <h1 className="text-2xl font-bold tracking-tighter bg-gradient-to-r from-white via-purple-200 to-violet-200 bg-clip-text text-transparent">
+                                    <h1 className="text-2xl font-bold tracking-tighter bg-cyan-300 bg-clip-text text-transparent">
                                         AutoPart
                                     </h1>
                                     <p className="text-[10px] text-zinc-500 -mt-1 tracking-widest">PRO</p>
@@ -63,45 +63,37 @@ export default function Navbar({ onSearchChange, searchValue }: NavbarProps) {
                         {/* Правая часть */}
                         <div className="flex items-center gap-3">
                             {/* Корзина */}
-                            {/* Корзина с неоновой подсветкой */}
-                            {/* Корзина — агрессивное неоновое свечение */}
                             <button
                                 onClick={() => setIsCartOpen(true)}
                                 className="relative p-3.5 hover:bg-zinc-900 rounded-2xl transition-all active:scale-95 group"
                             >
-                                <ShoppingCart className="w-6 h-6 text-zinc-300 group-hover:text-white transition-colors" />
+                                <ShoppingCart className="w-6 h-6 text-zinc-300 group-hover:text-cyan-300 transition-colors" />
 
                                 {totalItems > 0 && (
-                                    <div className="absolute -top-1.5 -right-1.5 bg-gradient-to-br from-purple-500 via-pink-500 to-violet-600
-                        text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center
-                        shadow-[0_0_15px_#c026d3,0_0_30px_#db2777] ring-2 ring-purple-400/60">
+                                    <div className="absolute -top-1.5 -right-1.5 bg-gradient-to-br from-cyan-200 to-blue-800
+                                                    text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center
+                                                    shadow-neon-main ring-2 ring-cyan-400/50">
                                         {totalItems}
                                     </div>
                                 )}
 
-                                {/* Мощное неоновое свечение */}
-                                <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-40
-                    transition-all duration-300 bg-gradient-to-br from-purple-500/30 to-pink-500/30
-                    blur-xl pointer-events-none scale-75 group-hover:scale-100" />
-
-                                {/* Второе, ещё более яркое свечение */}
-                                <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-20
-                    transition-all duration-300 bg-purple-500 blur-2xl pointer-events-none" />
+                                {/* Неоновое свечение корзины */}
+                                <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-30
+                                                transition-all duration-300 bg-cyan-500/20 blur-xl pointer-events-none" />
                             </button>
 
                             {/* Профиль */}
                             {user ? (
                                 <Menu as="div" className="relative">
                                     <Menu.Button className="flex items-center gap-3 p-2 pr-4 hover:bg-zinc-900 rounded-2xl transition-all hover:scale-105 focus:outline-none">
-                                        {/* Аватарка */}
                                         {avatarUrl ? (
                                             <img
                                                 src={avatarUrl}
                                                 alt={displayName}
-                                                className="w-9 h-9 rounded-2xl object-cover border-2 border-purple-500/30"
+                                                className="w-9 h-9 rounded-2xl object-cover border-2 border-cyan-500/30"
                                             />
                                         ) : (
-                                            <div className="w-9 h-9 bg-gradient-to-br from-purple-600 to-violet-600 rounded-2xl flex items-center justify-center text-white font-semibold text-lg border-2 border-purple-500/30">
+                                            <div className="w-9 h-9 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center text-white font-semibold text-lg border-2 border-cyan-500/30">
                                                 {displayName?.[0] || "U"}
                                             </div>
                                         )}
@@ -111,9 +103,7 @@ export default function Navbar({ onSearchChange, searchValue }: NavbarProps) {
                                                 {displayName}
                                             </p>
                                             <p className="text-xs text-zinc-500">
-                                                {isTelegramUser
-                                                    ? `@${user.username || 'telegram'}`
-                                                    : user.email?.split('@')[0]}
+                                                {isTelegramUser ? `@${user.username || 'telegram'}` : user.email?.split('@')[0]}
                                             </p>
                                         </div>
                                     </Menu.Button>
@@ -131,7 +121,7 @@ export default function Navbar({ onSearchChange, searchValue }: NavbarProps) {
                                                 {({ active }) => (
                                                     <button
                                                         onClick={() => router.push("/profile")}
-                                                        className={`flex w-full items-center gap-3 px-5 py-3 text-left text-sm ${active ? "bg-zinc-800 text-purple-400" : "text-zinc-300"}`}
+                                                        className={`flex w-full items-center gap-3 px-5 py-3 text-left text-sm ${active ? "bg-zinc-800 text-cyan-400" : "text-zinc-300"}`}
                                                     >
                                                         <UserCircle className="w-5 h-5" />
                                                         Личный кабинет
@@ -160,7 +150,7 @@ export default function Navbar({ onSearchChange, searchValue }: NavbarProps) {
                                     onClick={() => setIsAuthOpen(true)}
                                     className="p-3 hover:bg-zinc-900 rounded-2xl transition-all hover:scale-110"
                                 >
-                                    <User className="w-6 h-6 text-zinc-300" />
+                                    <User className="w-6 h-6 text-zinc-300 hover:text-cyan-300" />
                                 </button>
                             )}
                         </div>

@@ -37,7 +37,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                     <div className="flex items-center gap-3">
                         {/* Иконка корзины с лёгким контуром */}
                         <div className="w-9 h-9 flex items-center justify-center rounded-xl transition-colors">
-                            <ShoppingCart className="w-5 h-5 text-purple-400" />
+                            <ShoppingCart className="w-5 h-5 text-cyan-300" />
                         </div>
                         {/*<h2 className="text-2xl font-semibold text-purple-500/80 tracking-tight">Корзина</h2>*/}
                     </div>
@@ -48,12 +48,12 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                         className="p-3 rounded-2xl text-zinc-400 hover:text-white transition-all duration-200
                     "
                     >
-                        <X size={28} className="hover:text-purple-300 text-purple-400 "  />
+                        <X size={28} className="text-cyan-300 hover:text-blue-500  "  />
                     </button>
                 </div>
 
                 {/* Список товаров — без видимого скроллбара */}
-                <div className="flex-1 overflow-auto p-6 custom-scroll-hidden">
+                <div className="flex-1 overflow-auto custom-scroll-purple p-6 custom-scroll-hidden">
                     {items.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center text-center py-16">
                             <div className="w-20 h-20 bg-zinc-800 rounded-full flex items-center justify-center mb-6">

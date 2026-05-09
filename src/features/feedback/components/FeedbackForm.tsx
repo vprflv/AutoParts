@@ -29,16 +29,12 @@ export default function FeedbackForm({ onSuccess, onClose }: FeedbackFormProps) 
             return;
         }
 
-
-        // Симуляция отправки
         await new Promise(resolve => setTimeout(resolve, 1300));
-
         onSuccess();
     };
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Все поля формы — как было раньше */}
             <div>
                 <label className="block text-sm text-zinc-400 mb-1.5">Имя</label>
                 <input
@@ -46,7 +42,7 @@ export default function FeedbackForm({ onSuccess, onClose }: FeedbackFormProps) 
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-blue-600 text-base"
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-cyan-400 text-base"
                     placeholder="Иван Иванов"
                 />
             </div>
@@ -61,7 +57,7 @@ export default function FeedbackForm({ onSuccess, onClose }: FeedbackFormProps) 
                         onChange={handlePhoneChange}
                         maxLength={16}
                         className={`w-full bg-zinc-800 border rounded-2xl px-5 py-4 focus:outline-none text-base transition-colors
-                            ${phoneError ? 'border-red-500 focus:border-red-500' : 'border-zinc-700 focus:border-blue-600'}`}
+                            ${phoneError ? 'border-red-500 focus:border-red-500' : 'border-zinc-700 focus:border-cyan-400'}`}
                         placeholder="+7 (999) 123-45-67"
                     />
                     {phoneError && <p className="text-red-500 text-sm mt-1.5">{phoneError}</p>}
@@ -74,7 +70,7 @@ export default function FeedbackForm({ onSuccess, onClose }: FeedbackFormProps) 
                         name="email"
                         value={formData.email}
                         onChange={handleChange}
-                        className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-blue-600 text-base"
+                        className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-cyan-400 text-base"
                         placeholder="you@example.com"
                     />
                 </div>
@@ -88,7 +84,7 @@ export default function FeedbackForm({ onSuccess, onClose }: FeedbackFormProps) 
                     value={formData.vin}
                     onChange={handleChange}
                     maxLength={17}
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-blue-600 uppercase tracking-wider text-base"
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-cyan-400 uppercase tracking-wider text-base"
                     placeholder="JTDBU4BF3C1234567"
                 />
             </div>
@@ -100,7 +96,7 @@ export default function FeedbackForm({ onSuccess, onClose }: FeedbackFormProps) 
                     name="carModel"
                     value={formData.carModel}
                     onChange={handleChange}
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-blue-600 text-base"
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-cyan-400 text-base"
                     placeholder="Toyota Camry 2018"
                 />
             </div>
@@ -112,7 +108,7 @@ export default function FeedbackForm({ onSuccess, onClose }: FeedbackFormProps) 
                     value={formData.message}
                     onChange={handleChange}
                     rows={4}
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded-3xl px-5 py-4 focus:outline-none focus:border-blue-600 resize-y min-h-[110px] text-base"
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-3xl px-5 py-4 focus:outline-none focus:border-cyan-400 resize-y min-h-[110px] text-base"
                     placeholder="Нужны тормозные диски + колодки..."
                 />
             </div>
@@ -123,20 +119,21 @@ export default function FeedbackForm({ onSuccess, onClose }: FeedbackFormProps) 
                     id="policy"
                     checked={agreePolicy}
                     onChange={(e) => setAgreePolicy(e.target.checked)}
-                    className="mt-1.5 w-5 h-5 accent-blue-600 bg-zinc-800 border-zinc-700 rounded focus:ring-blue-600"
+                    className="mt-1.5 w-5 h-5 accent-cyan-500 bg-zinc-800 border-zinc-700 rounded focus:ring-cyan-400 cursor-pointer"
                     required
                 />
                 <label htmlFor="policy" className="text-sm text-zinc-400 leading-relaxed cursor-pointer">
                     Я согласен с{" "}
-                    <span className="text-blue-500 hover:underline">политикой конфиденциальности</span>
+                    <span className="text-cyan-400 hover:underline">политикой конфиденциальности</span>
                     и даю согласие на обработку персональных данных
                 </label>
             </div>
 
+            {/* Главная кнопка в новом стиле */}
             <button
                 type="submit"
                 disabled={isSubmitting || !agreePolicy}
-                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-zinc-700 disabled:text-zinc-400 py-4 rounded-2xl font-semibold text-lg transition-all mt-4"
+                className="btn-neon disabled:cursor-not-allowed disabled:opacity-50"
             >
                 {isSubmitting ? "Отправляем заявку..." : "Отправить заявку"}
             </button>

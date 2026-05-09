@@ -45,10 +45,6 @@ export default function HomeContent() {
 
 
 
-    // const allBrands = useMemo(() => {
-    //     return Array.from(new Set(products.map(p => p.brand))).sort();
-    // }, [products]);
-
     return (
         <>
             <Navbar onSearchChange={handleSearchChange} searchValue={filters.search} />
@@ -66,7 +62,7 @@ export default function HomeContent() {
 
                     <button
                         onClick={() => setIsFeedbackOpen(true)}
-                        className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 px-5 py-3.5 rounded-2xl transition-colors font-medium text-white"
+                        className="flex-1 flex items-center justify-center gap-2 bg-cyan-500 hover:bg-cyan-500  px-5 py-3.5 rounded-2xl transition-colors font-medium text-white"
                     >
                         <MessageCircle className="w-5 h-5" />
                         Заявка
@@ -87,7 +83,7 @@ export default function HomeContent() {
                         <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                             <h1 className="text-3xl md:text-4xl font-bold">Каталог автозапчастей</h1>
                             <p className="text-zinc-400">
-                                Найдено: <span className="text-white font-medium">{data?.total || 0}</span> товаров
+                                Найдено: <span className="text-cyan-300 font-medium">{data?.total || 0}</span> товаров
                             </p>
                         </div>
 
@@ -127,11 +123,12 @@ export default function HomeContent() {
             {showFloatingButton && (
                 <button
                     onClick={() => setIsFeedbackOpen(true)}
-                    className="hidden lg:block fixed bottom-8 right-8 bg-blue-600 hover:bg-blue-700 text-white px-6 py-4 rounded-2xl flex items-center gap-3 shadow-2xl transition-all active:scale-95 z-50 font-medium text-base"
+                    className="hidden lg:block fixed bottom-8 right-8 border-2  border-cyan-500  hover:bg-cyan-500 text-white px-6 py-4 rounded-2xl flex items-center gap-3 shadow-2xl transition-all active:scale-95 z-50 font-medium text-base"
                 >
                     💬 Оставить заявку
                 </button>
             )}
+
 
             <FeedbackModal
                 isOpen={isFeedbackOpen}

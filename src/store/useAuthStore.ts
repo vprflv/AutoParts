@@ -13,6 +13,7 @@ export interface User {
 }
 
 interface AuthStore {
+    isAuthenticated: boolean;
     user: User | null;
     isLoading: boolean;
     error: string | null;
@@ -31,6 +32,7 @@ export const useAuthStore = create<AuthStore>()(
     persist(
         (set, get) => ({
             user: null,
+            isAuthenticated: false,
             isLoading: false,
             error: null,
 

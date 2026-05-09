@@ -20,12 +20,12 @@ export default function CartFooter({ clearCart, onOrderClick }: CartFooterProps)
                 </span>
             </div>
 
-            {/* Главная кнопка — Оформить заказ */}
+            {/* Главная кнопка — Голубой неон */}
             <button
                 onClick={onOrderClick}
-                className="w-full bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500
+                className=" btn-neon w-full
                            py-4 rounded-2xl font-semibold text-lg transition-all active:scale-[0.97]
-                           shadow-neon-purple hover:shadow-[0_0_25px_#c026d3]"
+                           "
             >
                 Оформить заказ
             </button>

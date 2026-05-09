@@ -13,7 +13,7 @@ export default function AuthTabs({ tab, setTab }: AuthTabsProps) {
                 onClick={() => setTab("login")}
                 className={`flex-1 py-5 md:py-4 font-medium transition-all text-base md:text-lg active:scale-[0.985] ${
                     tab === "login"
-                        ? "text-white border-b-2 border-blue-600"
+                        ? "text-white border-b-2 border-cyan-300"
                         : "text-zinc-400 hover:text-zinc-200"
                 }`}
             >
@@ -24,7 +24,7 @@ export default function AuthTabs({ tab, setTab }: AuthTabsProps) {
                 onClick={() => setTab("register")}
                 className={`flex-1 py-5 md:py-4 font-medium transition-all text-base md:text-lg active:scale-[0.985] ${
                     tab === "register"
-                        ? "text-white border-b-2 border-blue-600"
+                        ? "text-white border-b-2 border-cyan-500"
                         : "text-zinc-400 hover:text-zinc-200"
                 }`}
             >

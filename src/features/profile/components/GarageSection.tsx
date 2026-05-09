@@ -1,4 +1,3 @@
-// src/features/profile/components/GarageSection.tsx
 "use client";
 
 import { Car, Plus, Edit2, Trash2 } from "lucide-react";
@@ -18,7 +17,6 @@ export default function GarageSection({
                                           onAddClick,
                                           onDeleteVehicle,
                                       }: GarageSectionProps) {
-
     const [vehicleToEdit, setVehicleToEdit] = useState<any>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
@@ -34,61 +32,71 @@ export default function GarageSection({
 
     return (
         <>
-            <div className="flex justify-between items-center mb-5 sm:mb-6">
-                <h3 className="text-xl sm:text-2xl font-semibold">
-                    Мой гараж ({vehicles.length})
+            <div className="flex justify-between gap-3 items-center mb-6">
+                <h3 className="text-xl sm:text-2xl md:text-3xl font-semibold flex items-center gap-3">
+                    <Car className="w-6 h-6 sm:w-7 sm:h-7 text-cyan-400" />
+                    Мой гараж
+
                 </h3>
 
                 <button
                     onClick={onAddClick}
-                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl text-sm font-medium transition-colors active:scale-[0.97]"
+                    className=" border-2 border-cyan-300 rounded-2xl inline-flex w-auto px-8 py-3 text-base"
                 >
-                    <Plus size={18} className="sm:w-5 sm:h-5" />
-                    <span className="hidden xs:inline">Добавить автомобиль</span>
-                    <span className="xs:hidden">Добавить</span>
+                    <Plus className="w-5 h-5 mr-2" />
+                    Добавить автомобиль
                 </button>
             </div>
 
             {vehicles.length === 0 ? (
-                <div className="text-center py-16 sm:py-20 text-zinc-400">
-                    <Car size={52} className="mx-auto mb-5 opacity-40" />
-                    <p className="text-lg sm:text-xl">Гараж пока пуст</p>
-                    <p className="text-sm mt-2 max-w-xs mx-auto">
-                        Добавьте свой автомобиль для быстрого подбора запчастей
+                /* Пустое состояние гаража */
+                <div className="text-center py-20 bg-zinc-900/50 border border-dashed border-zinc-700 rounded-3xl">
+                    <div className="mx-auto w-20 h-20 bg-zinc-800 rounded-full flex items-center justify-center mb-6">
+                        <Car size={48} className="text-zinc-500" />
+                    </div>
+                    <p className="text-2xl font-medium text-zinc-300">Гараж пока пуст</p>
+                    <p className="text-zinc-500 mt-3 max-w-xs mx-auto">
+                        Добавьте свой автомобиль, чтобы получать точные рекомендации запчастей
                     </p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+                /* Список автомобилей */
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     {vehicles.map((vehicle) => (
                         <div
                             key={vehicle.id}
-                            className="bg-zinc-900 rounded-3xl p-5 sm:p-6 border border-zinc-700 hover:border-zinc-600 transition-all"
+                            className="group bg-zinc-900 border border-zinc-700 hover:border-cyan-500/40 rounded-3xl p-6 transition-all duration-300 hover:shadow-neon-main"
                         >
-                            <div>
-                                <p className="text-lg sm:text-xl font-bold">
-                                    {vehicle.brand} {vehicle.model}
-                                </p>
-                                <p className="text-zinc-400 mt-1 text-sm sm:text-base">
-                                    {vehicle.year} год • {vehicle.engine}
-                                </p>
-                            </div>
-
-                            {vehicle.vin && (
-                                <div className="mt-4">
-                                    <span className="text-xs text-zinc-500">VIN / Номер кузова</span>
-                                    <p className="font-mono text-sm text-zinc-300 mt-0.5 tracking-wider">
-                                        {vehicle.vin}
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <p className="text-xl font-bold text-white">
+                                        {vehicle.brand} {vehicle.model}
+                                    </p>
+                                    <p className="text-zinc-400 mt-1">
+                                        {vehicle.year} год • {vehicle.engine}
                                     </p>
                                 </div>
-                            )}
 
-                            <div className="mt-6 pt-6 border-t border-zinc-700 flex gap-3">
+                                {vehicle.vin && (
+                                    <div className="text-right">
+                                        <span className="text-[10px] text-zinc-500 tracking-widest">VIN</span>
+                                        <p className="font-mono text-xs text-zinc-400 mt-0.5">
+                                            {vehicle.vin}
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className=" mt-8 flex gap-3 text-xl sm:text-xl md:text-3xl">
                                 <button
                                     onClick={() => openEditModal(vehicle)}
-                                    className="flex-1 flex items-center justify-center gap-2 py-3 sm:py-3.5 bg-zinc-800 hover:bg-zinc-700 rounded-2xl text-sm font-medium transition-colors active:scale-[0.97]"
+                                    className=" flex-1 flex items-center justify-center gap-2 py-3 sm:py-3.5
+                   bg-zinc-800 hover:bg-zinc-700 rounded-2xl
+                   text-sm sm:text-base text-cyan-300 font-medium transition-all active:scale-[0.97]"
                                 >
-                                    <Edit2 size={17} className="sm:w-[18px] sm:h-[18px]" />
-                                    Редактировать
+                                    <Edit2 size={16} className="sm:hiden sm:w-5 sm:h-5" />
+                                    <span className="hidden xs:inline">Редактировать</span>
+                                    <span className="xs:hidden ">Изменить</span>
                                 </button>
 
                                 <button
@@ -98,9 +106,9 @@ export default function GarageSection({
                                             toast.success("Автомобиль удалён из гаража");
                                         }
                                     }}
-                                    className="flex-1 flex items-center justify-center gap-2 py-3 sm:py-3.5 bg-zinc-800 hover:bg-red-900/60 hover:text-red-400 rounded-2xl text-sm font-medium text-red-400 transition-colors active:scale-[0.97]"
+                                    className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-zinc-800 hover:bg-red-900/60 hover:text-red-400 rounded-2xl text-sm font-medium text-red-400 transition-all active:scale-[0.97]"
                                 >
-                                    <Trash2 size={17} className="sm:w-[18px] sm:h-[18px]" />
+                                    <Trash2 size={18} />
                                     Удалить
                                 </button>
                             </div>
