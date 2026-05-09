@@ -1,7 +1,8 @@
 "use client";
 
 import { Suspense } from "react";
-import ResetPasswordContent from "@/features/auth/components/ResetPasswordPage";
+import ResetPasswordPageContent from "@/features/auth/components/ResetPasswordPageContent";
+
 
 export default function ResetPasswordPage() {
     return (
@@ -10,7 +11,7 @@ export default function ResetPasswordPage() {
                 <div className="text-cyan-400">Загрузка...</div>
             </div>
         }>
-            <ResetPasswordContent />
+            <ResetPasswordPageContent />
         </Suspense>
     );
 }
