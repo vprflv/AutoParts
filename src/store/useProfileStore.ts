@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { createClient } from "@/src/lib/supabase/client";
 import { toast } from "react-hot-toast";
 import {useCartStore} from "@/src/store/useCartStore";
+import {useAuthStore} from "@/store/useAuthStore";
 
 export interface OrderItem {
     name: string;
@@ -55,7 +56,7 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
         const supabase = createClient();
 
         try {
-            const { data: { user } } = await supabase.auth.getUser();
+            const { user } = useAuthStore.getState();
             if (!user) return;
 
             const { data, error } = await supabase
@@ -85,7 +86,7 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
 
     createOrder: async (orderData) => {
         const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
+        const { user } = useAuthStore.getState();
 
         try {
             const { data: newOrder, error: orderError } = await supabase
@@ -99,17 +100,19 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
                     items_count: orderData.items.length,
                     delivery_address: orderData.delivery_address,
                     comment: orderData.comment || null,
+                    status: "pending",
                 })
                 .select()
                 .single();
 
             if (orderError) throw orderError;
 
-            // Добавляем товары с изображением
+
             const orderItems = orderData.items.map((item: any) => ({
                 order_id: newOrder.id,
                 name: item.name,
                 oem: item.oem || null,
+                brand: item.brand || null,
                 qty: item.qty,
                 price: item.price,
                 image: item.image || null,

@@ -1,8 +1,7 @@
 'use client';
 
 import { Suspense } from 'react';
-import {TelegramAuthContent} from "@/features/auth/components/telegram/TelegramAuthContent";
-
+import TelegramAuthContent from "@/features/auth/components/telegram/TelegramAuthContent";
 
 export default function TelegramAuthPage() {
     return (

@@ -5,9 +5,11 @@ import { useDebounce } from "../features/Navbar/hooks/useDebounce";
 import { Product, ProductsFilter } from "@/src/types";
 import { useSearchParams } from "next/navigation";
 
-const supabase = createClient();
+
 
 export const useProducts = (filters: ProductsFilter) => {
+
+
     const searchParams = useSearchParams();
     const page = parseInt(searchParams.get("page") || "1");
     const limit = 12;
@@ -24,6 +26,10 @@ export const useProducts = (filters: ProductsFilter) => {
             limit,
         }],
         queryFn: async () => {
+
+            const supabase = createClient();
+
+
             let query = supabase
                 .from("products")
                 .select("*", { count: "exact" });
@@ -67,7 +73,5 @@ export const useProducts = (filters: ProductsFilter) => {
                 totalPages: Math.ceil((count || 0) / limit),
             };
         },
-        staleTime: 0,
-        gcTime: 0,
     });
 };

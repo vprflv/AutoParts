@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ShoppingCart, User, LogOut, UserCircle, Package } from "lucide-react";
+import { ShoppingCart, User, LogOut, UserCircle } from "lucide-react";
 import { useCartStore } from "@/src/store/useCartStore";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import { useRouter } from "next/navigation";
@@ -30,7 +30,6 @@ export default function Navbar({ onSearchChange, searchValue }: NavbarProps) {
         toast.success("Вы вышли из аккаунта");
     };
 
-    // Улучшенная логика для Telegram пользователя
     const avatarUrl = user?.avatar_url || (user?.telegram_id ? `https://t.me/i/userpic/320/${user.username || user.id}.jpg` : null);
     const displayName = user?.name || user?.username || "Пользователь";
     const isTelegramUser = !!user?.telegram_id;
@@ -43,13 +42,15 @@ export default function Navbar({ onSearchChange, searchValue }: NavbarProps) {
 
                         {/* Логотип */}
                         <Link href="/">
-                            <div className="flex items-center gap-3 flex-shrink-0">
-                                <div className="w-9 h-9 bg-blue-600 rounded-3xl flex items-center justify-center text-2xl">
-
+                            <div className="flex items-center gap-3 flex-shrink-0 group">
+                                <div className="w-9 h-9 bg-gradient-to-br from-purple-600 to-violet-600 rounded-2xl flex items-center justify-center text-2xl transition-all group-hover:scale-110 group-hover:rotate-12">
+                                    ⚙️
                                 </div>
                                 <div>
-                                    <h1 className="text-xl font-bold tracking-tight">AutoPart</h1>
-                                    <p className="text-[10px] text-zinc-500 -mt-1">Pro</p>
+                                    <h1 className="text-2xl font-bold tracking-tighter bg-gradient-to-r from-white via-purple-200 to-violet-200 bg-clip-text text-transparent">
+                                        AutoPart
+                                    </h1>
+                                    <p className="text-[10px] text-zinc-500 -mt-1 tracking-widest">PRO</p>
                                 </div>
                             </div>
                         </Link>
@@ -60,64 +61,77 @@ export default function Navbar({ onSearchChange, searchValue }: NavbarProps) {
                         </div>
 
                         {/* Правая часть */}
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-3">
                             {/* Корзина */}
+                            {/* Корзина с неоновой подсветкой */}
+                            {/* Корзина — агрессивное неоновое свечение */}
                             <button
                                 onClick={() => setIsCartOpen(true)}
-                                className="relative p-3 hover:bg-zinc-900 rounded-2xl transition-colors"
+                                className="relative p-3.5 hover:bg-zinc-900 rounded-2xl transition-all active:scale-95 group"
                             >
-                                <ShoppingCart className="w-6 h-6" />
+                                <ShoppingCart className="w-6 h-6 text-zinc-300 group-hover:text-white transition-colors" />
+
                                 {totalItems > 0 && (
-                                    <div className="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-medium w-5 h-5 rounded-full flex items-center justify-center">
+                                    <div className="absolute -top-1.5 -right-1.5 bg-gradient-to-br from-purple-500 via-pink-500 to-violet-600
+                        text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center
+                        shadow-[0_0_15px_#c026d3,0_0_30px_#db2777] ring-2 ring-purple-400/60">
                                         {totalItems}
                                     </div>
                                 )}
+
+                                {/* Мощное неоновое свечение */}
+                                <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-40
+                    transition-all duration-300 bg-gradient-to-br from-purple-500/30 to-pink-500/30
+                    blur-xl pointer-events-none scale-75 group-hover:scale-100" />
+
+                                {/* Второе, ещё более яркое свечение */}
+                                <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-20
+                    transition-all duration-300 bg-purple-500 blur-2xl pointer-events-none" />
                             </button>
 
                             {/* Профиль */}
                             {user ? (
                                 <Menu as="div" className="relative">
-                                    <Menu.Button className="flex items-center gap-3 p-2 pr-3 hover:bg-zinc-900 rounded-2xl transition-colors focus:outline-none">
-
+                                    <Menu.Button className="flex items-center gap-3 p-2 pr-4 hover:bg-zinc-900 rounded-2xl transition-all hover:scale-105 focus:outline-none">
                                         {/* Аватарка */}
                                         {avatarUrl ? (
                                             <img
                                                 src={avatarUrl}
                                                 alt={displayName}
-                                                className="w-8 h-8 rounded-full object-cover border border-zinc-700"
+                                                className="w-9 h-9 rounded-2xl object-cover border-2 border-purple-500/30"
                                             />
                                         ) : (
-                                            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold">
-                                                {displayName?.[0] || "T"}
+                                            <div className="w-9 h-9 bg-gradient-to-br from-purple-600 to-violet-600 rounded-2xl flex items-center justify-center text-white font-semibold text-lg border-2 border-purple-500/30">
+                                                {displayName?.[0] || "U"}
                                             </div>
                                         )}
 
                                         <div className="hidden sm:block text-left">
-                                            <p className="text-sm font-medium text-white leading-none">
+                                            <p className="text-sm font-semibold text-white">
                                                 {displayName}
                                             </p>
                                             <p className="text-xs text-zinc-500">
-                                                {user.telegram_id
+                                                {isTelegramUser
                                                     ? `@${user.username || 'telegram'}`
-                                                    : user.email}
+                                                    : user.email?.split('@')[0]}
                                             </p>
                                         </div>
                                     </Menu.Button>
 
                                     <Transition
-                                        enter="transition duration-100 ease-out"
+                                        enter="transition duration-200 ease-out"
                                         enterFrom="transform scale-95 opacity-0"
                                         enterTo="transform scale-100 opacity-100"
-                                        leave="transition duration-75 ease-out"
+                                        leave="transition duration-150 ease-out"
                                         leaveFrom="transform scale-100 opacity-100"
                                         leaveTo="transform scale-95 opacity-0"
                                     >
-                                        <Menu.Items className="absolute right-0 mt-2 w-56 origin-top-right bg-zinc-900 border border-zinc-700 rounded-2xl shadow-xl py-2 z-50 focus:outline-none">
+                                        <Menu.Items className="absolute right-0 mt-3 w-56 origin-top-right bg-zinc-900 border border-zinc-700 rounded-3xl shadow-2xl py-2 z-50 focus:outline-none overflow-hidden">
                                             <Menu.Item>
                                                 {({ active }) => (
                                                     <button
                                                         onClick={() => router.push("/profile")}
-                                                        className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm ${active ? "bg-zinc-800" : ""}`}
+                                                        className={`flex w-full items-center gap-3 px-5 py-3 text-left text-sm ${active ? "bg-zinc-800 text-purple-400" : "text-zinc-300"}`}
                                                     >
                                                         <UserCircle className="w-5 h-5" />
                                                         Личный кабинет
@@ -125,13 +139,13 @@ export default function Navbar({ onSearchChange, searchValue }: NavbarProps) {
                                                 )}
                                             </Menu.Item>
 
-                                            <div className="border-t border-zinc-700 my-1" />
+                                            <div className="border-t border-zinc-800 my-1" />
 
                                             <Menu.Item>
                                                 {({ active }) => (
                                                     <button
                                                         onClick={handleLogout}
-                                                        className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-red-400 ${active ? "bg-zinc-800" : ""}`}
+                                                        className={`flex w-full items-center gap-3 px-5 py-3 text-left text-sm text-red-400 ${active ? "bg-zinc-800" : ""}`}
                                                     >
                                                         <LogOut className="w-5 h-5" />
                                                         Выйти
@@ -144,15 +158,15 @@ export default function Navbar({ onSearchChange, searchValue }: NavbarProps) {
                             ) : (
                                 <button
                                     onClick={() => setIsAuthOpen(true)}
-                                    className="p-3 hover:bg-zinc-900 rounded-2xl transition-colors"
+                                    className="p-3 hover:bg-zinc-900 rounded-2xl transition-all hover:scale-110"
                                 >
-                                    <User className="w-6 h-6" />
+                                    <User className="w-6 h-6 text-zinc-300" />
                                 </button>
                             )}
                         </div>
                     </div>
 
-                    {/* Поиск на мобильных */}
+                    {/* Мобильный поиск */}
                     <div className="md:hidden mt-4">
                         <SearchInput value={searchValue} onChange={onSearchChange} />
                     </div>

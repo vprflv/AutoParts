@@ -43,7 +43,7 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                 </div>
 
                 {/* Контент с прокруткой */}
-                <div className="flex-1 overflow-y-auto p-5 sm:p-6 md:p-7">
+                <div className="flex-1 overflow-y-auto custom-scroll-purple p-5 sm:p-6 md:p-7">
                     {isSuccess ? (
                         <FeedbackSuccess onClose={handleClose} />
                     ) : (

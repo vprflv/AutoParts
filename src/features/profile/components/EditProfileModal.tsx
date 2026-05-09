@@ -49,7 +49,7 @@ export default function EditProfileModal({ isOpen, onClose }: EditProfileModalPr
                             <input
                                 type="text"
                                 name="name"
-                                value={formData.name}
+                                value={formData.name || ''}
                                 onChange={handleChange}
                                 className={`w-full bg-zinc-800 border rounded-2xl px-4 sm:px-5 py-3.5 sm:py-4 text-base focus:outline-none focus:border-blue-600 ${
                                     errors.name ? "border-red-500" : "border-zinc-700"
@@ -64,7 +64,7 @@ export default function EditProfileModal({ isOpen, onClose }: EditProfileModalPr
                             <label className="text-sm text-zinc-400 block mb-1.5">Email</label>
                             <input
                                 type="email"
-                                value={formData.email}
+                                value={formData.email || ''}
                                 disabled
                                 className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-4 sm:px-5 py-3.5 sm:py-4 text-base opacity-60 cursor-not-allowed"
                             />

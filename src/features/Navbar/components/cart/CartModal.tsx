@@ -1,4 +1,3 @@
-
 "use client";
 
 import { X, ShoppingCart } from "lucide-react";
@@ -20,9 +19,9 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
     if (!isOpen) return null;
 
     const handleOrderSuccess = () => {
-        clearCart();                    // Очищаем корзину
-        setIsOrderModalOpen(false);     // Закрываем OrderModal
-        onClose();                      // Закрываем CartModal
+        clearCart();
+        setIsOrderModalOpen(false);
+        onClose();
     };
 
     return (
@@ -30,35 +29,43 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
             <div className="fixed inset-0 bg-black/70" onClick={onClose} />
 
             <div
-                className="bg-zinc-900 rounded-3xl w-full max-w-lg md:max-w-2xl max-h-[92vh] overflow-hidden flex flex-col relative z-10"
+                className="bg-zinc-900 rounded-3xl w-full max-w-lg md:max-w-2xl max-h-[92vh] overflow-hidden flex flex-col relative z-10 border border-zinc-700 shadow-2xl"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
-                <div className="flex items-center justify-between px-5 sm:px-6 py-5 border-b border-zinc-800">
+                <div className="flex items-center justify-between px-6 py-5 border-b border-zinc-800 bg-zinc-950">
                     <div className="flex items-center gap-3">
-                        <ShoppingCart className="w-6 h-6" />
-                        <h2 className="text-2xl font-semibold">Корзина</h2>
+                        {/* Иконка корзины с лёгким контуром */}
+                        <div className="w-9 h-9 flex items-center justify-center rounded-xl transition-colors">
+                            <ShoppingCart className="w-5 h-5 text-purple-400" />
+                        </div>
+                        {/*<h2 className="text-2xl font-semibold text-purple-500/80 tracking-tight">Корзина</h2>*/}
                     </div>
+
+                    {/* Кнопка закрытия с ярким неоновым свечением */}
                     <button
                         onClick={onClose}
-                        className="text-zinc-400 hover:text-white p-2 transition-colors"
+                        className="p-3 rounded-2xl text-zinc-400 hover:text-white transition-all duration-200
+                    "
                     >
-                        <X size={28} />
+                        <X size={28} className="hover:text-purple-300 text-purple-400 "  />
                     </button>
                 </div>
 
-                {/* Список товаров */}
-                <div className="flex-1 overflow-auto p-5 sm:p-6">
+                {/* Список товаров — без видимого скроллбара */}
+                <div className="flex-1 overflow-auto p-6 custom-scroll-hidden">
                     {items.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center text-center py-16">
-                            <div className="text-7xl mb-6 opacity-50">
-                                <ShoppingCart className="w-16 h-16" />
+                            <div className="w-20 h-20 bg-zinc-800 rounded-full flex items-center justify-center mb-6">
+                                <ShoppingCart className="w-10 h-10 text-zinc-500" />
                             </div>
                             <p className="text-2xl font-medium text-zinc-400">Корзина пуста</p>
-                            <p className="text-zinc-500 mt-3">Добавьте товары из каталога</p>
+                            <p className="text-zinc-500 mt-3 max-w-xs">
+                                Добавьте товары из каталога, чтобы увидеть их здесь
+                            </p>
                         </div>
                     ) : (
-                        <div className="space-y-6">
+                        <div className="space-y-5">
                             {items.map((item, index) => (
                                 <CartItem
                                     key={item.id}
@@ -79,7 +86,6 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                 )}
             </div>
 
-            {/* OrderModal */}
             <OrderModal
                 isOpen={isOrderModalOpen}
                 onClose={() => setIsOrderModalOpen(false)}

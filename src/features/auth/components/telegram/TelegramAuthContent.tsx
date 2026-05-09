@@ -4,70 +4,72 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { useAuthStore } from '@/store/useAuthStore';
-import { createClient } from '@/lib/supabase/client';
 
-export function TelegramAuthContent() {
+export default function TelegramAuthContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
-    const userId = searchParams.get('userId');   // ← главное изменение
-
-    const [loading, setLoading] = useState(true);
+    const [status, setStatus] = useState('Проверяем ссылку...');
 
     useEffect(() => {
-        if (!userId) {
-            toast.error("userId не найден в ссылке");
+        const token = searchParams.get('token');
+
+        if (!token) {
+            toast.error("Токен не найден в ссылке");
             router.push('/');
             return;
         }
 
-        console.log("🔑 Получен userId:", userId);
-
-        const loadUser = async () => {
+        const handleAuth = async () => {
             try {
-                const supabase = createClient();
+                console.log('🔑 Отправляем токен на проверку...');
 
-                const { data: profile } = await supabase
-                    .from('profiles')
-                    .select('*')
-                    .eq('id', userId)
-                    .single();
+                const res = await fetch('/api/auth/verify-telegram', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token }),
+                });
 
-                if (profile) {
-                    const newUser = {
-                        id: profile.id,
-                        name: profile.name,
-                        email: profile.email,
-                        telegram_id: profile.telegram_id,
-                        username: profile.username,
-                        avatar_url: profile.avatar_url,
-                    };
+                const result = await res.json();
 
-                    useAuthStore.setState({ user: newUser });
-                    toast.success(`✅ Добро пожаловать, ${profile.name}!`);
-                    router.push('/'); // или '/dashboard'
-                } else {
-                    toast.error("Пользователь не найден в базе");
+                if (!result.success || !result.profile) {
+                    console.error('❌ Ошибка верификации:', result.error);
+                    toast.error(result.error || "Недействительная или устаревшая ссылка");
                     router.push('/');
+                    return;
                 }
-            } catch (err) {
-                console.error(err);
-                toast.error("Ошибка при загрузке профиля");
+
+                console.log('✅ Токен валиден, профиль получен');
+
+                // Сохраняем в Zustand
+                useAuthStore.setState({
+                    user: result.profile,
+                    isAuthenticated: true,
+                });
+
+                toast.success(`✅ Добро пожаловать, ${result.profile.name}!`, {
+                    duration: 5000,
+                });
+
                 router.push('/');
-            } finally {
-                setLoading(false);
+
+            } catch (err: any) {
+                console.error('💥 Ошибка при обработке токена:', err);
+                toast.error("Не удалось завершить вход. Попробуй ещё раз.");
+                router.push('/');
             }
         };
 
-        loadUser();
-    }, [userId, router]);
+        // Небольшая задержка для стабильности
+        const timer = setTimeout(handleAuth, 800);
+
+        return () => clearTimeout(timer);
+    }, [searchParams, router]);
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-zinc-950 text-white">
             <div className="text-center">
                 <h1 className="text-3xl font-bold mb-4">Вход через Telegram</h1>
-                <p className="text-zinc-400">
-                    {loading ? "Загружаем ваш профиль..." : "Перенаправляем..."}
-                </p>
+                <p className="text-zinc-400">{status}</p>
             </div>
         </div>
     );

@@ -12,6 +12,7 @@ import { SlidersHorizontal, MessageCircle } from "lucide-react";
 
 import { useCatalogFilters } from "@/src/hooks/useCatalogFilters";
 import { useFloatingButton } from "@/src/hooks/useFloatingButton";
+import {useBrands} from "@/features/catalog/hooks/useBrands";
 
 export default function HomeContent() {
     const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
@@ -28,6 +29,8 @@ export default function HomeContent() {
 
     const { data, isLoading } = useProducts(filters);
 
+    const { data: brands = [], isLoading: brandsLoading } = useBrands();
+
     const products = data?.products || [];
     const totalPages = data?.totalPages || 1;
     const currentPage = data?.page || 1;
@@ -36,15 +39,15 @@ export default function HomeContent() {
         window.scrollTo({
             top: 0,
             left: 0,
-            behavior: 'instant',        // 'smooth' — если хочешь плавно
+            behavior: 'instant',
         });
     }, [currentPage]);
 
 
 
-    const allBrands = useMemo(() => {
-        return Array.from(new Set(products.map(p => p.brand))).sort();
-    }, [products]);
+    // const allBrands = useMemo(() => {
+    //     return Array.from(new Set(products.map(p => p.brand))).sort();
+    // }, [products]);
 
     return (
         <>
@@ -76,7 +79,7 @@ export default function HomeContent() {
                             filters={filters}
                             setFilters={handleFilterChange}
                             resetFilters={handleReset}
-                            brands={allBrands}
+                            brands={brands}
                         />
                     </div>
 
