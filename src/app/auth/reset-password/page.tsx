@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { Eye, EyeOff } from "lucide-react";
 import { createClient } from "@/src/lib/supabase/client";
 
 export default function ResetPasswordPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
@@ -15,29 +17,31 @@ export default function ResetPasswordPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
 
+    // Более устойчивая проверка сессии + hash
     useEffect(() => {
-
-        const checkSession = async () => {
+        const checkRecoverySession = async () => {
             const supabase = createClient();
             const { data: { session } } = await supabase.auth.getSession();
 
-            if (!session) {
+            // Проверяем наличие recovery типа
+            const type = searchParams.get("type");
+
+            if (!session && type !== "recovery") {
                 toast.error("Ссылка недействительна или устарела");
-                router.push("/auth");
+                setTimeout(() => router.push("/auth"), 1500);
             }
         };
 
-        checkSession();
-    }, [router]);
+        checkRecoverySession();
+    }, [router, searchParams]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         if (password.length < 6) {
-            toast.error("Пароль должен быть не менее 6 символов");
+            toast.error("Пароль должен содержать минимум 6 символов");
             return;
         }
-
         if (password !== confirmPassword) {
             toast.error("Пароли не совпадают");
             return;
@@ -47,23 +51,19 @@ export default function ResetPasswordPage() {
 
         try {
             const supabase = createClient();
-
-            const { error } = await supabase.auth.updateUser({
-                password: password,
-            });
+            const { error } = await supabase.auth.updateUser({ password });
 
             if (error) throw error;
 
             setIsSuccess(true);
             toast.success("Пароль успешно изменён!");
 
-            // Редирект на логин через 2 секунды
             setTimeout(() => {
                 router.push("/auth");
-            }, 2000);
+            }, 1800);
 
         } catch (error: any) {
-            toast.error(error.message || "Не удалось изменить пароль");
+            toast.error(error.message || "Не удалось сменить пароль");
         } finally {
             setIsLoading(false);
         }
@@ -72,12 +72,10 @@ export default function ResetPasswordPage() {
     if (isSuccess) {
         return (
             <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
-                <div className="text-center max-w-md">
-                    <div className="text-6xl mb-6">✅</div>
-                    <h1 className="text-3xl font-bold mb-4">Пароль успешно изменён</h1>
-                    <p className="text-zinc-400 mb-8">
-                        Вы будете перенаправлены на страницу входа
-                    </p>
+                <div className="text-center">
+                    <div className="text-6xl mb-6">🎉</div>
+                    <h1 className="text-3xl font-bold mb-3">Пароль изменён</h1>
+                    <p className="text-zinc-400">Перенаправляем на страницу входа...</p>
                 </div>
             </div>
         );
@@ -88,8 +86,8 @@ export default function ResetPasswordPage() {
             <div className="w-full max-w-md">
                 <div className="bg-zinc-900 rounded-3xl border border-zinc-700 p-8 md:p-10">
                     <h1 className="text-3xl font-bold text-center mb-2">Новый пароль</h1>
-                    <p className="text-zinc-400 text-center mb-8">
-                        Придумайте новый пароль для вашего аккаунта
+                    <p className="text-zinc-400 text-center mb-8 text-sm">
+                        Придумайте надёжный новый пароль
                     </p>
 
                     <form onSubmit={handleSubmit} className="space-y-6">
@@ -101,14 +99,10 @@ export default function ResetPasswordPage() {
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     required
-                                    className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-cyan-400 text-base"
-                                    placeholder="••••••••"
+                                    className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-cyan-400"
+                                    placeholder="Новый пароль"
                                 />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white"
-                                >
+                                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-5 top-1/2 -translate-y-1/2 text-zinc-400">
                                     {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                                 </button>
                             </div>
@@ -122,14 +116,10 @@ export default function ResetPasswordPage() {
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
                                     required
-                                    className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-cyan-400 text-base"
-                                    placeholder="••••••••"
+                                    className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-cyan-400"
+                                    placeholder="Повторите пароль"
                                 />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                    className="absolute right-5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white"
-                                >
+                                <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-5 top-1/2 -translate-y-1/2 text-zinc-400">
                                     {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                                 </button>
                             </div>
@@ -138,9 +128,9 @@ export default function ResetPasswordPage() {
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="btn-neon disabled:cursor-not-allowed disabled:opacity-50 mt-4"
+                            className="btn-neon disabled:cursor-not-allowed disabled:opacity-50 mt-2"
                         >
-                            {isLoading ? "Сохраняем пароль..." : "Сменить пароль"}
+                            {isLoading ? "Сохраняем..." : "Сменить пароль"}
                         </button>
                     </form>
                 </div>
