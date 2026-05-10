@@ -1,4 +1,4 @@
-// src/features/auth/hooks/useAuthForm.ts
+// src/features/auth/hooks/useRegisterForm.ts
 import { useState, useEffect } from "react";
 import { z } from "zod";
 import { useAuthStore } from "@/src/store/useAuthStore";
@@ -19,29 +19,18 @@ const registerSchema = z.object({
     password: passwordSchema,
 });
 
-const loginSchema = z.object({
-    email: z.string().email("Введите корректный email"),
-    password: z.string().min(1, "Введите пароль"),
-});
-
-export function useAuthForm() {
+export function useRegisterForm() {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [agreePolicy, setAgreePolicy] = useState(false);
 
-    const [errors, setErrors] = useState({
-        name: "",
-        email: "",
-        password: "",
-    });
-
+    const [errors, setErrors] = useState({ name: "", email: "", password: "" });
     const [isLoading, setIsLoading] = useState(false);
     const [passwordStrength, setPasswordStrength] = useState(0);
 
-    const { login, register, clearError, error: storeError } = useAuthStore();
-    const [generalError, setGeneralError] = useState("");
-    // Улучшенная проверка силы пароля
+    const { register, clearError, error: storeError } = useAuthStore();
+
     const calculateStrength = (pass: string): number => {
         let strength = 0;
         if (pass.length >= 8) strength++;
@@ -56,43 +45,21 @@ export function useAuthForm() {
         setPasswordStrength(calculateStrength(password));
     }, [password]);
 
-
+    // Обработка ошибок от Supabase
     useEffect(() => {
         if (storeError) {
             let message = storeError;
-            let field: "email" | "password" | null = null;
 
             if (storeError.includes("User already registered") ||
                 storeError.includes("already exists")) {
                 message = "Пользователь с таким email уже существует";
-                field = "email";
-            }
-            else if (storeError.includes("Invalid login credentials") ||
-                storeError.includes("invalid credentials")) {
-                message = "Неправильный email или пароль";
-                field = null;                    // общая ошибка
-            }
-            else if (storeError.includes("Email not confirmed")) {
-                message = "Email не подтверждён. Проверьте почту";
-                field = "email";
-            }
-            else if (storeError.includes("too many requests")) {
-                message = "Слишком много попыток. Подождите немного";
-                field = null;
             }
 
-            if (field) {
-                debugger
-                setErrors(prev => ({ ...prev, [field]: message }));
-            } else {
-
-                setGeneralError(message);        // ← общая ошибка
-            }
-        } else {
-            setGeneralError("");
+            setErrors(prev => ({ ...prev, email: message }));
         }
     }, [storeError]);
 
+    // Валидация отдельного поля (для onBlur)
     const validateField = (field: "name" | "email" | "password") => {
         try {
             if (field === "name") {
@@ -115,22 +82,13 @@ export function useAuthForm() {
         const newErrors = { name: "", email: "", password: "" };
 
         try {
-            if (name?.trim()) {
-                // Полная валидация регистрации
-                registerSchema.parse({
-                    name: name.trim(),
-                    email,
-                    password
-                });
-            } else {
-                // Если имя пустое — принудительно ставим ошибку
-                newErrors.name = "Имя обязательно";
-                loginSchema.parse({ email, password });
-            }
-
+            registerSchema.parse({
+                name: name.trim(),
+                email,
+                password
+            });
             setErrors(newErrors);
-            return Object.values(newErrors).every(e => e === "");
-
+            return true;
         } catch (err: any) {
             if (err?.issues) {
                 err.issues.forEach((issue: any) => {
@@ -146,27 +104,18 @@ export function useAuthForm() {
     const handleSubmit = async (): Promise<boolean> => {
         setIsLoading(true);
         setErrors({ name: "", email: "", password: "" });
-        setGeneralError("");
         clearError();
 
-        const isValid = validateForm();
-
-        if (!isValid) {
+        if (!validateForm()) {
             setIsLoading(false);
             return false;
         }
 
-        let success = false;
-
         try {
-            if (name?.trim()) {
-                success = await register(name.trim(), email, password);
-            } else {
-                success = await login(email, password);
-            }
+            const success = await register(name.trim(), email, password);
             return success;
-        } catch (err: any) {
-            console.error("Auth error:", err);
+        } catch (err) {
+            console.error(err);
             return false;
         } finally {
             setIsLoading(false);
@@ -180,9 +129,8 @@ export function useAuthForm() {
         agreePolicy, setAgreePolicy,
         errors,
         isLoading,
-        generalError,
         passwordStrength,
-        validateField,
+        validateField,        // ← Добавили
         handleSubmit,
     };
 }

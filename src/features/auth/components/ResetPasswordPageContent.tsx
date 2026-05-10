@@ -22,7 +22,7 @@ export default function ResetPasswordContent() {
             const supabase = createClient();
 
             try {
-                // Это ключевой момент — Supabase сам обрабатывает hash из URL
+
                 const { data, error } = await supabase.auth.getSession();
 
                 if (error || !data.session) {

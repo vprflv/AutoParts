@@ -16,25 +16,24 @@ export default function ForgotPasswordForm({ onClose, setTab }: ForgotPasswordFo
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!email) return;
+        if (!email.trim()) return;
 
         setIsSubmitting(true);
 
         try {
             const supabase = createClient();
 
-            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            await supabase.auth.resetPasswordForEmail(email.trim(), {
                 redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/reset-password`,
             });
 
-            if (error) throw error;
-
             setIsSuccess(true);
-            toast.success("Ссылка для сброса пароля отправлена на почту!");
+            toast.success("Если аккаунт существует, ссылка отправлена на почту");
 
         } catch (error: any) {
-            console.error(error);
-            toast.error(error.message || "Не удалось отправить письмо");
+            // Даже при ошибке показываем успех (security best practice)
+            setIsSuccess(true);
+            toast.success("Если аккаунт существует, ссылка отправлена на почту");
         } finally {
             setIsSubmitting(false);
         }
@@ -46,11 +45,10 @@ export default function ForgotPasswordForm({ onClose, setTab }: ForgotPasswordFo
                 <div className="text-center py-10 md:py-12">
                     <div className="text-6xl mb-6">📧</div>
                     <h3 className="text-2xl md:text-3xl font-semibold mb-3">
-                        Письмо отправлено
+                        Ссылка отправлена
                     </h3>
                     <p className="text-zinc-400 text-base md:text-lg leading-relaxed">
-                        Мы отправили ссылку для сброса пароля на{" "}
-                        <span className="text-white font-medium">{email}</span>
+                        Если аккаунт с таким email существует, мы отправили ссылку для сброса пароля.
                     </p>
                     <p className="text-sm text-zinc-500 mt-4">
                         Проверьте папку «Спам», если письмо не пришло
@@ -71,13 +69,13 @@ export default function ForgotPasswordForm({ onClose, setTab }: ForgotPasswordFo
                             placeholder="you@example.com"
                         />
                         <p className="text-xs md:text-sm text-zinc-500 mt-2 px-1">
-                            Мы отправим вам ссылку для сброса пароля
+                            Укажите email, который вы использовали при регистрации
                         </p>
                     </div>
 
                     <button
                         type="submit"
-                        disabled={isSubmitting || !email}
+                        disabled={isSubmitting || !email.trim()}
                         className="btn-neon disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         {isSubmitting ? "Отправляем..." : "Отправить ссылку"}

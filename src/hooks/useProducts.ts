@@ -1,20 +1,16 @@
 // src/hooks/useProducts.ts
 import { useQuery } from "@tanstack/react-query";
 import { createClient } from "@/src/lib/supabase/client";
-import { useDebounce } from "../features/Navbar/hooks/useDebounce";
-import { Product, ProductsFilter } from "@/src/types";
+import { useDebounce } from "@/features/Navbar/hooks/useDebounce";
+import {  ProductsFilter } from "@/src/types";
 import { useSearchParams } from "next/navigation";
 
-
-
 export const useProducts = (filters: ProductsFilter) => {
-
-
     const searchParams = useSearchParams();
     const page = parseInt(searchParams.get("page") || "1");
     const limit = 12;
 
-    const debouncedSearch = useDebounce(filters.search || "", 300);
+    const debouncedSearch = useDebounce(filters.search?.trim() || "", 400);
 
     return useQuery({
         queryKey: ["products", {
@@ -25,10 +21,9 @@ export const useProducts = (filters: ProductsFilter) => {
             page,
             limit,
         }],
+
         queryFn: async () => {
-
             const supabase = createClient();
-
 
             let query = supabase
                 .from("products")
@@ -36,12 +31,8 @@ export const useProducts = (filters: ProductsFilter) => {
 
             if (debouncedSearch) {
                 const term = `%${debouncedSearch}%`;
-
                 query = query.or(
-                    `name.ilike.${term},` +
-                    `oem.ilike.${term},` +
-                    `brand.ilike.${term},` +
-                    `crossNumbers.ilike.${term}`
+                    `name.ilike.${term},oem.ilike.${term},brand.ilike.${term},crossNumbers.ilike.${term}`
                 );
             }
 
@@ -62,7 +53,15 @@ export const useProducts = (filters: ProductsFilter) => {
             const { data, error, count } = await query.range(from, to);
 
             if (error) {
-                console.error("Ошибка поиска товаров:", error);
+                // Логируем только реальные ошибки, а не пустой объект
+                if (error.message || error.code) {
+                    console.warn("⚠️ Ошибка при загрузке товаров:", {
+                        message: error.message,
+                        code: error.code,
+                        details: error.details,
+                        hint: error.hint,
+                    });
+                }
                 throw error;
             }
 
@@ -73,5 +72,10 @@ export const useProducts = (filters: ProductsFilter) => {
                 totalPages: Math.ceil((count || 0) / limit),
             };
         },
+
+        staleTime: 0,
+        gcTime: 0,
+        retry: 1,
+        refetchOnWindowFocus: false,
     });
 };

@@ -2,11 +2,10 @@
 
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
-import { useAuthForm } from "@/src/features/auth/hooks/useAuthForm";
 import SocialLoginButtons from "@/src/features/auth/components/SocialLoginButtons";
-import TelegramLoginWidget from "@/features/auth/components/telegram/TelegramLoginWidget";
 import { toast } from "react-hot-toast";
 import TelegramModal from "@/features/auth/components/telegram/TelegramModal";
+import {useRegisterForm} from "@/features/auth/hooks/useRegisterForm";
 
 interface RegisterFormProps {
     onClose: () => void;
@@ -26,7 +25,8 @@ export default function RegisterForm({ onClose }: RegisterFormProps) {
         isLoading,
         handleSubmit,
         validateField,
-    } = useAuthForm();
+        passwordStrength
+    } = useRegisterForm();
 
     const [showPassword, setShowPassword] = useState(false);
     const [isTelegramWidgetOpen, setIsTelegramWidgetOpen] = useState(false);
@@ -46,6 +46,16 @@ export default function RegisterForm({ onClose }: RegisterFormProps) {
             toast(`🔄 ${provider} скоро будет`, { icon: "⏳" });
         }
     };
+
+    const strengthConfig = [
+        { label: "Очень слабый", color: "bg-red-500" },
+        { label: "Слабый",       color: "bg-orange-500" },
+        { label: "Средний",      color: "bg-yellow-500" },
+        { label: "Хороший",      color: "bg-emerald-500" },
+        { label: "Отличный",     color: "bg-cyan-500" },
+    ];
+
+    const currentStrength = strengthConfig[passwordStrength];
 
     return (
         <div className="space-y-6">
@@ -84,6 +94,7 @@ export default function RegisterForm({ onClose }: RegisterFormProps) {
             </div>
 
             {/* Пароль */}
+            {/* Пароль + Индикатор силы */}
             <div>
                 <label className="text-sm text-zinc-400 block mb-1.5">
                     Пароль <span className="text-red-500">*</span>
@@ -106,6 +117,22 @@ export default function RegisterForm({ onClose }: RegisterFormProps) {
                         {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                     </button>
                 </div>
+
+                {/* Индикатор силы пароля */}
+                {password && (
+                    <div className="mt-3">
+                        <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                            <div
+                                className={`h-full transition-all duration-300 ${currentStrength.color}`}
+                                style={{ width: `${(passwordStrength + 1) * 20}%` }}
+                            />
+                        </div>
+                        <p className={`text-xs mt-1.5 font-medium ${currentStrength.color.replace('bg-', 'text-')}`}>
+                            {currentStrength.label}
+                        </p>
+                    </div>
+                )}
+
                 {errors.password && <p className="text-red-500 text-sm mt-1.5 px-1">{errors.password}</p>}
             </div>
 

@@ -2,12 +2,10 @@
 
 import {useEffect, useState} from "react";
 import { Eye, EyeOff } from "lucide-react";
-import { useAuthForm } from "@/src/features/auth/hooks/useAuthForm";
 import SocialLoginButtons from "@/src/features/auth/components/SocialLoginButtons";
-import TelegramLoginWidget from "@/features/auth/components/telegram/TelegramLoginWidget";
-import { toast } from "react-hot-toast";
 import { useAuthStore } from "@/store/useAuthStore";
 import TelegramModal from "@/features/auth/components/telegram/TelegramModal";
+import {useLoginForm} from "@/features/auth/hooks/useLoginForm";
 
 interface LoginFormProps {
     onClose: () => void;
@@ -24,7 +22,8 @@ export default function LoginForm({ onClose, setTab }: LoginFormProps) {
         isLoading,
         handleSubmit,
         validateField,
-    } = useAuthForm();
+        generalError
+    } = useLoginForm();
 
     const [rememberMe, setRememberMe] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
@@ -104,6 +103,12 @@ export default function LoginForm({ onClose, setTab }: LoginFormProps) {
                     <p className="text-red-500 text-sm mt-1.5 px-1">{errors.password}</p>
                 )}
             </div>
+            {/* Общая ошибка */}
+            {generalError && (
+                <p className="text-red-500 text-sm text-center bg-red-500/10 border border-red-500/30 py-2.5 rounded-2xl">
+                    {generalError}
+                </p>
+            )}
 
             <div className="flex items-center justify-between px-1">
                 <label className="flex items-center gap-3 cursor-pointer">
@@ -126,6 +131,8 @@ export default function LoginForm({ onClose, setTab }: LoginFormProps) {
                     Забыл пароль?
                 </button>
             </div>
+
+
 
             {/* Кнопка входа */}
             <button
