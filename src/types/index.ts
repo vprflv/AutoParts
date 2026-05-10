@@ -1,7 +1,9 @@
 import { SVGProps } from "react";
 type SortOption = "default" | "price_asc" | "price_desc";
 
-
+export type ProductSpecifications = {
+    [key: string]: string | number | boolean | string[] | null | undefined;
+};
 
 export type ProductsFilter = {
   search: string;
@@ -19,8 +21,14 @@ export type Product = {
   brand: string;
   stock: number;
   images: string[];
+
+  description?: string | null;
+  specifications?: ProductSpecifications | null;
   applicability?: string[];
   crossNumbers?: string[];
+
+  created_at?: string;
+  updated_at?: string;
 };
 
 export interface User {
@@ -28,6 +36,7 @@ export interface User {
   name: string;
   email: string;
   phone?: string;
+
 }
 
 export interface Vehicle {
