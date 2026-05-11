@@ -3,10 +3,11 @@
 import { useState } from "react";
 import { X, Loader2 } from "lucide-react";
 import { useImportProductsMutation } from "@/src/features/admin/hooks/useImportProductsMutation";
-import { useProductImport } from "@/src/features/admin/hooks/product-import";
 import ImportUploadStep from "./ImportUploadStep";
 import ImportPreviewStep from "./ImportPreviewStep";
 import { toast } from "react-hot-toast";
+import {useProductImport} from "@/features/admin/hooks/product-import";
+
 
 interface ImportProductsModalProps {
     isOpen: boolean;
@@ -15,14 +16,14 @@ interface ImportProductsModalProps {
 
 export default function ImportProductsModal({ isOpen, onClose }: ImportProductsModalProps) {
     const importMutation = useImportProductsMutation();
-    const { parseImportFile } = useProductImport();
+
+    const{parseImportFile}=useProductImport()
 
     const [step, setStep] = useState<"upload" | "preview" | "saving">("upload");
     const [previewData, setPreviewData] = useState<any>(null);
     const [excelFile, setExcelFile] = useState<File | null>(null);
     const [isParsing, setIsParsing] = useState(false);
 
-    // Упрощённая функция — только Excel
     const handlePreviewReady = async (excel: File) => {
         setExcelFile(excel);
         setIsParsing(true);
@@ -40,18 +41,19 @@ export default function ImportProductsModal({ isOpen, onClose }: ImportProductsM
     };
 
     const handleConfirmImport = async () => {
-        if (!excelFile) return;
+        if (!previewData) return;
 
         setStep("saving");
 
         try {
-            await importMutation.mutateAsync({
-                excelFile,
-            });
+            const allProducts = [...previewData.toAdd, ...previewData.toUpdate];
+            await importMutation.mutateAsync(allProducts);
 
+            toast.success("Импорт успешно завершён!");
             setTimeout(() => onClose(), 1400);
-        } catch (err) {
+        } catch (err: any) {
             setStep("preview");
+            toast.error(err.message || "Ошибка при сохранении");
         }
     };
 
@@ -69,7 +71,6 @@ export default function ImportProductsModal({ isOpen, onClose }: ImportProductsM
     return (
         <div className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center p-4">
             <div className="bg-zinc-900 rounded-3xl w-full max-w-4xl max-h-[95vh] overflow-hidden flex flex-col">
-                {/* Заголовок */}
                 <div className="px-8 py-6 border-b border-zinc-800 flex items-center justify-between">
                     <div>
                         <h2 className="text-2xl font-semibold">
@@ -77,23 +78,16 @@ export default function ImportProductsModal({ isOpen, onClose }: ImportProductsM
                             {step === "preview" && "Предпросмотр импорта"}
                             {step === "saving" && "Выполняется импорт..."}
                         </h2>
-                        {previewData && step === "preview" && (
-                            <p className="text-zinc-400 text-sm mt-1">
-                                Новых: <span className="text-emerald-400">{previewData.toAdd?.length || 0}</span> |
-                                Обновлений: <span className="text-amber-400">{previewData.toUpdate?.length || 0}</span>
-                            </p>
-                        )}
                     </div>
                     <button onClick={handleClose} className="text-zinc-400 hover:text-white transition-colors">
                         <X size={28} />
                     </button>
                 </div>
 
-                {/* Контент */}
                 <div className="flex-1 overflow-auto">
                     {step === "upload" && (
                         <ImportUploadStep
-                            onPreviewReady={handlePreviewReady}   // Теперь принимает только excel
+                            onPreviewReady={handlePreviewReady}
                             excelFile={excelFile}
                             setExcelFile={setExcelFile}
                             isLoading={isParsing}

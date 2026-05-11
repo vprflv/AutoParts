@@ -11,16 +11,20 @@ export type ProductsFilter = {
 }
 
 export type Product = {
-  id: string;
-  name: string;
-  oem: string;
-  price: number;
-  category: string;
-  brand: string;
-  stock: number;
-  images: string[];
-  applicability?: string[];
-  crossNumbers?: string[];
+    id: string;
+    name: string;
+    oem: string;
+    price: number;
+    category?: string | null;
+    brand: string;
+    stock: number;
+    images: string[];
+    applicability?: string[];
+    crossNumbers?: string[];
+    description?: string | null;
+    specifications?: any;
+    createdAt?: Date;
+    updatedAt?: Date;
 };
 
 export interface User {

@@ -1,7 +1,6 @@
-// src/features/admin/components/import/ImportPreviewStep.tsx
 "use client";
 
-import {ArrowLeft, CheckCircle, AlertTriangle, Plus, RefreshCw, Loader2} from "lucide-react";
+import { ArrowLeft, CheckCircle, AlertTriangle, Plus, RefreshCw, Loader2 } from "lucide-react";
 import { ImportProduct } from "@/src/features/admin/hooks/product-import/types";
 
 interface ImportPreviewStepProps {
@@ -103,11 +102,6 @@ export default function ImportPreviewStep({
                             ))}
                             </tbody>
                         </table>
-                        {toAdd.length > 10 && (
-                            <p className="text-center text-zinc-500 text-sm py-3">
-                                + ещё {toAdd.length - 10} товаров
-                            </p>
-                        )}
                     </div>
                 </div>
             )}

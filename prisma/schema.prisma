@@ -1,0 +1,55 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Feedback {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  name        String?
+  phone       String
+  email       String?
+  vin         String?
+  carModel    String?
+  message     String?
+
+  status      FeedbackStatus @default(NEW)
+  viewedAt    DateTime?
+
+  @@map("feedbacks")
+}
+
+model Product {
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  name           String
+  oem            String   @unique
+  price          Float
+  category       String?
+  brand          String
+  stock          Int      @default(0)
+
+  images         String[] @default([])
+  applicability  String[] @default([])
+  crossNumbers   String[] @default([])
+
+  description    String?
+  specifications Json?    // для хранения характеристик
+
+  @@map("products")
+}
+
+enum FeedbackStatus {
+  NEW
+  IN_PROGRESS
+  DONE
+  REJECTED
+}
