@@ -1,13 +1,16 @@
 import { SVGProps } from "react";
+
 type SortOption = "default" | "price_asc" | "price_desc";
 
-
+export type ProductSpecifications = {
+    [key: string]: string | number | boolean | string[] | null | undefined;
+};
 
 export type ProductsFilter = {
-  search: string;
-  brand?: string;
-  onlyInStock?: boolean;
-  sort?: SortOption;
+    search: string;
+    brand?: string;
+    onlyInStock?: boolean;
+    sort?: SortOption;
 }
 
 export type Product = {
@@ -28,19 +31,18 @@ export type Product = {
 };
 
 export interface User {
-  id: string;
-  name: string;
-  email: string;
-  phone?: string;
+    id: string;
+    name: string;
+    email: string;
+    phone?: string;
 }
 
 export interface Vehicle {
-  id: string;
-  brand: string;
-  model: string;
-  year: number;
-  engine?: string;
-  vin?: string;
-  createdAt: string;
+    id: string;
+    brand: string;
+    model: string;
+    year: number;
+    engine?: string;
+    vin?: string;
+    createdAt: string;
 }
-

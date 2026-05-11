@@ -7,8 +7,10 @@ export interface ImportProduct {
     stock: number;
     category: string;
     images: string[];
-    applicability: string[];
     crossNumbers: string;
+
+    applicability?: string[];
+    specifications?: Record<string, any>;
     description?: string;
 }
 

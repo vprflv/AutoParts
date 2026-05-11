@@ -10,9 +10,10 @@ const ProductSchema = z.object({
     price: z.number().positive("Цена должна быть больше 0"),
     stock: z.number().int().nonnegative(),
     category: z.string().default("Разное"),
-    applicability: z.array(z.string()).default([]),
-    crossNumbers: z.string().default(""),     // ← string, как в базе
     description: z.string().optional(),
+    applicability: z.array(z.string()).default([]),
+    crossNumbers: z.string().default(""),
+    // specifications пока не валидируем жёстко
 });
 
 export async function parseExcelFile(
@@ -26,7 +27,8 @@ export async function parseExcelFile(
             try {
                 const data = new Uint8Array(e.target?.result as ArrayBuffer);
                 const workbook = XLSX.read(data, { type: "array" });
-                const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { defval: "" });
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
 
                 const toAdd: ImportProduct[] = [];
                 const toUpdate: ImportProduct[] = [];
@@ -36,7 +38,7 @@ export async function parseExcelFile(
 
                 jsonData.forEach((row: any, index: number) => {
                     try {
-                        let oem = String(row.OEM || row.oem || row["ОЕМ"] || row["Код"] || "")
+                        const oem = String(row.OEM || row.oem || row["ОЕМ"] || row["Код"] || "")
                             .trim()
                             .toUpperCase();
 
@@ -45,27 +47,46 @@ export async function parseExcelFile(
                             return;
                         }
 
-                        const crossStr = String(row.Кросс || row.cross || row["Аналоги"] || row["Cross"] || "")
+                        // === ПАРСИНГ ХАРАКТЕРИСТИК ===
+                        let specifications: Record<string, any> = {};
+
+                        const specsRaw = String(row.Характеристики || row.Спецификации || row.specifications || "")
                             .trim();
+
+                        if (specsRaw) {
+                            // Поддерживаем формат: Ключ1: Значение1; Ключ2: Значение2
+                            const pairs = specsRaw.split(/[,;]/);
+                            pairs.forEach(pair => {
+                                const [key, value] = pair.split(":").map(s => s.trim());
+                                if (key && value !== undefined) {
+                                    specifications[key] = value;
+                                }
+                            });
+                        }
 
                         const product: ImportProduct = {
                             name: String(row.Название || row.name || row["Наименование"] || "").trim(),
                             oem,
                             brand: String(row.Бренд || row.brand || "").trim(),
-                            price: Number(row.Цена || row.price || row["Цена"] || 0),
+                            price: Number(row.Цена || row.price || 0),
                             stock: Number(row.Остаток || row.stock || row["Количество"] || 0),
                             category: String(row.Категория || row.category || "Разное").trim(),
+                            description: String(row.Описание || row.description || "").trim() || undefined,
+
+                            specifications: Object.keys(specifications).length > 0 ? specifications : undefined,
+
                             applicability: String(row.Применяемость || row.applicability || "")
                                 .split(/[;,|]/)
                                 .map(s => s.trim())
                                 .filter(Boolean),
-                            crossNumbers: crossStr
+
+                            crossNumbers: String(row.Кросс || row.cross || row["Аналоги"] || "")
                                 .split(/[;,|]/)
                                 .map(s => s.trim().toUpperCase())
                                 .filter(s => s && s !== oem)
                                 .join(';'),
+
                             images: [],
-                            description: row.Описание || row.description || undefined,
                         };
 
                         ProductSchema.parse(product);

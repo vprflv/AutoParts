@@ -23,6 +23,15 @@ export default function ImportPreviewStep({
                                           }: ImportPreviewStepProps) {
     const { toAdd, toUpdate, errors, stats } = previewData;
 
+    // Вспомогательная функция для красивого отображения характеристик
+    const formatSpecifications = (specs?: Record<string, any>) => {
+        if (!specs || Object.keys(specs).length === 0) return "—";
+        return Object.entries(specs)
+            .slice(0, 3)
+            .map(([key, value]) => `${key}: ${value}`)
+            .join(" | ");
+    };
+
     return (
         <div className="p-8 space-y-8 overflow-auto max-h-[calc(95vh-180px)]">
             {/* Статистика */}
@@ -81,23 +90,31 @@ export default function ImportPreviewStep({
                     </h3>
                     <div className="overflow-x-auto rounded-2xl border border-zinc-800">
                         <table className="w-full text-sm">
-                            <thead className="bg-zinc-900">
+                            <thead className="bg-zinc-900 sticky top-0">
                             <tr>
                                 <th className="text-left p-4">OEM</th>
                                 <th className="text-left p-4">Название</th>
                                 <th className="text-left p-4">Бренд</th>
                                 <th className="text-right p-4">Цена</th>
                                 <th className="text-right p-4">Остаток</th>
+                                <th className="text-left p-4 w-52">Описание</th>
+                                <th className="text-left p-4 w-64">Характеристики</th>
                             </tr>
                             </thead>
                             <tbody className="divide-y divide-zinc-800">
-                            {toAdd.slice(0, 10).map((product, i) => (
+                            {toAdd.slice(0, 8).map((product, i) => (
                                 <tr key={i} className="hover:bg-zinc-900/50">
                                     <td className="p-4 font-mono text-emerald-400">{product.oem}</td>
                                     <td className="p-4">{product.name}</td>
                                     <td className="p-4">{product.brand}</td>
                                     <td className="p-4 text-right font-medium">{product.price.toLocaleString()} ₽</td>
                                     <td className="p-4 text-right text-emerald-400">{product.stock}</td>
+                                    <td className="p-4 text-zinc-300 text-sm line-clamp-2">
+                                        {product.description || "—"}
+                                    </td>
+                                    <td className="p-4 text-zinc-400 text-sm whitespace-pre-line leading-relaxed font-mono text-xs">
+                                        {formatSpecifications(product.specifications)}
+                                    </td>
                                 </tr>
                             ))}
                             </tbody>
@@ -115,12 +132,13 @@ export default function ImportPreviewStep({
                     </h3>
                     <div className="overflow-x-auto rounded-2xl border border-zinc-800">
                         <table className="w-full text-sm">
-                            <thead className="bg-zinc-900">
+                            <thead className="bg-zinc-900 sticky top-0">
                             <tr>
                                 <th className="text-left p-4">OEM</th>
                                 <th className="text-left p-4">Название</th>
-                                <th className="text-right p-4">Новая цена</th>
-                                <th className="text-right p-4">Новый остаток</th>
+                                <th className="text-right p-4">Цена</th>
+                                <th className="text-right p-4">Остаток</th>
+                                <th className="text-left p-4 w-64">Характеристики</th>
                             </tr>
                             </thead>
                             <tbody className="divide-y divide-zinc-800">
@@ -130,6 +148,9 @@ export default function ImportPreviewStep({
                                     <td className="p-4">{product.name}</td>
                                     <td className="p-4 text-right font-medium">{product.price.toLocaleString()} ₽</td>
                                     <td className="p-4 text-right text-amber-400">{product.stock}</td>
+                                    <td className="p-4 text-zinc-400 text-sm whitespace-pre-line leading-relaxed font-mono text-xs">
+                                        {formatSpecifications(product.specifications)}
+                                    </td>
                                 </tr>
                             ))}
                             </tbody>
@@ -169,4 +190,20 @@ export default function ImportPreviewStep({
             </div>
         </div>
     );
+}
+
+// Вспомогательная функция
+function formatSpecifications(specs?: Record<string, any>): string {
+    if (!specs || Object.keys(specs).length === 0) return "—";
+
+    return Object.entries(specs)
+        .map(([key, value]) => {
+            const keyStr = String(key).trim();
+            const valueStr = String(value).trim();
+
+            // Делаем красивую строку с точками
+            const dots = ".".repeat(Math.max(2, 35 - keyStr.length));
+            return `${keyStr} ${dots} ${valueStr}`;
+        })
+        .join("\n");
 }
