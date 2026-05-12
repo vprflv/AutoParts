@@ -1,13 +1,13 @@
 "use client";
 
-import { X, ChevronDown, ChevronUp } from "lucide-react";
+import { X, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "react-hot-toast";
 
-import { useOrderForm } from "@/src/features/order/hook/useOrderForm";
-import { useProfileStore } from "@/src/store/useProfileStore";
+import { createOrder } from "@/features/actions/orderActions";
 import { useCartStore } from "@/src/store/useCartStore";
+import { useAuthStore } from "@/src/store/useAuthStore";
 
 interface OrderModalProps {
     isOpen: boolean;
@@ -23,25 +23,30 @@ export default function OrderModal({
                                        onSuccess,
                                    }: OrderModalProps) {
     const router = useRouter();
+    const { user } = useAuthStore();
+    const { items, clearCart } = useCartStore();
 
-    const { createOrder } = useProfileStore();
-    const { clearCart } = useCartStore();
-
-    const [agreePolicy, setAgreePolicy] = useState(false);
+    const [deliveryType, setDeliveryType] = useState<"delivery" | "pickup">("delivery");
+    const [showOrderItems, setShowOrderItems] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [agreePolicy, setAgreePolicy] = useState(false);
 
-    const {
-        formData,
-        availableItems,
-        deliveryType,
-        setDeliveryType,
-        showOrderItems,
-        setShowOrderItems,
-        totalPrice,
-        handleChange,
-    } = useOrderForm();
+    const [formData, setFormData] = useState({
+        name: user?.name || "",
+        phone: "",
+        email: user?.email || "",
+        address: "",
+        comment: "",
+    });
 
-    const handleFormSubmit = async (e: React.FormEvent) => {
+    const totalPrice = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         if (!agreePolicy) {
@@ -49,43 +54,43 @@ export default function OrderModal({
             return;
         }
 
-        if (availableItems.length === 0) {
+        if (!formData.name || !formData.phone || (deliveryType === "delivery" && !formData.address)) {
+            toast.error("Заполните обязательные поля");
+            return;
+        }
+
+        if (items.length === 0) {
             toast.error("Корзина пуста");
             return;
         }
 
         setIsSubmitting(true);
 
-        const success = await createOrder({
-            total: totalPrice,
-            items: availableItems.map((item) => ({
-                name: item.name,
-                oem: item.oem,
-                qty: item.quantity,
-                price: item.price,
-                image: item.image || "",
-            })),
-            delivery_address: formData.address || "Самовывоз",
-            comment: formData.comment,
-            guest_name: formData.name,
-            guest_email: formData.email,
-            guest_phone: formData.phone,
-        });
+        try {
+            const result = await createOrder({
+                customerName: formData.name,
+                customerPhone: formData.phone,
+                customerEmail: formData.email,
+                deliveryAddress: deliveryType === "delivery" ? formData.address : "Самовывоз",
+                comment: formData.comment,
+                cartItems: items,                    // ← Важно! Передаём товары явно
+            });
 
-        setIsSubmitting(false);
+            if (result.success) {
+                clearCart();
+                toast.success("Заказ успешно оформлен! Спасибо за покупку!");
 
-        if (success) {
-            clearCart();
-            toast.success("Заказ успешно оформлен! Спасибо за покупку!");
+                onSuccess?.();
+                onClose();
 
-            onClose();
-            onSuccess?.();
-
-            if (redirectAfterSuccess) {
-                setTimeout(() => {
-                    router.push("/profile?tab=orders");
-                }, 700);
+                if (redirectAfterSuccess) {
+                    setTimeout(() => router.push("/profile?tab=orders"), 800);
+                }
             }
+        } catch (error: any) {
+            toast.error(error.message || "Не удалось оформить заказ");
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -98,10 +103,7 @@ export default function OrderModal({
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-5 border-b border-zinc-800 bg-zinc-950 flex-shrink-0">
                     <h2 className="text-2xl text-cyan-300 font-semibold tracking-tight">Оформление заказа</h2>
-                    <button
-                        onClick={onClose}
-                        className="text-zinc-400 hover:text-white p-3 -mr-2 transition-all hover:scale-110"
-                    >
+                    <button onClick={onClose} className="text-zinc-400 hover:text-white p-3 -mr-2">
                         <X size={28} />
                     </button>
                 </div>
@@ -111,9 +113,7 @@ export default function OrderModal({
                     <button
                         onClick={() => setDeliveryType("delivery")}
                         className={`flex-1 py-4 text-center transition-all ${
-                            deliveryType === "delivery"
-                                ? "border-b-2 border-cyan-400 text-white"
-                                : "text-zinc-400 hover:text-zinc-200"
+                            deliveryType === "delivery" ? "border-b-2 border-cyan-400 text-white" : "text-zinc-400 hover:text-zinc-200"
                         }`}
                     >
                         🚚 Доставка
@@ -121,144 +121,144 @@ export default function OrderModal({
                     <button
                         onClick={() => setDeliveryType("pickup")}
                         className={`flex-1 py-4 text-center transition-all ${
-                            deliveryType === "pickup"
-                                ? "border-b-2 border-cyan-400 text-white"
-                                : "text-zinc-400 hover:text-zinc-200"
+                            deliveryType === "pickup" ? "border-b-2 border-cyan-400 text-white" : "text-zinc-400 hover:text-zinc-200"
                         }`}
                     >
                         🏪 Самовывоз
                     </button>
                 </div>
 
-                {/* Контент */}
-                <div className="flex-1 overflow-y-auto custom-scroll-purple p-6 space-y-6">
-                    <form onSubmit={handleFormSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto custom-scroll-purple p-6 space-y-6">
+                    {/* Имя */}
+                    <div>
+                        <label className="block text-sm text-zinc-400 mb-1.5">Имя и фамилия *</label>
+                        <input
+                            type="text"
+                            name="name"
+                            value={formData.name}
+                            onChange={handleChange}
+                            required
+                            className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 focus:border-cyan-400 outline-none"
+                            placeholder="Иван Иванов"
+                        />
+                    </div>
 
+                    {/* Телефон + Email */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm text-zinc-400 mb-1.5">Имя и фамилия *</label>
+                            <label className="block text-sm text-zinc-400 mb-1.5">Телефон *</label>
                             <input
-                                type="text"
-                                name="name"
-                                value={formData.name}
+                                type="tel"
+                                name="phone"
+                                value={formData.phone}
                                 onChange={handleChange}
                                 required
-                                className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 text-base focus:outline-none focus:border-cyan-400"
-                                placeholder="Иван Иванов"
+                                className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 focus:border-cyan-400 outline-none"
+                                placeholder="+7 (999) 123-45-67"
                             />
                         </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm text-zinc-400 mb-1.5">Телефон *</label>
-                                <input
-                                    type="tel"
-                                    name="phone"
-                                    value={formData.phone}
-                                    onChange={handleChange}
-                                    required
-                                    className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 text-base focus:outline-none focus:border-cyan-400"
-                                    placeholder="+7 (999) 123-45-67"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm text-zinc-400 mb-1.5">Email</label>
-                                <input
-                                    type="email"
-                                    name="email"
-                                    value={formData.email}
-                                    onChange={handleChange}
-                                    className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 text-base focus:outline-none focus:border-cyan-400"
-                                    placeholder="you@example.com"
-                                />
-                            </div>
+                        <div>
+                            <label className="block text-sm text-zinc-400 mb-1.5">Email</label>
+                            <input
+                                type="email"
+                                name="email"
+                                value={formData.email}
+                                onChange={handleChange}
+                                className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 focus:border-cyan-400 outline-none"
+                                placeholder="you@example.com"
+                            />
                         </div>
+                    </div>
 
-                        {deliveryType === "delivery" && (
-                            <div>
-                                <label className="block text-sm text-zinc-400 mb-1.5">Адрес доставки *</label>
-                                <input
-                                    type="text"
-                                    name="address"
-                                    value={formData.address}
-                                    onChange={handleChange}
-                                    required
-                                    className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 text-base focus:outline-none focus:border-cyan-400"
-                                    placeholder="г. Москва, ул. Ленина, д. 10, кв. 55"
-                                />
+                    {/* Адрес доставки */}
+                    {deliveryType === "delivery" && (
+                        <div>
+                            <label className="block text-sm text-zinc-400 mb-1.5">Адрес доставки *</label>
+                            <input
+                                type="text"
+                                name="address"
+                                value={formData.address}
+                                onChange={handleChange}
+                                required
+                                className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 focus:border-cyan-400 outline-none"
+                                placeholder="г. Москва, ул. Ленина, д. 10, кв. 55"
+                            />
+                        </div>
+                    )}
+
+                    {/* Состав заказа */}
+                    <div>
+                        <button
+                            type="button"
+                            onClick={() => setShowOrderItems(!showOrderItems)}
+                            className="w-full flex items-center justify-between bg-zinc-800 hover:bg-zinc-700 px-5 py-4 rounded-2xl transition-colors"
+                        >
+                            <span>Состав заказа ({items.length} товара)</span>
+                            {showOrderItems ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                        </button>
+
+                        {showOrderItems && (
+                            <div className="mt-3 bg-zinc-800 rounded-2xl p-4 space-y-3 max-h-60 overflow-y-auto text-sm">
+                                {items.map((item) => (
+                                    <div key={item.id} className="flex justify-between text-zinc-300">
+                                        <span>{item.name}</span>
+                                        <span>{item.price.toLocaleString("ru-RU")} ₽ × {item.quantity}</span>
+                                    </div>
+                                ))}
                             </div>
                         )}
+                    </div>
 
-                        {/* Состав заказа */}
-                        <div>
-                            <button
-                                type="button"
-                                onClick={() => setShowOrderItems(!showOrderItems)}
-                                className="w-full flex items-center justify-between bg-zinc-800 hover:bg-zinc-700 px-5 py-4 rounded-2xl transition-colors"
-                            >
-                                <span>Состав заказа ({availableItems.length} товара)</span>
-                                {showOrderItems ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-                            </button>
+                    {/* Комментарий */}
+                    <div>
+                        <label className="block text-sm text-zinc-400 mb-1.5">Комментарий</label>
+                        <textarea
+                            name="comment"
+                            value={formData.comment}
+                            onChange={handleChange}
+                            rows={3}
+                            className="w-full bg-zinc-800 border border-zinc-700 rounded-3xl px-5 py-4 focus:border-cyan-400 outline-none resize-y"
+                            placeholder="Особые пожелания..."
+                        />
+                    </div>
 
-                            {showOrderItems && (
-                                <div className="mt-3 bg-zinc-800 rounded-2xl p-4 space-y-3 max-h-60 overflow-y-auto text-sm custom-scroll-purple">
-                                    {availableItems.map((item) => (
-                                        <div key={item.id} className="flex justify-between">
-                                            <span className="text-zinc-300">{item.name}</span>
-                                            <span className="font-medium">
-                                                {item.price.toLocaleString("ru-RU")} ₽ × {item.quantity}
-                                            </span>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
+                    {/* Итого */}
+                    <div className="bg-zinc-800 rounded-3xl p-6">
+                        <div className="flex justify-between items-center text-xl font-semibold">
+                            <span>Итого к оплате:</span>
+                            <span>{totalPrice.toLocaleString("ru-RU")} ₽</span>
                         </div>
+                    </div>
 
-                        {/* Комментарий */}
-                        <div>
-                            <label className="block text-sm text-zinc-400 mb-1.5">Комментарий</label>
-                            <textarea
-                                name="comment"
-                                value={formData.comment}
-                                onChange={handleChange}
-                                rows={3}
-                                className="w-full bg-zinc-800 border border-zinc-700 rounded-3xl px-5 py-4 text-base focus:outline-none focus:border-cyan-400 resize-y"
-                                placeholder="Особые пожелания..."
-                            />
-                        </div>
+                    {/* Политика */}
+                    <div className="flex items-start gap-3">
+                        <input
+                            type="checkbox"
+                            id="policy"
+                            checked={agreePolicy}
+                            onChange={(e) => setAgreePolicy(e.target.checked)}
+                            className="mt-1.5 accent-cyan-500"
+                        />
+                        <label htmlFor="policy" className="text-sm text-zinc-400 cursor-pointer">
+                            Я согласен с условиями покупки и обработкой персональных данных
+                        </label>
+                    </div>
 
-                        {/* Итого */}
-                        <div className="bg-zinc-800 rounded-3xl p-6">
-                            <div className="flex justify-between items-center text-xl font-semibold">
-                                <span>Итого к оплате:</span>
-                                <span className="text-white">{totalPrice.toLocaleString("ru-RU")} ₽</span>
-                            </div>
-                        </div>
-
-                        {/* Согласие */}
-                        <div className="flex items-start gap-3">
-                            <input
-                                type="checkbox"
-                                id="order-policy"
-                                checked={agreePolicy}
-                                onChange={(e) => setAgreePolicy(e.target.checked)}
-                                className="mt-1.5 w-5 h-5 accent-cyan-500 bg-zinc-800 border-zinc-700 rounded focus:ring-cyan-400"
-                            />
-                            <label htmlFor="order-policy" className="text-sm text-zinc-400 leading-relaxed cursor-pointer">
-                                Я согласен с{" "}
-                                <span className="text-cyan-400 hover:underline">условиями покупки</span> и даю согласие на обработку персональных данных
-                            </label>
-                        </div>
-
-                        {/* Кнопка подтверждения */}
-                        <button
-                            type="submit"
-                            disabled={!agreePolicy || isSubmitting || availableItems.length === 0}
-                            className="btn-neon disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                            {isSubmitting ? "Оформляем заказ..." : "Подтвердить заказ"}
-                        </button>
-                    </form>
-                </div>
+                    <button
+                        type="submit"
+                        disabled={isSubmitting || !agreePolicy || items.length === 0}
+                        className="btn-neon w-full py-4 text-lg disabled:opacity-50 flex items-center justify-center gap-3"
+                    >
+                        {isSubmitting ? (
+                            <>
+                                <Loader2 className="animate-spin" size={24} />
+                                Оформляем...
+                            </>
+                        ) : (
+                            "Подтвердить заказ"
+                        )}
+                    </button>
+                </form>
             </div>
         </div>
     );
