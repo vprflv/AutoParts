@@ -9,12 +9,10 @@ const passwordSchema = z.string()
     .regex(/[A-Z]/, "Пароль должен содержать хотя бы одну заглавную букву")
     .regex(/[a-z]/, "Пароль должен содержать хотя бы одну строчную букву")
     .regex(/[0-9]/, "Пароль должен содержать хотя бы одну цифру")
-    .regex(/[^A-Za-z0-9]/, "Пароль должен содержать хотя бы один специальный символ (!@#$%^&*)")
-    .refine((val) => !val.toLowerCase().includes("password"), "Пароль не может содержать слово 'password'")
-    .refine((val) => !/(.)\1{2,}/.test(val), "Пароль не должен содержать три одинаковых символа подряд");
+    .regex(/[^A-Za-z0-9]/, "Пароль должен содержать хотя бы один специальный символ");
 
 const registerSchema = z.object({
-    name: z.string().min(1, "Имя обязательно").max(50, "Имя слишком длинное").trim(),
+    name: z.string().min(2, "Имя должно содержать минимум 2 символа").max(50, "Имя слишком длинное").trim(),
     email: z.string().email("Введите корректный email"),
     password: passwordSchema,
 });
@@ -31,7 +29,9 @@ export function useRegisterForm() {
 
     const { register, clearError, error: storeError } = useAuthStore();
 
+    // Расчёт силы пароля
     const calculateStrength = (pass: string): number => {
+        if (!pass) return 0;
         let strength = 0;
         if (pass.length >= 8) strength++;
         if (/[A-Z]/.test(pass)) strength++;
@@ -45,30 +45,23 @@ export function useRegisterForm() {
         setPasswordStrength(calculateStrength(password));
     }, [password]);
 
-    // Обработка ошибок от Supabase
+    // Обработка ошибок из store
     useEffect(() => {
         if (storeError) {
             let message = storeError;
-
-            if (storeError.includes("User already registered") ||
-                storeError.includes("already exists")) {
+            if (storeError.includes("already") || storeError.includes("User already registered")) {
                 message = "Пользователь с таким email уже существует";
             }
-
             setErrors(prev => ({ ...prev, email: message }));
         }
     }, [storeError]);
 
-    // Валидация отдельного поля (для onBlur)
     const validateField = (field: "name" | "email" | "password") => {
         try {
-            if (field === "name") {
-                registerSchema.shape.name.parse(name);
-            } else if (field === "email") {
-                z.string().email("Введите корректный email").parse(email);
-            } else if (field === "password") {
-                passwordSchema.parse(password);
-            }
+            if (field === "name") registerSchema.shape.name.parse(name.trim());
+            if (field === "email") registerSchema.shape.email.parse(email);
+            if (field === "password") registerSchema.shape.password.parse(password);
+
             setErrors(prev => ({ ...prev, [field]: "" }));
         } catch (err: any) {
             setErrors(prev => ({
@@ -79,17 +72,16 @@ export function useRegisterForm() {
     };
 
     const validateForm = (): boolean => {
-        const newErrors = { name: "", email: "", password: "" };
-
         try {
             registerSchema.parse({
                 name: name.trim(),
                 email,
                 password
             });
-            setErrors(newErrors);
+            setErrors({ name: "", email: "", password: "" });
             return true;
         } catch (err: any) {
+            const newErrors = { name: "", email: "", password: "" };
             if (err?.issues) {
                 err.issues.forEach((issue: any) => {
                     const field = issue.path[0] as keyof typeof newErrors;
@@ -106,7 +98,7 @@ export function useRegisterForm() {
         setErrors({ name: "", email: "", password: "" });
         clearError();
 
-        if (!validateForm()) {
+        if (!validateForm() || !agreePolicy) {
             setIsLoading(false);
             return false;
         }
@@ -130,7 +122,7 @@ export function useRegisterForm() {
         errors,
         isLoading,
         passwordStrength,
-        validateField,        // ← Добавили
+        validateField,
         handleSubmit,
     };
 }

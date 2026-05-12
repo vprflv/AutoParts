@@ -1,3 +1,4 @@
+// src/features/auth/hooks/useLoginForm.ts
 import { useState, useEffect } from "react";
 import { z } from "zod";
 import { useAuthStore } from "@/src/store/useAuthStore";
@@ -10,7 +11,6 @@ const loginSchema = z.object({
 export function useLoginForm() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [rememberMe, setRememberMe] = useState(false);
 
     const [errors, setErrors] = useState({ email: "", password: "" });
     const [isLoading, setIsLoading] = useState(false);
@@ -24,9 +24,11 @@ export function useLoginForm() {
             let message = "Неправильный email или пароль";
 
             if (storeError.includes("Email not confirmed")) {
-                message = "Email не подтверждён. Проверьте почту";
+                message = "Email не подтверждён. Проверьте почту.";
             } else if (storeError.includes("too many requests")) {
-                message = "Слишком много попыток. Подождите немного";
+                message = "Слишком много попыток. Подождите немного.";
+            } else if (storeError.includes("Invalid login credentials")) {
+                message = "Неверный email или пароль.";
             }
 
             setGeneralError(message);
@@ -78,13 +80,12 @@ export function useLoginForm() {
     return {
         email, setEmail,
         password, setPassword,
-        rememberMe, setRememberMe,
         errors,
         generalError,
         isLoading,
         handleSubmit,
         validateField: (field: "email" | "password") => {
-            // можно добавить при необходимости
+            // При необходимости можно добавить
         },
     };
 }

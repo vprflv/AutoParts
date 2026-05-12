@@ -4,10 +4,11 @@
 import { Package, Users, MessageSquare, TrendingUp } from "lucide-react";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import { products as allProducts } from "@/src/lib/mockData";
+import {useAdminProducts} from "@/features/admin/hooks/useAdminProducts";
 
 export default function AdminDashboard() {
     const { user } = useAuthStore();
-
+    const { products } = useAdminProducts();
     // Подсчёт статистики
     const totalProducts = allProducts.length;
     const inStockProducts = allProducts.filter(p => p.stock > 0).length;
@@ -121,7 +122,7 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {allProducts.slice(0, 8).map((product) => (
+                    {products.slice(0, 8).map((product) => (
                         <div key={product.id} className="bg-zinc-900 border border-zinc-800 rounded-3xl overflow-hidden">
                             <div className="relative h-48 bg-zinc-950">
                                 <img

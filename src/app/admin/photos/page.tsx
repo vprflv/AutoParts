@@ -4,6 +4,9 @@ import { useState, useEffect, useMemo } from "react";
 import { createClient } from "@/src/lib/supabase/client";
 import { Trash2, Search, X } from "lucide-react";
 import { toast } from "react-hot-toast";
+import {prisma} from "@/lib/prisma";
+import {deletePhotoAction} from "@/features/admin/actions/adminProductActions";
+
 
 const supabase = createClient();
 
@@ -35,47 +38,15 @@ export default function AdminPhotosPage() {
 
     // Надёжное удаление: Storage + очистка из всех товаров
     const deletePhoto = async (fileName: string) => {
-        if (!confirm(`Удалить фото "${fileName}"?`)) return;
+        if (!confirm(`Удалить фото "${fileName}" и очистить все ссылки?`)) return;
 
         try {
-            const publicUrl = supabase.storage
-                .from("product-images")
-                .getPublicUrl(fileName).data.publicUrl;
+            const result = await deletePhotoAction(fileName);
 
-            // 1. Удаляем файл из Storage
-            const { error: storageError } = await supabase
-                .storage
-                .from("product-images")
-                .remove([fileName]);
-
-            if (storageError) throw storageError;
-
-            // 2. Находим все товары, где есть это фото
-            const { data: productsWithPhoto } = await supabase
-                .from("products")
-                .select("id, images")
-                .contains("images", [publicUrl]);
-
-            // 3. Очищаем это фото из всех товаров
-            if (productsWithPhoto && productsWithPhoto.length > 0) {
-                for (const prod of productsWithPhoto) {
-                    const newImages = (prod.images || []).filter(
-                        (url: string) => url !== publicUrl
-                    );
-
-                    await supabase
-                        .from("products")
-                        .update({ images: newImages })
-                        .eq("id", prod.id);
-                }
-            }
-
-            toast.success(`Фото "${fileName}" успешно удалено`);
+            toast.success(result.message || `Фото "${fileName}" успешно удалено`);
             loadPhotos(); // обновляем список
-
         } catch (err: any) {
-            console.error(err);
-            toast.error("Ошибка при удалении фото");
+            toast.error(err.message || "Ошибка при удалении");
         }
     };
 

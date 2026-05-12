@@ -2,14 +2,13 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { createClient } from "@/src/lib/supabase/client";
 import { ArrowLeft } from "lucide-react";
 import { ProductGallery } from "@/src/features/parts-detail/components/ProductGallery";
 import ProductActions from "@/src/features/parts-detail/components/ProductActions";
-import { Product } from "@/src/types";
-import { useState } from "react";
 
-const supabase = createClient();
+import {useState} from "react";
+import {getProduct} from "@/features/actions/productActions";
+
 
 export default function ProductDetailPage() {
     const params = useParams();
@@ -18,18 +17,9 @@ export default function ProductDetailPage() {
 
     const [activeTab, setActiveTab] = useState<"description" | "applicability">("description");
 
-    const { data: product, isLoading } = useQuery({
+    const { data: product, isLoading, error } = useQuery({
         queryKey: ["product", productId],
-        queryFn: async (): Promise<Product> => {
-            const { data, error } = await supabase
-                .from("products")
-                .select("*")
-                .eq("id", productId)
-                .single();
-
-            if (error || !data) throw new Error("Товар не найден");
-            return data;
-        },
+        queryFn: () => getProduct(productId),
         enabled: !!productId,
     });
 
@@ -41,8 +31,20 @@ export default function ProductDetailPage() {
         );
     }
 
-    if (!product) {
-        return <div className="text-center py-20 text-zinc-400">Товар не найден</div>;
+    if (error || !product) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-zinc-950">
+                <div className="text-center">
+                    <p className="text-red-400 text-xl">Товар не найден</p>
+                    <button
+                        onClick={() => router.back()}
+                        className="mt-4 text-cyan-400 hover:underline"
+                    >
+                        ← Вернуться назад
+                    </button>
+                </div>
+            </div>
+        );
     }
 
     return (
@@ -77,7 +79,7 @@ export default function ProductDetailPage() {
                             </p>
                         </div>
 
-                        {/* Характеристики с точками */}
+                        {/* Характеристики */}
                         {product.specifications && Object.keys(product.specifications).length > 0 && (
                             <div>
                                 <h3 className="text-sm uppercase text-zinc-500 mb-4">Характеристики</h3>
@@ -115,7 +117,7 @@ export default function ProductDetailPage() {
                     </div>
                 </div>
 
-                {/* ТАБЫ ВНИЗУ СТРАНИЦЫ */}
+                {/* ТАБЫ */}
                 <div className="max-w-4xl mx-auto mt-20">
                     <div className="flex border-b border-zinc-800 mb-8">
                         <button
@@ -140,14 +142,13 @@ export default function ProductDetailPage() {
                         </button>
                     </div>
 
-                    {/* Контент табов */}
                     {activeTab === "description" && product.description && (
                         <div className="prose prose-invert max-w-none text-zinc-300 leading-relaxed text-[17px]">
                             {product.description}
                         </div>
                     )}
 
-                    {activeTab === "applicability" && product.applicability && product.applicability.length > 0 && (
+                    {activeTab === "applicability" && product.applicability?.length > 0 && (
                         <div className="flex flex-wrap gap-3">
                             {product.applicability.map((item, index) => (
                                 <div

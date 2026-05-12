@@ -5,12 +5,15 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  // schemas = ["public"]   // закомментировано — не нужно
 }
 
+// =============================================
+
 model Feedback {
-  id          String   @id @default(cuid())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id          String         @id @default(cuid())
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
 
   name        String?
   phone       String
@@ -26,25 +29,74 @@ model Feedback {
 }
 
 model Product {
-  id             String   @id @default(cuid())
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id             String      @id @default(cuid())
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
 
   name           String
-  oem            String   @unique
+  oem            String      @unique
   price          Float
   category       String?
   brand          String
-  stock          Int      @default(0)
+  stock          Int         @default(0)
 
-  images         String[] @default([])
-  applicability  String[] @default([])
-  crossNumbers   String[] @default([])
+  images         String[]    @default([])
+  applicability  String[]    @default([])
+  crossNumbers   String[]    @default([])
 
   description    String?
-  specifications Json?    // для хранения характеристик
+  specifications Json?
+
+  orderItems     OrderItem[]
 
   @@map("products")
+
+  @@index([brand])
+  @@index([oem])
+  @@index([crossNumbers], type: Gin)
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  userId          String
+  status          OrderStatus @default(PENDING)
+
+  totalAmount     Decimal     @db.Decimal(10, 2)
+
+  customerName    String
+  customerPhone   String
+  customerEmail   String?
+  deliveryAddress String
+  comment         String?
+
+  items           OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id          String   @id @default(cuid())
+  orderId     String
+  productId   String
+  quantity    Int
+  price       Decimal  @db.Decimal(10, 2)
+
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product  @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
 }
 
 enum FeedbackStatus {

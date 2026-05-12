@@ -3,9 +3,10 @@
 import {useEffect, useState} from "react";
 import { Eye, EyeOff } from "lucide-react";
 import SocialLoginButtons from "@/src/features/auth/components/SocialLoginButtons";
-import { useAuthStore } from "@/store/useAuthStore";
+
 import TelegramModal from "@/features/auth/components/telegram/TelegramModal";
 import {useLoginForm} from "@/features/auth/hooks/useLoginForm";
+
 
 interface LoginFormProps {
     onClose: () => void;
@@ -29,7 +30,7 @@ export default function LoginForm({ onClose, setTab }: LoginFormProps) {
     const [showPassword, setShowPassword] = useState(false);
     const [isTelegramWidgetOpen, setIsTelegramWidgetOpen] = useState(false);
 
-    // Загрузка сохранённого email
+
     useEffect(() => {
         const savedEmail = localStorage.getItem("rememberedEmail");
         if (savedEmail) {
@@ -55,13 +56,6 @@ export default function LoginForm({ onClose, setTab }: LoginFormProps) {
         }
     };
 
-    const handleTelegramAuth = async (telegramUser: any) => {
-        const success = await useAuthStore.getState().loginWithTelegram(telegramUser);
-        if (success) {
-            setIsTelegramWidgetOpen(false);
-            onClose();
-        }
-    };
 
     return (
         <div className="space-y-6">

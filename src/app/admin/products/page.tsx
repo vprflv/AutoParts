@@ -9,6 +9,7 @@ import ImportProductsModal from "@/src/features/admin/components/import/ImportPr
 import {Product} from "@/src/types";
 import EditProductModal from "@/src/features/admin/components/EditProductModal";
 import BulkPhotoUploadModal from "@/src/features/admin/components/import/BulkPhotoUploadModal";
+import {cleanupBrokenImages} from "@/features/actions/productActions";
 
 
 export default function AdminProducts() {
@@ -35,11 +36,13 @@ export default function AdminProducts() {
     };
 
     if (isLoading) {
+
         return <div className="text-center py-20 text-zinc-400">Загрузка товаров...</div>;
     }
 
     return (
         <div>
+
             <div className="flex items-center justify-between mb-8">
                 <div>
                     <h1 className="text-3xl font-bold">Управление товарами</h1>

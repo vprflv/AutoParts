@@ -14,11 +14,25 @@ export default function ImageThumbnails({
                                             selectedIndex,
                                             onSelect
                                         }: ImageThumbnailsProps) {
-    if (images.length <= 1) return null;
+
+    const validImages = images.filter(img =>
+        img &&
+        typeof img === "string" &&
+        img.trim() !== "" &&
+        !img.includes("undefined") &&
+        !img.includes("null")
+    );
+
+
+
+
+    if (validImages.length <= 1) return null;
+
+
 
     return (
         <div className="flex gap-4 justify-center overflow-x-auto pb-4 scrollbar-hide pt-2 snap-x">
-            {images.map((img, index) => (
+            {validImages.map((img, index) => (
                 <button
                     key={index}
                     onClick={() => onSelect(index)}

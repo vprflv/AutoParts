@@ -3,59 +3,52 @@
 import { prisma } from "@/src/lib/prisma";
 
 export async function importProducts(products: any[]) {
-    try {
-        let added = 0;
-        let updated = 0;
+    const startTime = Date.now();
 
-        // Используем upsert — это оптимально для импорта
-        for (const p of products) {
+    try {
+        // Подготавливаем данные один раз
+        const upsertData = products.map(p => {
             const crossNumbersArray = typeof p.crossNumbers === 'string'
                 ? p.crossNumbers.split(';').map((s: string) => s.trim()).filter(Boolean)
-                : p.crossNumbers || [];
+                : Array.isArray(p.crossNumbers) ? p.crossNumbers : [];
 
-            const result = await prisma.product.upsert({
-                where: { oem: p.oem },
-                update: {
-                    name: p.name,
-                    price: p.price,
-                    brand: p.brand,
-                    category: p.category || null,
-                    stock: p.stock || 0,
-                    images: p.images || [],
-                    applicability: p.applicability || [],
-                    crossNumbers: crossNumbersArray,
-                    description: p.description || null,
-                    specifications: p.specifications || null,
-                },
-                create: {
-                    name: p.name,
-                    oem: p.oem,
-                    price: p.price,
-                    brand: p.brand,
-                    category: p.category || null,
-                    stock: p.stock || 0,
-                    images: p.images || [],
-                    applicability: p.applicability || [],
-                    crossNumbers: crossNumbersArray,
-                    description: p.description || null,
-                    specifications: p.specifications || null,
-                },
-            });
+            return {
+                oem: p.oem?.toString().trim(),
+                name: p.name?.toString().trim(),
+                brand: p.brand?.toString().trim(),
+                price: parseFloat(p.price) || 0,
+                stock: parseInt(p.stock) || 0,
+                category: p.category?.toString().trim() || null,
+                description: p.description?.toString().trim() || null,
+                images: Array.isArray(p.images) ? p.images : [],
+                applicability: Array.isArray(p.applicability) ? p.applicability : [],
+                crossNumbers: crossNumbersArray,
+                specifications: p.specifications
+                    ? (typeof p.specifications === 'string'
+                        ? JSON.parse(p.specifications)
+                        : p.specifications)
+                    : null,
+            };
+        });
 
-            // Считаем, было ли обновление или создание
-            if (result.createdAt.getTime() === result.updatedAt.getTime()) {
-                added++;
-            } else {
-                updated++;
-            }
-        }
+        // Один большой запрос вместо 100 мелких
+        const result = await prisma.product.createMany({
+            data: upsertData,
+            skipDuplicates: true,   // пропускает товары с уже существующим OEM
+        });
+
+        const duration = Date.now() - startTime;
+
+        console.log(`✅ Импорт завершён за ${duration}мс | Добавлено: ${result.count} товаров`);
 
         return {
             success: true,
-            added,
-            updated,
-            total: products.length
+            added: result.count,
+            updated: 0,                    // createMany не обновляет, только создаёт
+            total: products.length,
+            duration
         };
+
     } catch (error: any) {
         console.error("Import error:", error);
         return {
