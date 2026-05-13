@@ -24,25 +24,32 @@ export async function POST(request: NextRequest) {
             process.env.SUPABASE_SERVICE_ROLE_KEY!
         );
 
-        // Получаем профиль пользователя
+        // === ИЗМЕНЕНО: ищем по userid, а не по id ===
         const { data: profile, error } = await admin
             .from('profiles')
             .select('*')
-            .eq('id', decoded.userId)
+            .eq('userid', decoded.userId)   // ← Вот главное исправление
             .single();
 
         if (error || !profile) {
+            console.error(`❌ Профиль не найден для userid: ${decoded.userId}`);
             return NextResponse.json({
                 success: false,
                 error: "Профиль не найден"
             }, { status: 404 });
         }
 
-        console.log(`✅ Токен успешно проверен для пользователя ${profile.id}`);
+        console.log(`✅ Токен успешно проверен для пользователя ${profile.name || profile.userid}`);
 
         return NextResponse.json({
             success: true,
-            profile
+            profile: {
+                id: profile.userid,           // возвращаем userid как id для фронта
+                name: profile.name,
+                username: profile.username,
+                avatar_url: profile.avatar_url,
+                telegram_id: profile.telegram_id,
+            }
         });
 
     } catch (error: any) {
@@ -51,7 +58,7 @@ export async function POST(request: NextRequest) {
         if (error.name === 'TokenExpiredError') {
             return NextResponse.json({
                 success: false,
-                error: "Ссылка устарела (5 минут)"
+                error: "Ссылка устарела. Запроси вход заново."
             }, { status: 401 });
         }
 
