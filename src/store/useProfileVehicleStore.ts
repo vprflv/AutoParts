@@ -43,12 +43,13 @@ export const useProfileVehicleStore = create<ProfileVehicleStore>((set, get) => 
 
     addVehicle: async (data) => {
         try {
+            console.log("Zustand → addVehicle вызван");
             await addVehicle(data);
-            await get().loadVehicles();           // обновляем список
+            await get().loadVehicles();
             toast.success("Автомобиль успешно добавлен в гараж!");
             return true;
         } catch (err: any) {
-            console.error(err);
+            console.error("Zustand addVehicle ошибка:", err);
             toast.error(err.message || "Не удалось добавить автомобиль");
             return false;
         }
