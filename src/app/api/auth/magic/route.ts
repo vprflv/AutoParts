@@ -1,71 +1,80 @@
-// app/api/auth/magic/route.ts
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/src/lib/prisma';
-import { cookies } from 'next/headers';
-import { sign } from 'jsonwebtoken';
+// bot.js
+require('dotenv').config();
+const TelegramBot = require('node-telegram-bot-api');
+const fetch = require('node-fetch').default;
 
-const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-change-in-production';
+const token = process.env.BOT_TOKEN;
+const bot = new TelegramBot(token, { polling: true });
 
-export async function POST(request: NextRequest) {
-    try {
-        const { telegramId, name, username, avatarUrl } = await request.json();
+const API_URL = "https://auto-parts-beige.vercel.app/api/auth/magic";
 
-        if (!telegramId) {
-            return NextResponse.json({ success: false, error: "Нет telegramId" }, { status: 400 });
-        }
+console.log("✅ Бот запущен");
+console.log("📡 API_URL:", API_URL);
 
-        // Ищем или создаём пользователя
-        let user = await prisma.user.findUnique({
-            where: { telegramId }
-        });
+bot.onText(/\/start/, async (msg) => {
+    const chatId = msg.chat.id;
+    const user = msg.from;
 
-        if (!user) {
-            user = await prisma.user.create({
-                data: {
-                    telegramId,
-                    name: name || "Telegram User",
-                    username,
-                    avatarUrl,
-                    provider: "telegram"
-                }
-            });
-        }
+    console.log(`📨 /start от ${user.id} (${user.first_name} ${user.last_name || ''})`);
 
-        // Создаём одноразовый токен
-        const token = sign(
-            {
-                userId: user.id,
-                telegramId: user.telegramId
-            },
-            JWT_SECRET,
-            { expiresIn: '15m' }
-        );
-
-        // Сохраняем токен в БД
-        await prisma.magicToken.create({
-            data: {
-                token,
-                telegramId,
-                name: user.name,
-                username: user.username,
-                avatarUrl: user.avatarUrl,
-                expiresAt: new Date(Date.now() + 15 * 60 * 1000)
-            }
-        });
-
-        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-        const magicLink = `${siteUrl}/auth/magic?token=${token}`;
-
-        return NextResponse.json({
-            success: true,
-            magicLink
-        });
-
-    } catch (error: any) {
-        console.error("Magic link error:", error);
-        return NextResponse.json({
-            success: false,
-            error: "Внутренняя ошибка"
-        }, { status: 500 });
+    if (!user?.id) {
+        console.error("❌ Не удалось получить user.id");
+        bot.sendMessage(chatId, "❌ Не удалось получить данные от Telegram.");
+        return;
     }
-}
+
+    bot.sendMessage(chatId, `Привет, ${user.first_name}! Генерируем ссылку...`);
+
+    try {
+        const payload = {
+            telegramId: String(user.id),
+            name: `${user.first_name} ${user.last_name || ''}`.trim(),
+            username: user.username,
+            avatarUrl: user.photo_url,
+        };
+
+        console.log("📤 Отправляем payload:", payload);
+
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        console.log(`⬅️ Ответ от сервера: ${response.status} ${response.statusText}`);
+
+        const text = await response.text();
+        console.log("📄 Ответ (первые 500 символов):", text.substring(0, 500));
+
+        let result;
+        try {
+            result = JSON.parse(text);
+        } catch (e) {
+            throw new Error(`Сервер вернул не JSON: ${text.substring(0, 200)}`);
+        }
+
+        console.log("✅ Распарсенный результат:", result);
+
+        if (result.success && result.magicLink) {
+            await bot.sendMessage(chatId,
+                `✅ Ссылка готова!\n\nНажми кнопку для входа:`,
+                {
+                    reply_markup: {
+                        inline_keyboard: [[{
+                            text: "🚀 Войти в AutoPart",
+                            url: result.magicLink
+                        }]]
+                    }
+                }
+            );
+        } else {
+            await bot.sendMessage(chatId, `❌ Ошибка: ${result.error || 'Неизвестная ошибка'}`);
+        }
+
+    } catch (error) {
+        console.error("💥 Полная ошибка:", error);
+        bot.sendMessage(chatId, "❌ Не удалось связаться с сайтом.\nПопробуй позже.");
+    }
+});
+
+console.log("🤖 Бот готов. Напиши /start");
