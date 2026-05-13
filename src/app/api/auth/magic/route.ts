@@ -1,63 +1,78 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/src/lib/prisma';
+import { sign } from 'jsonwebtoken';
+import { cookies } from 'next/headers';
 import crypto from 'crypto';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-change-in-production';
 
 export async function POST(request: NextRequest) {
     try {
-        const { telegramId, name, username, avatarUrl } = await request.json();
+        const { token } = await request.json();
 
-        if (!telegramId) {
-            return NextResponse.json({ success: false, error: "Нет telegramId" }, { status: 400 });
+        if (!token) {
+            return NextResponse.json({ success: false, error: "Токен не передан" }, { status: 400 });
         }
 
+        const magic = await prisma.magicToken.findUnique({
+            where: { token }
+        });
+
+        if (!magic) {
+            return NextResponse.json({ success: false, error: "Ссылка недействительна" }, { status: 400 });
+        }
+
+        if (magic.used || magic.expiresAt < new Date()) {
+            return NextResponse.json({ success: false, error: "Ссылка уже использована или истекла" }, { status: 400 });
+        }
+
+        // Находим пользователя
         let user = await prisma.user.findUnique({
-            where: { telegramId: String(telegramId) }
+            where: { telegramId: magic.telegramId }
         });
 
         if (!user) {
             user = await prisma.user.create({
                 data: {
-                    telegramId: String(telegramId),
-                    name: name || "Telegram User",
-                    username,
-                    avatarUrl,
+                    telegramId: magic.telegramId,
+                    name: magic.name,
+                    username: magic.username,
+                    avatarUrl: magic.avatarUrl,
                     provider: "telegram"
                 }
             });
         }
 
-        // Генерируем magic token
-        const token = crypto.randomBytes(32).toString('hex');
-        const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
-
-        await prisma.magicToken.create({
-            data: {
-                token,
-                telegramId: String(telegramId),
-                name: user.name,
-                username: user.username,
-                avatarUrl: user.avatarUrl,
-                expiresAt,
-            }
+        // Помечаем токен как использованный
+        await prisma.magicToken.update({
+            where: { id: magic.id },
+            data: { used: true }
         });
 
-        const baseUrl = process.env.NEXT_PUBLIC_SITE_URL;
-        if (!baseUrl) {
-            console.error("❌ NEXT_PUBLIC_SITE_URL не найден в .env / Vercel");
-            return NextResponse.json({ success: false, error: "Ошибка конфигурации сервера" }, { status: 500 });
-        }
+        // Создаём сессию
+        const sessionToken = sign({ userId: user.id }, JWT_SECRET, { expiresIn: '30d' });
 
-        const magicLink = `${baseUrl}/auth/magic?token=${token}`;
-
-        console.log("✅ Magic link сгенерирован:", magicLink);
+        const cookieStore = await cookies();
+        cookieStore.set('session', sessionToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 30 * 24 * 60 * 60,
+            path: '/'
+        });
 
         return NextResponse.json({
             success: true,
-            magicLink
+            user: {
+                id: user.id,
+                name: user.name,
+                username: user.username,
+                avatarUrl: user.avatarUrl
+            }
         });
 
     } catch (error: any) {
-        console.error("Magic error:", error);
+        console.error("Verify magic error:", error);
         return NextResponse.json({ success: false, error: "Внутренняя ошибка" }, { status: 500 });
     }
 }

@@ -31,7 +31,7 @@ export default function MagicLinkHandler() {
                 setStatus('Отправляем токен на сервер...');
                 console.log('🔑 Начинаем запрос к /api/auth/magic');
 
-                const res = await fetch('/api/auth/magic', {
+                const res = await fetch('/api/auth/verify-magic', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ token }),
