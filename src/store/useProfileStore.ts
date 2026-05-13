@@ -28,7 +28,7 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
         }
 
         try {
-            const orders = await getUserOrders(user.id);
+            const orders = await getUserOrders();
             set({ orders });
         } catch (err) {
             console.error("Ошибка загрузки заказов:", err);

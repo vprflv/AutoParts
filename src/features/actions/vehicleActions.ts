@@ -2,7 +2,7 @@
 "use server";
 
 import { prisma } from "@/src/lib/prisma";
-import { getCurrentUserId } from "@/src/lib/auth";
+import {getCurrentProfileUserId, getCurrentUserId} from "@/src/lib/auth";
 
 export async function getUserVehicles() {
     const userId = await getCurrentUserId();
@@ -23,7 +23,7 @@ export async function addVehicle(data: {
     bodyNumber?: string;
     notes?: string;
 }) {
-    const userId = await getCurrentUserId();
+    const userId = await getCurrentProfileUserId();
     if (!userId) throw new Error("Пользователь не авторизован");
 
     return prisma.vehicle.create({
@@ -35,7 +35,7 @@ export async function addVehicle(data: {
 }
 
 export async function updateVehicle(id: string, data: any) {
-    const userId = await getCurrentUserId();
+    const userId = await getCurrentProfileUserId();
     if (!userId) throw new Error("Пользователь не авторизован");
 
     return prisma.vehicle.update({
@@ -45,7 +45,7 @@ export async function updateVehicle(id: string, data: any) {
 }
 
 export async function deleteVehicle(id: string) {
-    const userId = await getCurrentUserId();
+    const userId = await getCurrentProfileUserId();
     if (!userId) throw new Error("Пользователь не авторизован");
 
     await prisma.vehicle.delete({

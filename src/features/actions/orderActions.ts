@@ -2,6 +2,7 @@
 "use server";
 
 import { prisma } from "@/src/lib/prisma";
+import {getCurrentProfileUserId} from "@/lib/auth";
 
 export async function createOrder(data: {
     customerName: string;
@@ -80,7 +81,8 @@ export async function createOrder(data: {
 }
 
 
-export async function getUserOrders(userId: string) {
+export async function getUserOrders() {
+    const userId = await getCurrentProfileUserId();
     if (!userId) return [];
 
     const orders = await prisma.order.findMany({
