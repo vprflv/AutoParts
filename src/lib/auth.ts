@@ -10,26 +10,15 @@ export async function getCurrentUserId(): Promise<string | null> {
 export async function getCurrentProfileUserId(): Promise<string | null> {
     const supabase = await createServerClientFn();
 
-    // Получаем пользователя из сессии
     const { data: { user }, error } = await supabase.auth.getUser();
 
-
-
-    console.log("[getCurrentProfileUserId] Auth user:", user?.id, "Error:", error?.message);
+    console.log("[getCurrentProfileUserId] User ID:", user?.id);
+    console.log("[getCurrentProfileUserId] Error:", error?.message);
 
     if (!user?.id) {
-        console.log("[getCurrentProfileUserId] Пользователь не авторизован");
+        console.log("[getCurrentProfileUserId] ❌ Нет сессии");
         return null;
     }
 
-    // Для Telegram пользователей иногда нужно дополнительно проверить профиль
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('userid')
-        .eq('userid', user.id)
-        .single();
-
-    console.log("[getCurrentProfileUserId] Profile found:", !!profile);
-
-    return user.id; // возвращаем user.id из auth.users
+    return user.id;
 }

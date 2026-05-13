@@ -6,7 +6,6 @@ export const createServerClientFn = async () => {
     const cookieStore = await cookies();
 
     console.log("[createServerClientFn] Cookies count:", cookieStore.getAll().length);
-    // console.log("[createServerClientFn] Cookies:", cookieStore.getAll().map(c => c.name)); // раскомментируй при необходимости
 
     return createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -14,7 +13,9 @@ export const createServerClientFn = async () => {
         {
             cookies: {
                 getAll() {
-                    return cookieStore.getAll();
+                    const all = cookieStore.getAll();
+                    console.log("[createServerClientFn] getAll called, count:", all.length);
+                    return all;
                 },
                 setAll(cookiesToSet) {
                     try {
