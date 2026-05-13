@@ -1,10 +1,8 @@
-// app/api/auth/magic/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/src/lib/prisma';
-import { sign } from 'jsonwebtoken';
-import { cookies } from 'next/headers';
+import crypto from 'crypto';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET!;
 
 export async function POST(request: NextRequest) {
     try {
@@ -14,9 +12,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: false, error: "Нет telegramId" }, { status: 400 });
         }
 
-        let user = await prisma.user.findUnique({
-            where: { telegramId: String(telegramId) }
-        });
+        let user = await prisma.user.findUnique({ where: { telegramId: String(telegramId) } });
 
         if (!user) {
             user = await prisma.user.create({
@@ -30,30 +26,26 @@ export async function POST(request: NextRequest) {
             });
         }
 
-        const sessionToken = sign(
-            { userId: user.id },
-            JWT_SECRET,
-            { expiresIn: '30d' }
-        );
+        // === Создаём Magic Token ===
+        const token = crypto.randomBytes(32).toString('hex');
+        const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 минут
 
-        // Устанавливаем httpOnly cookie
-        const cookieStore = await cookies();
-        cookieStore.set('session', sessionToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            maxAge: 30 * 24 * 60 * 60,
-            path: '/'
+        await prisma.magicToken.create({
+            data: {
+                token,
+                telegramId: String(telegramId),
+                name: user.name,
+                username: user.username,
+                avatarUrl: user.avatarUrl,
+                expiresAt,
+            }
         });
+
+        const magicLink = `${process.env.NEXT_PUBLIC_BASE_URL}/auth/magic?token=${token}`;
 
         return NextResponse.json({
             success: true,
-            user: {
-                id: user.id,
-                name: user.name,
-                username: user.username,
-                avatarUrl: user.avatarUrl
-            }
+            magicLink
         });
 
     } catch (error: any) {
