@@ -10,7 +10,7 @@ interface ProfileStore {
     isLoading: boolean;
 
     loadOrders: () => Promise<void>;
-    createOrder: (orderData: any) => Promise<boolean>; // оставляем как было
+    // createOrder: (orderData: any) => Promise<boolean>;
     repeatOrder: (orderId: string) => Promise<boolean>;
 }
 

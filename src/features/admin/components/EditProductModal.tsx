@@ -13,7 +13,7 @@ interface EditProductModalProps {
 }
 
 export default function EditProductModal({ isOpen, onClose, product }: EditProductModalProps) {
-    const { addOrUpdateProducts } = useAdminProducts();
+    // const { addOrUpdateProducts } = useAdminProducts();
 
     const [formData, setFormData] = useState<Partial<Product>>({});
     const [images, setImages] = useState<string[]>([]);
@@ -41,7 +41,7 @@ export default function EditProductModal({ isOpen, onClose, product }: EditProdu
             images: images.length > 0 ? images : product.images,
         } as Product;
 
-        addOrUpdateProducts([updatedProduct]);
+        // addOrUpdateProducts([updatedProduct]);
         alert("Товар успешно обновлён!");
         onClose();
     };
