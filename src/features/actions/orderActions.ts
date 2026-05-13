@@ -68,3 +68,44 @@ export async function createOrder(data: {
 
     return { success: true, orderId: order.id, order };
 }
+
+
+export async function getUserOrders(userId: string) {
+    if (!userId) return [];
+
+    const orders = await prisma.order.findMany({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+        include: {
+            items: {
+                include: {
+                    product: {
+                        select: {
+                            name: true,
+                            oem: true,
+                            images: true,
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    return orders.map(order => ({
+        id: order.id,
+        created_at: order.createdAt.toISOString(),
+        total: Number(order.totalAmount),
+        status: order.status,
+        delivery_address: order.deliveryAddress,
+        comment: order.comment,
+        items_count: order.items.length,
+        items: order.items.map(item => ({
+            id: item.productId,
+            name: item.product?.name || "Товар",
+            oem: item.product?.oem || "",
+            price: Number(item.price),
+            quantity: item.quantity,
+            image: item.product?.images?.[0] || "",
+        }))
+    }));
+}
