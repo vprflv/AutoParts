@@ -37,11 +37,11 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
         }
     },
 
-    createOrder: async (orderData) => {
-        // оставляем как было у тебя раньше (или твой текущий код)
-        // toast.info("createOrder вызван через старый store");
-        return false; // пока заглушка
-    },
+    // createOrder: async (orderData) => {
+    //     // оставляем как было у тебя раньше (или твой текущий код)
+    //     // toast.info("createOrder вызван через старый store");
+    //     return false; // пока заглушка
+    // },
 
     repeatOrder: async (orderId: string) => {
         const order = get().orders.find(o => o.id === orderId);

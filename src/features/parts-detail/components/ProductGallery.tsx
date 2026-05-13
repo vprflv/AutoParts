@@ -97,14 +97,14 @@ export function ProductGallery({ images }: ProductGalleryProps) {
                     <>
                         <button
                             onClick={goToPrevious}
-                            className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-3 rounded-full transition-all"
+                            className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-cyan-500/10 border border-transparent hover:border-cyan-400/30 p-3 rounded-full text-white transition-all z-10 hover:scale-110 hover:shadow-[0_0_15px_#22d3ee]"
                         >
                             <ChevronLeft className="w-6 h-6" />
                         </button>
 
                         <button
                             onClick={goToNext}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-3 rounded-full transition-all"
+                            className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-cyan-500/10 border border-transparent hover:border-cyan-400/30 p-3 rounded-full text-white transition-all z-10 hover:scale-110 hover:shadow-[0_0_15px_#22d3ee]"
                         >
                             <ChevronRight className="w-6 h-6" />
                         </button>
