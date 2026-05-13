@@ -82,6 +82,7 @@ export async function POST(request: NextRequest) {
 
     } catch (error: any) {
         console.error('💥 Ошибка Telegram Auth:', error);
+        console.error('💥 Ошибка Telegram Auth:', error);
         return NextResponse.json({
             success: false,
             error: error.message || 'Внутренняя ошибка сервера'
