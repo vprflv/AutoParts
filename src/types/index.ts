@@ -1,4 +1,4 @@
-import { SVGProps } from "react";
+
 
 type SortOption = "default" | "price_asc" | "price_desc";
 
