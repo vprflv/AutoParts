@@ -16,7 +16,14 @@ export async function getUserVehicles() {
 }
 
 export async function addVehicle(data: any) {
-    console.log("addVehicle вызван с данными:", data);
+    console.log("[addVehicle] Вызван");
+
+    const userId = await getCurrentProfileUserId();
+    console.log("[addVehicle] Получен userId:", userId);
+
+    if (!userId) {
+        throw new Error("Пользователь не авторизован (userId = null)");
+    }
 
     try {
         const userId = await getCurrentProfileUserId();
