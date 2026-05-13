@@ -5,18 +5,20 @@ import { cookies } from 'next/headers';
 export const createServerClientFn = async () => {
     const cookieStore = await cookies();
 
-    console.log("[createServerClientFn] Cookies count:", cookieStore.getAll().length);
+    console.log("[createServerClientFn] Total cookies:", cookieStore.getAll().length);
 
-    return createServerClient(
+    const client = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
         {
             cookies: {
                 getAll() {
-                    const all = cookieStore.getAll();
-                    console.log("[createServerClientFn] getAll called, count:", all.length);
-                    return all;
+                    const allCookies = cookieStore.getAll();
+                    console.log("[createServerClientFn] getAll() called → cookies:",
+                        allCookies.map(c => c.name));
+                    return allCookies;
                 },
+
                 setAll(cookiesToSet) {
                     try {
                         cookiesToSet.forEach(({ name, value, options }) => {
@@ -29,4 +31,6 @@ export const createServerClientFn = async () => {
             },
         }
     );
+
+    return client;
 };
