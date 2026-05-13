@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
         const { telegramUser } = await request.json();
 
         if (!telegramUser?.id) {
-            console.log('❌ Нет telegram_id в запросе');
+            console.log('❌ Нет telegram_id');
             return NextResponse.json({ success: false, error: "Нет telegram_id" }, { status: 400 });
         }
 
@@ -21,12 +21,14 @@ export async function POST(request: NextRequest) {
             process.env.SUPABASE_SERVICE_ROLE_KEY!
         );
 
-        // 1. Поиск или создание пользователя
+        // Поиск пользователя
         const { data: { users } } = await admin.auth.admin.listUsers();
-        let authUser = users?.find((u: any) => u.user_metadata?.telegram_id === telegramUser.id);
+        let authUser = users?.find((u: any) =>
+            u.user_metadata?.telegram_id === String(telegramUser.id)
+        );
 
         if (!authUser) {
-            console.log(`🆕 Создаём нового пользователя (telegram_id: ${telegramUser.id})`);
+            console.log(`🆕 Создаём нового Telegram пользователя`);
 
             const { data: newUser, error: createError } = await admin.auth.admin.createUser({
                 email: `${telegramUser.id}@telegram.local`,
@@ -44,35 +46,46 @@ export async function POST(request: NextRequest) {
             if (createError) throw createError;
             authUser = newUser.user;
 
-            // Создаём профиль
-            await admin.from('profiles').insert({
-                id: authUser.id,
-                telegram_id: telegramUser.id,
-                name: `${telegramUser.first_name} ${telegramUser.last_name || ''}`.trim(),
-                username: telegramUser.username,
-                avatar_url: telegramUser.photo_url,
-            });
+            // === ВАЖНО: используем userid, а не id ===
+            const { error: profileError } = await admin
+                .from('profiles')
+                .insert({
+                    userid: authUser.id,
+                    email: authUser.email,
+                    name: `${telegramUser.first_name} ${telegramUser.last_name || ''}`.trim(),
+                    username: telegramUser.username,
+                    avatar_url: telegramUser.photo_url,
+                });
+
+            if (profileError) {
+                console.error("Ошибка создания профиля:", profileError);
+                throw profileError;
+            }
+
         } else {
-            console.log(`🔄 Обновляем данные пользователя ${authUser.id}`);
-            await admin.from('profiles').update({
-                name: `${telegramUser.first_name} ${telegramUser.last_name || ''}`.trim(),
-                username: telegramUser.username,
-                avatar_url: telegramUser.photo_url,
-            }).eq('id', authUser.id);
+            // Обновление существующего профиля
+            await admin
+                .from('profiles')
+                .update({
+                    name: `${telegramUser.first_name} ${telegramUser.last_name || ''}`.trim(),
+                    username: telegramUser.username,
+                    avatar_url: telegramUser.photo_url,
+                    updated_at: new Date().toISOString(),   // если есть такая колонка
+                })
+                .eq('userid', authUser.id);                 // ← ищем по userid
         }
 
-        // 2. Создаём JWT токен (живёт 5 минут)
+        // Создаём токен
         const token = jwt.sign(
             { userId: authUser.id },
             JWT_SECRET,
-            { expiresIn: '5m' }
+            { expiresIn: '10m' }
         );
 
         const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000').replace(/\/$/, '');
         const magicLink = `${siteUrl}/auth/telegram?token=${token}`;
 
-        console.log('✅ JWT токен создан успешно');
-        console.log('🔗 Magic Link:', magicLink);
+        console.log('✅ Magic Link успешно создан');
 
         return NextResponse.json({
             success: true,
@@ -83,7 +96,7 @@ export async function POST(request: NextRequest) {
         console.error('💥 Ошибка в /api/auth/telegram:', error);
         return NextResponse.json({
             success: false,
-            error: error.message
+            error: error.message || 'Внутренняя ошибка'
         }, { status: 500 });
     }
 }
