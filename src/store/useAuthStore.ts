@@ -9,6 +9,7 @@ export interface User {
     username?: string | null;
     avatarUrl?: string | null;
     telegramId?: string | null;
+    phone?: string | null;
     provider: "email" | "telegram";
 }
 
@@ -21,6 +22,7 @@ interface AuthStore {
     loadUser: () => Promise<void>;
     register: (name: string, email: string, password: string) => Promise<boolean>;
     login: (email: string, password: string) => Promise<boolean>;
+    updateUser: (updates: Partial<User>) => Promise<void>;
     loginWithTelegram: (telegramUser: any) => Promise<boolean>;
     logout: () => Promise<void>;
     clearError: () => void;
@@ -121,6 +123,31 @@ export const useAuthStore = create<AuthStore>()(
                     return false;
                 } finally {
                     set({ isLoading: false });
+                }
+            },
+
+            updateUser: async (updates: Partial<User>) => {
+                const current = get().user;
+                if (!current) return;
+
+                try {
+                    const res = await fetch('/api/auth/update', {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(updates),
+                        credentials: 'include'
+                    });
+
+                    if (!res.ok) throw new Error("Не удалось обновить профиль");
+
+                    const { user: updated } = await res.json();
+
+                    set((state) => ({
+                        user: state.user ? { ...state.user, ...updated } : null,
+                    }));
+                } catch (err: any) {
+                    console.error("updateUser error:", err);
+                    set({ error: err.message });
                 }
             },
 

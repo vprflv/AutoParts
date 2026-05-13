@@ -37,7 +37,7 @@ export default function ProfileInfo() {
                             {user.email}
                         </p>
 
-                        {user.telegram_id && (
+                        {user.telegramId && (
                             <p className="text-cyan-400 text-sm mt-1">
                                 @{user.username || 'telegram'}
                             </p>

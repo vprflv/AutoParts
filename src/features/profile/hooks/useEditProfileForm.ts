@@ -27,7 +27,7 @@ export function useEditProfileForm() {
             setFormData({
                 name: user.name || "",
                 phone: user.phone || "",
-                email: user.email,
+                email: user?.email || "",
             });
             setPreviewUrl( null);
         }
