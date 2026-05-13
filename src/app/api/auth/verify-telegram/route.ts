@@ -1,70 +1,103 @@
-// app/api/auth/verify-telegram/route.ts
+// app/api/auth/telegram/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import jwt from 'jsonwebtoken';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
+import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.SUPABASE_JWT_SECRET!;
 
 export async function POST(request: NextRequest) {
-    try {
-        const { token } = await request.json();
+    console.log('🔄 [Telegram Auth] === НАЧАЛО ЗАПРОСА ===');
 
-        if (!token) {
-            return NextResponse.json({
-                success: false,
-                error: "Токен не передан"
-            }, { status: 400 });
+    try {
+        const { telegramUser } = await request.json();
+        console.log('📥 Получены данные от бота:', telegramUser);
+
+        if (!telegramUser?.id) {
+            return NextResponse.json({ success: false, error: "Нет данных пользователя" }, { status: 400 });
         }
 
-        // Верифицируем JWT токен
-        const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
+        const telegramId = String(telegramUser.id);
+        const email = `${telegramId}@telegram.local`;
 
         const admin = createAdminClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
             process.env.SUPABASE_SERVICE_ROLE_KEY!
         );
 
-        // === ИЗМЕНЕНО: ищем по userid, а не по id ===
-        const { data: profile, error } = await admin
+        // Создание пользователя
+        const { data: { users } } = await admin.auth.admin.listUsers();
+        let authUser = users?.find((u: any) =>
+            u.user_metadata?.telegram_id === telegramId || u.email === email
+        );
+
+        if (!authUser) {
+            console.log(`🆕 Создаём пользователя в auth.users`);
+            const { data: newUser, error: createError } = await admin.auth.admin.createUser({
+                email,
+                email_confirm: true,
+                user_metadata: {
+                    telegram_id: telegramId,
+                    first_name: telegramUser.first_name,
+                    last_name: telegramUser.last_name || null,
+                    username: telegramUser.username,
+                    avatar_url: telegramUser.photo_url,
+                    provider: 'telegram'
+                }
+            });
+
+            if (createError) {
+                console.error("❌ Ошибка createUser:", createError);
+                throw createError;
+            }
+            authUser = newUser.user;
+            console.log(`✅ Пользователь создан в auth.users: ${authUser.id}`);
+        } else {
+            console.log(`✅ Пользователь уже существует: ${authUser.id}`);
+        }
+
+        // === КРИТИЧНЫЙ БЛОК — создание профиля ===
+        console.log(`📝 Пытаемся upsert профиля для userid = ${authUser.id}`);
+
+        const profilePayload = {
+            userid: authUser.id,
+            email: authUser.email,
+            name: `${telegramUser.first_name} ${telegramUser.last_name || ''}`.trim(),
+            username: telegramUser.username || null,
+            avatar_url: telegramUser.photo_url || null,
+        };
+
+        console.log('📤 Payload для profiles:', profilePayload);
+
+        const { data: profile, error: upsertError } = await admin
             .from('profiles')
-            .select('*')
-            .eq('userid', decoded.userId)   // ← Вот главное исправление
+            .upsert(profilePayload, { onConflict: 'userid' })
+            .select()
             .single();
 
-        if (error || !profile) {
-            console.error(`❌ Профиль не найден для userid: ${decoded.userId}`);
-            return NextResponse.json({
-                success: false,
-                error: "Профиль не найден"
-            }, { status: 404 });
+        if (upsertError) {
+            console.error("❌ ОШИБКА upsert профиля:", upsertError);
+            console.error("Код ошибки:", upsertError.code);
+            console.error("Сообщение:", upsertError.message);
+            throw upsertError;
         }
 
-        console.log(`✅ Токен успешно проверен для пользователя ${profile.name || profile.userid}`);
+        console.log(`✅ ПРОФИЛЬ УСПЕШНО создан/обновлён!`, profile);
 
-        return NextResponse.json({
-            success: true,
-            profile: {
-                id: profile.userid,           // возвращаем userid как id для фронта
-                name: profile.name,
-                username: profile.username,
-                avatar_url: profile.avatar_url,
-                telegram_id: profile.telegram_id,
-            }
-        });
+        // Генерация токена
+        const token = jwt.sign({ userId: authUser.id }, JWT_SECRET, { expiresIn: '10m' });
+
+        const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000').replace(/\/$/, '');
+        const magicLink = `${siteUrl}/auth/telegram?token=${token}`;
+
+        console.log('✅ Magic Link создан');
+
+        return NextResponse.json({ success: true, magicLink });
 
     } catch (error: any) {
-        console.error('Verify token error:', error);
-
-        if (error.name === 'TokenExpiredError') {
-            return NextResponse.json({
-                success: false,
-                error: "Ссылка устарела. Запроси вход заново."
-            }, { status: 401 });
-        }
-
+        console.error('💥 КРИТИЧЕСКАЯ ОШИБКА В TELEGRAM AUTH:', error);
         return NextResponse.json({
             success: false,
-            error: "Недействительный токен"
-        }, { status: 401 });
+            error: error.message || 'Внутренняя ошибка'
+        }, { status: 500 });
     }
 }
