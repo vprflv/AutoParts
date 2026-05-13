@@ -1,4 +1,3 @@
-// src/features/actions/orderActions.ts
 "use server";
 
 import { prisma } from "@/src/lib/prisma";
@@ -14,7 +13,7 @@ export async function createOrder(data: {
 }) {
     let cartItems = data.cartItems;
 
-    // Если cartItems не передали — берём из store
+    // Если cartItems не передали — берём из Zustand store
     if (!cartItems || cartItems.length === 0) {
         try {
             const { useCartStore } = await import("@/src/store/useCartStore");
@@ -28,8 +27,7 @@ export async function createOrder(data: {
         throw new Error("Корзина пуста. Добавьте товары перед оформлением.");
     }
 
-    const userId = await getCurrentUserId();   // ← Используем новую функцию
-
+    const userId = await getCurrentUserId();
     if (!userId) {
         throw new Error("Пользователь не авторизован");
     }
@@ -60,10 +58,10 @@ export async function createOrder(data: {
             items: {
                 include: {
                     product: {
-                        select: { name: true, oem: true, images: true }
-                    }
-                }
-            }
+                        select: { name: true, oem: true, images: true },
+                    },
+                },
+            },
         },
     });
 
@@ -73,20 +71,20 @@ export async function createOrder(data: {
         useCartStore.getState().clearCart();
     } catch (_) {}
 
-    // Сериализация Decimal
+    // Приводим Decimal к числу для фронтенда
     const plainOrder = {
         ...order,
         totalAmount: Number(order.totalAmount),
         items: order.items.map((item: any) => ({
             ...item,
             price: Number(item.price),
-        }))
+        })),
     };
 
     return {
         success: true,
         orderId: order.id,
-        order: plainOrder
+        order: plainOrder,
     };
 }
 
@@ -105,14 +103,14 @@ export async function getUserOrders() {
                             name: true,
                             oem: true,
                             images: true,
-                        }
-                    }
-                }
-            }
-        }
+                        },
+                    },
+                },
+            },
+        },
     });
 
-    return orders.map(order => ({
+    return orders.map((order) => ({
         id: order.id,
         created_at: order.createdAt.toISOString(),
         total: Number(order.totalAmount),
@@ -120,13 +118,13 @@ export async function getUserOrders() {
         delivery_address: order.deliveryAddress,
         comment: order.comment,
         items_count: order.items.length,
-        items: order.items.map(item => ({
+        items: order.items.map((item) => ({
             id: item.productId,
             name: item.product?.name || "Товар",
             oem: item.product?.oem || "",
             price: Number(item.price),
             quantity: item.quantity,
             image: item.product?.images?.[0] || "",
-        }))
+        })),
     }));
 }

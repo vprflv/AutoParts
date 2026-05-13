@@ -27,12 +27,21 @@ export default function Navbar({ onSearchChange, searchValue }: NavbarProps) {
 
     const handleLogout = async () => {
         await logout();
-        toast.success("Вы вышли из аккаунта");
+        toast.success("Вы успешно вышли из аккаунта");
     };
 
-    const avatarUrl = user?.avatar_url || (user?.telegram_id ? `https://t.me/i/userpic/320/${user.username || user.id}.jpg` : null);
+    // Адаптация под новую структуру User
+    const avatarUrl = user?.avatarUrl ||
+        (user?.telegramId
+            ? `https://t.me/i/userpic/320/${user.username || user.id}.jpg`
+            : null);
+
     const displayName = user?.name || user?.username || "Пользователь";
-    const isTelegramUser = !!user?.telegram_id;
+
+    const isTelegramUser = !!user?.telegramId;
+    const userSubtitle = isTelegramUser
+        ? `@${user?.username || 'telegram'}`
+        : user?.email?.split('@')[0] || '';
 
     return (
         <>
@@ -44,7 +53,7 @@ export default function Navbar({ onSearchChange, searchValue }: NavbarProps) {
                         <Link href="/">
                             <div className="flex items-center gap-3 flex-shrink-0 group">
                                 <div className="w-9 h-9 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center text-2xl transition-all group-hover:scale-110 group-hover:rotate-6 shadow-neon-main">
-
+                                    {/* Можно добавить иконку авто */}
                                 </div>
                                 <div>
                                     <h1 className="text-2xl font-bold tracking-tighter bg-cyan-300 bg-clip-text text-transparent">
@@ -70,16 +79,10 @@ export default function Navbar({ onSearchChange, searchValue }: NavbarProps) {
                                 <ShoppingCart className="w-6 h-6 text-zinc-300 group-hover:text-cyan-300 transition-colors" />
 
                                 {totalItems > 0 && (
-                                    <div className="absolute -top-1.5 -right-1.5 bg-gradient-to-br from-cyan-200 to-blue-800
-                                                    text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center
-                                                    shadow-neon-main ring-2 ring-cyan-400/50">
+                                    <div className="absolute -top-1.5 -right-1.5 bg-gradient-to-br from-cyan-200 to-blue-800 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center shadow-neon-main ring-2 ring-cyan-400/50">
                                         {totalItems}
                                     </div>
                                 )}
-
-                                {/* Неоновое свечение корзины */}
-                                <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-30
-                                                transition-all duration-300 bg-cyan-500/20 blur-xl pointer-events-none" />
                             </button>
 
                             {/* Профиль */}
@@ -103,7 +106,7 @@ export default function Navbar({ onSearchChange, searchValue }: NavbarProps) {
                                                 {displayName}
                                             </p>
                                             <p className="text-xs text-zinc-500">
-                                                {isTelegramUser ? `@${user.username || 'telegram'}` : user.email?.split('@')[0]}
+                                                {userSubtitle}
                                             </p>
                                         </div>
                                     </Menu.Button>
