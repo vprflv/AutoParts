@@ -23,13 +23,15 @@ export async function POST(request: NextRequest) {
             process.env.SUPABASE_SERVICE_ROLE_KEY!
         );
 
-        // === 1. Ищем пользователя по telegram_id ===
+        // === Поиск пользователя ===
         const { data: { users } } = await admin.auth.admin.listUsers();
-        let authUser = users?.find((u: any) => u.user_metadata?.telegram_id === telegramId);
+        let authUser = users?.find((u: any) =>
+            u.user_metadata?.telegram_id === telegramId || u.email === email
+        );
 
-        // === 2. Если не нашли — создаём ===
+        // === Создание, если не найден ===
         if (!authUser) {
-            console.log(`🆕 Создаём нового пользователя (telegram_id: ${telegramId})`);
+            console.log(`🆕 Создаём нового пользователя ${telegramId}`);
 
             const { data: newUser, error: createError } = await admin.auth.admin.createUser({
                 email: email,
@@ -45,16 +47,26 @@ export async function POST(request: NextRequest) {
             });
 
             if (createError) {
-                console.error("Ошибка создания пользователя:", createError.message);
-                throw createError;
+                // Специальная обработка дубликата email
+                if (createError.message.includes("already been registered")) {
+                    console.log("⚠️ Email уже существует, ищем пользователя по email...");
+                    const { data: existing } = await admin.auth.admin.listUsers();
+                    authUser = existing?.users?.find((u: any) => u.email === email);
+                } else {
+                    throw createError;
+                }
+            } else {
+                authUser = newUser.user;
             }
-
-            authUser = newUser.user;
         } else {
-            console.log(`🔄 Пользователь уже существует (id: ${authUser.id})`);
+            console.log(`✅ Пользователь уже существует (id: ${authUser.id})`);
         }
 
-        // === 3. Создаём / обновляем профиль (upsert) ===
+        if (!authUser) {
+            throw new Error("Не удалось найти или создать пользователя");
+        }
+
+        // === Upsert профиля ===
         await admin.from('profiles').upsert({
             userid: authUser.id,
             email: authUser.email,
@@ -63,7 +75,7 @@ export async function POST(request: NextRequest) {
             avatar_url: telegramUser.photo_url,
         }, { onConflict: 'userid' });
 
-        // === 4. Генерируем токен ===
+        // === Токен ===
         const token = jwt.sign(
             { userId: authUser.id },
             JWT_SECRET,
@@ -75,13 +87,9 @@ export async function POST(request: NextRequest) {
 
         console.log(`✅ Magic Link готов для ${telegramUser.first_name}`);
 
-        return NextResponse.json({
-            success: true,
-            magicLink
-        });
+        return NextResponse.json({ success: true, magicLink });
 
     } catch (error: any) {
-        console.error('💥 Ошибка Telegram Auth:', error);
         console.error('💥 Ошибка Telegram Auth:', error);
         return NextResponse.json({
             success: false,
