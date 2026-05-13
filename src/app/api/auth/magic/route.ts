@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/src/lib/prisma';
 import crypto from 'crypto';
 
-const JWT_SECRET = process.env.JWT_SECRET!;
-
 export async function POST(request: NextRequest) {
     try {
         const { telegramId, name, username, avatarUrl } = await request.json();
@@ -12,7 +10,9 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: false, error: "Нет telegramId" }, { status: 400 });
         }
 
-        let user = await prisma.user.findUnique({ where: { telegramId: String(telegramId) } });
+        let user = await prisma.user.findUnique({
+            where: { telegramId: String(telegramId) }
+        });
 
         if (!user) {
             user = await prisma.user.create({
@@ -26,9 +26,9 @@ export async function POST(request: NextRequest) {
             });
         }
 
-        // === Создаём Magic Token ===
+        // Генерируем magic token
         const token = crypto.randomBytes(32).toString('hex');
-        const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 минут
+        const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
         await prisma.magicToken.create({
             data: {
@@ -41,7 +41,15 @@ export async function POST(request: NextRequest) {
             }
         });
 
-        const magicLink = `${process.env.NEXT_PUBLIC_BASE_URL}/auth/magic?token=${token}`;
+        const baseUrl = process.env.NEXT_PUBLIC_SITE_URL;
+        if (!baseUrl) {
+            console.error("❌ NEXT_PUBLIC_SITE_URL не найден в .env / Vercel");
+            return NextResponse.json({ success: false, error: "Ошибка конфигурации сервера" }, { status: 500 });
+        }
+
+        const magicLink = `${baseUrl}/auth/magic?token=${token}`;
+
+        console.log("✅ Magic link сгенерирован:", magicLink);
 
         return NextResponse.json({
             success: true,
