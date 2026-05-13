@@ -1,4 +1,3 @@
-// app/auth/magic/MagicLinkHandler.tsx
 "use client";
 
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -16,7 +15,7 @@ export default function MagicLinkHandler() {
         const token = searchParams.get('token');
 
         console.log('🔍 MagicLinkHandler: useEffect сработал');
-        console.log('📌 Token из URL:', token ? `${token.substring(0, 20)}...` : 'НЕ НАЙДЕН');
+        console.log('📌 Token из URL:', token ? `${token.substring(0, 30)}...` : 'НЕ НАЙДЕН');
 
         if (!token) {
             setStatus('Токен не найден');
@@ -29,7 +28,7 @@ export default function MagicLinkHandler() {
         const handleMagicLink = async () => {
             try {
                 setStatus('Отправляем токен на сервер...');
-                console.log('🔑 Начинаем запрос к /api/auth/magic');
+                console.log('🔑 Начинаем запрос к /api/auth/verify-magic');
 
                 const res = await fetch('/api/auth/verify-magic', {
                     method: 'POST',
@@ -40,7 +39,7 @@ export default function MagicLinkHandler() {
                 console.log('📡 Статус ответа от сервера:', res.status, res.statusText);
 
                 const result = await res.json();
-                console.log('📦 Полный ответ от /api/auth/magic:', result);
+                console.log('📦 Полный ответ от /api/auth/verify-magic:', result);
 
                 setDebug(`Ответ сервера: ${JSON.stringify(result, null, 2)}`);
 
@@ -75,6 +74,7 @@ export default function MagicLinkHandler() {
         };
 
         handleMagicLink();
+
     }, [searchParams, router]);
 
     return (
