@@ -1,10 +1,14 @@
 // src/store/useProfileVehicleStore.ts
 import { create } from "zustand";
-import { createClient } from "@/src/lib/supabase/client";
+import { toast } from "react-hot-toast";
 
-import { useAuthStore } from "./useAuthStore";
-import {toast} from "react-hot-toast";
-import {Vehicle} from "@/src/types";
+import {
+    getUserVehicles,
+    addVehicle,
+    updateVehicle,
+    deleteVehicle,
+} from "@/src/features/actions/vehicleActions";
+import { Vehicle } from "@/src/types";
 
 interface ProfileVehicleStore {
     vehicles: Vehicle[];
@@ -12,8 +16,8 @@ interface ProfileVehicleStore {
     error: string | null;
 
     loadVehicles: () => Promise<void>;
-    addVehicle: (data: Omit<Vehicle, "id" | "createdAt">) => Promise<boolean>;
-    updateVehicle: (id: string, updates: Partial<Vehicle>) => Promise<boolean>;
+    addVehicle: (data: any) => Promise<boolean>;
+    updateVehicle: (id: string, updates: any) => Promise<boolean>;
     deleteVehicle: (id: string) => Promise<boolean>;
 }
 
@@ -25,92 +29,53 @@ export const useProfileVehicleStore = create<ProfileVehicleStore>((set, get) => 
     loadVehicles: async () => {
         set({ isLoading: true, error: null });
 
-        const currentUser = useAuthStore.getState().user;
-        if (!currentUser) {
-            set({ vehicles: [], isLoading: false });
-            return;
-        }
-
-        const supabase = createClient();
-
         try {
-            const { data, error } = await supabase
-                .from("vehicles")
-                .select("*")
-                .eq("user_id", currentUser.id)
-                .order("created_at", { ascending: false });
-
-            if (error) throw error;
-
+            const data = await getUserVehicles();
             set({ vehicles: data || [] });
         } catch (err: any) {
             console.error("Ошибка загрузки автомобилей:", err);
             set({ error: err.message });
+            toast.error("Не удалось загрузить гараж");
         } finally {
             set({ isLoading: false });
         }
     },
 
     addVehicle: async (data) => {
-        const currentUser = useAuthStore.getState().user;
-        if (!currentUser) return false;
-
-        const supabase = createClient();
-
         try {
-            const { error } = await supabase
-                .from("vehicles")
-                .insert({
-                    user_id: currentUser.id,
-                    brand: data.brand,
-                    model: data.model,
-                    year: data.year,
-                    engine: data.engine,
-                    vin: data.vin,
-                });
-
-            if (error) throw error;
-
-            await get().loadVehicles();
-            toast.success("Автомобиль добавлен!");
+            await addVehicle(data);
+            await get().loadVehicles();           // обновляем список
+            toast.success("Автомобиль успешно добавлен в гараж!");
             return true;
         } catch (err: any) {
-            console.error("Ошибка добавления:", err);
-            toast.error("Не удалось добавить автомобиль");
+            console.error(err);
+            toast.error(err.message || "Не удалось добавить автомобиль");
             return false;
         }
     },
 
-    updateVehicle: async (id: string, updates) => {
-        const supabase = createClient();
+    updateVehicle: async (id: string, updates: any) => {
         try {
-            const { error } = await supabase
-                .from("vehicles")
-                .update(updates)
-                .eq("id", id);
-
-            if (error) throw error;
+            await updateVehicle(id, updates);
             await get().loadVehicles();
+            toast.success("Автомобиль успешно обновлён!");
             return true;
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
+            toast.error("Не удалось обновить автомобиль");
             return false;
         }
     },
 
     deleteVehicle: async (id: string) => {
-        const supabase = createClient();
         try {
-            const { error } = await supabase
-                .from("vehicles")
-                .delete()
-                .eq("id", id);
-
-            if (error) throw error;
+            await deleteVehicle(id);
             await get().loadVehicles();
+            toast.success("Автомобиль удалён из гаража");
             return true;
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
+            toast.error("Не удалось удалить автомобиль");
             return false;
         }
     },

@@ -1,3 +1,4 @@
+// src/features/actions/orderActions.ts
 "use server";
 
 import { prisma } from "@/src/lib/prisma";
@@ -8,11 +9,10 @@ export async function createOrder(data: {
     customerEmail?: string;
     deliveryAddress: string;
     comment?: string;
-    cartItems?: any[];           // ← Добавляем явно
+    cartItems?: any[];
 }) {
     let cartItems = data.cartItems;
 
-    // Если cartItems не передали — пытаемся достать из store
     if (!cartItems || cartItems.length === 0) {
         try {
             const { useCartStore } = await import("@/src/store/useCartStore");
@@ -27,7 +27,7 @@ export async function createOrder(data: {
     }
 
     const totalAmount = cartItems.reduce((sum: number, item: any) =>
-        sum + item.price * item.quantity, 0
+        sum + Number(item.price) * item.quantity, 0
     );
 
     // Получаем пользователя
@@ -53,7 +53,7 @@ export async function createOrder(data: {
                 create: cartItems.map((item: any) => ({
                     productId: item.id,
                     quantity: item.quantity,
-                    price: item.price,
+                    price: Number(item.price),   // ← важно привести к Number
                 })),
             },
         },
@@ -66,7 +66,17 @@ export async function createOrder(data: {
         useCartStore.getState().clearCart();
     } catch (_) {}
 
-    return { success: true, orderId: order.id, order };
+    // === Минимальная сериализация только того, что нужно ===
+    const plainOrder = {
+        ...order,
+        totalAmount: Number(order.totalAmount),
+        items: order.items.map((item: any) => ({
+            ...item,
+            price: Number(item.price),
+        }))
+    };
+
+    return { success: true, orderId: order.id, order: plainOrder };
 }
 
 

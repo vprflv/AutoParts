@@ -42,7 +42,13 @@ export interface Vehicle {
     brand: string;
     model: string;
     year: number;
-    engine?: string;
-    vin?: string;
-    createdAt: string;
+
+
+    engine?: string | null;
+    vin?: string | null;
+    notes?: string | null;
+    bodyNumber?: string | null;
+
+    createdAt: Date;
+    updatedAt: Date;
 }
