@@ -95,19 +95,18 @@ export function ProductGallery({ images }: ProductGalleryProps) {
                 {/* Управление */}
                 {validImages.length > 1 && (
                     <>
-                        <button onClick={goToPrevious} className="absolute left-4 top-1/2 -translate-y-1/2 ...">
+                        <button
+                            onClick={goToPrevious}
+                            className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-3 rounded-full transition-all"
+                        >
                             <ChevronLeft className="w-6 h-6" />
-                        </button>
-                        <button onClick={goToNext} className="absolute right-4 top-1/2 -translate-y-1/2 ...">
-                            <ChevronRight className="w-6 h-6" />
                         </button>
 
                         <button
-                            onClick={() => setIsLightboxOpen(true)}
-                            className="absolute bottom-5 right-5 bg-black/80 hover:bg-black text-white px-5 py-3 rounded-2xl flex items-center gap-2 text-sm"
+                            onClick={goToNext}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-3 rounded-full transition-all"
                         >
-                            <Expand className="w-4 h-4" />
-                            Увеличить
+                            <ChevronRight className="w-6 h-6" />
                         </button>
                     </>
                 )}
