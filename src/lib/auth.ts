@@ -13,6 +13,8 @@ export async function getCurrentProfileUserId(): Promise<string | null> {
     // Получаем пользователя из сессии
     const { data: { user }, error } = await supabase.auth.getUser();
 
+
+
     console.log("[getCurrentProfileUserId] Auth user:", user?.id, "Error:", error?.message);
 
     if (!user?.id) {
