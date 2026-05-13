@@ -1,12 +1,12 @@
-// src/features/auth/components/telegram/TelegramAuthContent.tsx
-'use client';
+// app/auth/magic/MagicLinkHandler.tsx
+"use client";
 
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { useAuthStore } from '@/store/useAuthStore';
 
-export default function TelegramAuthContent() {
+export default function MagicLinkHandler() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const [status, setStatus] = useState('Проверяем ссылку...');
@@ -15,16 +15,14 @@ export default function TelegramAuthContent() {
         const token = searchParams.get('token');
 
         if (!token) {
-            toast.error("Токен не найден в ссылке");
+            toast.error("Токен не найден");
             router.push('/');
             return;
         }
 
-        const handleAuth = async () => {
+        const handleMagicLink = async () => {
             try {
-                console.log('🔑 Отправляем токен на проверку...');
-
-                const res = await fetch('/api/auth/verify-telegram', {
+                const res = await fetch('/api/auth/magic', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ token }),
@@ -32,32 +30,29 @@ export default function TelegramAuthContent() {
 
                 const result = await res.json();
 
-                if (!result.success || !result.profile) {
-                    console.error('❌ Ошибка верификации:', result.error);
-                    toast.error(result.error || "Недействительная или устаревшая ссылка");
+                if (!result.success || !result.user) {
+                    toast.error(result.error || "Ссылка недействительна или устарела");
                     router.push('/');
                     return;
                 }
 
-                console.log('✅ Токен валиден');
-
+                // Сохраняем пользователя в Zustand
                 useAuthStore.setState({
-                    user: result.profile,
+                    user: result.user,
                     isAuthenticated: true,
                 });
 
-                toast.success(`✅ Добро пожаловать, ${result.profile.name}!`);
-                router.push('/profile?tab=garage');
+                toast.success(`Добро пожаловать, ${result.user.name}!`);
+                router.push('/profile?tab=garage'); // сразу в гараж
 
-            } catch (err: any) {
-                console.error('💥 Ошибка при обработке токена:', err);
+            } catch (err) {
+                console.error(err);
                 toast.error("Не удалось завершить вход");
                 router.push('/');
             }
         };
 
-        const timer = setTimeout(handleAuth, 800);
-        return () => clearTimeout(timer);
+        handleMagicLink();
     }, [searchParams, router]);
 
     return (

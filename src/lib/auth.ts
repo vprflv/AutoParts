@@ -1,24 +1,28 @@
 // src/lib/auth.ts
-import { createServerClientFn } from "@/src/lib/supabase/server";
+import { cookies } from 'next/headers';
+import { verify } from 'jsonwebtoken';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-change-in-production';
 
 export async function getCurrentUserId(): Promise<string | null> {
-    const supabase = await createServerClientFn();
-    const { data: { user } } = await supabase.auth.getUser();
-    return user?.id || null;
-}
+    const cookieStore = await cookies();
+    const sessionToken = cookieStore.get('session')?.value;
 
-export async function getCurrentProfileUserId(): Promise<string | null> {
-    const supabase = await createServerClientFn();
+    if (!sessionToken) return null;
 
-    const { data: { user }, error } = await supabase.auth.getUser();
-
-    console.log("[getCurrentProfileUserId] User ID:", user?.id);
-    console.log("[getCurrentProfileUserId] Error:", error?.message);
-
-    if (!user?.id) {
-        console.log("[getCurrentProfileUserId] ❌ Нет сессии");
+    try {
+        const decoded = verify(sessionToken, JWT_SECRET) as { userId: string };
+        return decoded.userId;
+    } catch {
         return null;
     }
+}
 
-    return user.id;
+// Для удобства
+export async function getCurrentUser() {
+    const userId = await getCurrentUserId();
+    if (!userId) return null;
+
+    // Можно добавить prisma.user.findUnique если нужно
+    return { id: userId };
 }

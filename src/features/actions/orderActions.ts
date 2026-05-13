@@ -2,7 +2,7 @@
 "use server";
 
 import { prisma } from "@/src/lib/prisma";
-import {getCurrentProfileUserId} from "@/lib/auth";
+import { getCurrentUserId } from "@/src/lib/auth";
 
 export async function createOrder(data: {
     customerName: string;
@@ -14,6 +14,7 @@ export async function createOrder(data: {
 }) {
     let cartItems = data.cartItems;
 
+    // Если cartItems не передали — берём из store
     if (!cartItems || cartItems.length === 0) {
         try {
             const { useCartStore } = await import("@/src/store/useCartStore");
@@ -27,26 +28,23 @@ export async function createOrder(data: {
         throw new Error("Корзина пуста. Добавьте товары перед оформлением.");
     }
 
-    const totalAmount = cartItems.reduce((sum: number, item: any) =>
-        sum + Number(item.price) * item.quantity, 0
-    );
+    const userId = await getCurrentUserId();   // ← Используем новую функцию
 
-    // Получаем пользователя
-    let userId: string | null = null;
-    try {
-        const { createServerClientFn } = await import("@/src/lib/supabase/server");
-        const supabase = await createServerClientFn();
-        const { data: { user } } = await supabase.auth.getUser();
-        userId = user?.id || null;
-    } catch (_) {}
+    if (!userId) {
+        throw new Error("Пользователь не авторизован");
+    }
+
+    const totalAmount = cartItems.reduce((sum: number, item: any) => {
+        return sum + Number(item.price) * item.quantity;
+    }, 0);
 
     const order = await prisma.order.create({
         data: {
-            userId: userId || undefined,
+            userId,
             totalAmount,
             customerName: data.customerName,
             customerPhone: data.customerPhone,
-            customerEmail: data.customerEmail,
+            customerEmail: data.customerEmail || null,
             deliveryAddress: data.deliveryAddress,
             comment: data.comment || null,
 
@@ -54,11 +52,19 @@ export async function createOrder(data: {
                 create: cartItems.map((item: any) => ({
                     productId: item.id,
                     quantity: item.quantity,
-                    price: Number(item.price),   // ← важно привести к Number
+                    price: Number(item.price),
                 })),
             },
         },
-        include: { items: true },
+        include: {
+            items: {
+                include: {
+                    product: {
+                        select: { name: true, oem: true, images: true }
+                    }
+                }
+            }
+        },
     });
 
     // Очищаем корзину
@@ -67,7 +73,7 @@ export async function createOrder(data: {
         useCartStore.getState().clearCart();
     } catch (_) {}
 
-    // === Минимальная сериализация только того, что нужно ===
+    // Сериализация Decimal
     const plainOrder = {
         ...order,
         totalAmount: Number(order.totalAmount),
@@ -77,12 +83,15 @@ export async function createOrder(data: {
         }))
     };
 
-    return { success: true, orderId: order.id, order: plainOrder };
+    return {
+        success: true,
+        orderId: order.id,
+        order: plainOrder
+    };
 }
 
-
 export async function getUserOrders() {
-    const userId = await getCurrentProfileUserId();
+    const userId = await getCurrentUserId();
     if (!userId) return [];
 
     const orders = await prisma.order.findMany({
