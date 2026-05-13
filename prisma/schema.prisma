@@ -13,10 +13,11 @@ model User {
   id         String  @id @default(cuid())
   telegramId String? @unique
   email      String? @unique
+  password   String? // ← добавь для email-регистрации
   name       String?
   username   String?
   avatarUrl  String?
-  provider   String? // "telegram", "email"
+  provider   String? // "telegram", "email", "google" и т.д.
 
   vehicles Vehicle[]
   orders   Order[]
