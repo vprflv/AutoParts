@@ -5,7 +5,7 @@ import { prisma } from "@/src/lib/prisma";
 import {getCurrentProfileUserId, getCurrentUserId} from "@/src/lib/auth";
 
 export async function getUserVehicles() {
-    const userId = await getCurrentUserId();
+    const userId = await getCurrentProfileUserId();
     if (!userId) return [];
 
     return prisma.vehicle.findMany({
