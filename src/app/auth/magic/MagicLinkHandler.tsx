@@ -15,13 +15,15 @@ export default function MagicLinkHandler() {
         const token = searchParams.get('token');
 
         if (!token) {
-            toast.error("Токен не найден");
+            toast.error("Токен не найден в ссылке");
             router.push('/');
             return;
         }
 
         const handleMagicLink = async () => {
             try {
+                setStatus('Авторизация...');
+
                 const res = await fetch('/api/auth/magic', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -36,18 +38,20 @@ export default function MagicLinkHandler() {
                     return;
                 }
 
-                // Сохраняем пользователя в Zustand
+                // Сохраняем пользователя
                 useAuthStore.setState({
                     user: result.user,
                     isAuthenticated: true,
                 });
 
-                toast.success(`Добро пожаловать, ${result.user.name}!`);
-                router.push('/profile?tab=garage'); // сразу в гараж
+                toast.success(`✅ Добро пожаловать, ${result.user.name || 'Пользователь'}!`);
 
-            } catch (err) {
-                console.error(err);
-                toast.error("Не удалось завершить вход");
+                // Переходим сразу в гараж для удобства
+                router.push('/profile?tab=garage');
+
+            } catch (err: any) {
+                console.error('Ошибка magic link:', err);
+                toast.error("Не удалось завершить вход. Попробуйте ещё раз.");
                 router.push('/');
             }
         };

@@ -1,8 +1,8 @@
 // app/api/auth/magic/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/src/lib/prisma';
-import { cookies } from 'next/headers';
 import { sign } from 'jsonwebtoken';
+import { cookies } from 'next/headers';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-change-in-production';
 
@@ -14,7 +14,6 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: false, error: "Нет telegramId" }, { status: 400 });
         }
 
-        // Ищем или создаём пользователя
         let user = await prisma.user.findUnique({
             where: { telegramId: String(telegramId) }
         });
@@ -31,41 +30,34 @@ export async function POST(request: NextRequest) {
             });
         }
 
-        // Создаём JWT токен
-        const token = sign(
-            {
-                userId: user.id,
-                telegramId: user.telegramId
-            },
+        const sessionToken = sign(
+            { userId: user.id },
             JWT_SECRET,
-            { expiresIn: '15m' }
+            { expiresIn: '30d' }
         );
 
-        // Сохраняем токен
-        await prisma.magicToken.create({
-            data: {
-                token,
-                telegramId: String(telegramId),
-                name: user.name,
-                username: user.username,
-                avatarUrl: user.avatarUrl,
-                expiresAt: new Date(Date.now() + 15 * 60 * 1000)
-            }
+        // Устанавливаем httpOnly cookie
+        const cookieStore = await cookies();
+        cookieStore.set('session', sessionToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 30 * 24 * 60 * 60,
+            path: '/'
         });
-
-        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-        const magicLink = `${siteUrl}/auth/magic?token=${token}`;
 
         return NextResponse.json({
             success: true,
-            magicLink
+            user: {
+                id: user.id,
+                name: user.name,
+                username: user.username,
+                avatarUrl: user.avatarUrl
+            }
         });
 
     } catch (error: any) {
-        console.error("Magic link error:", error);
-        return NextResponse.json({
-            success: false,
-            error: "Внутренняя ошибка"
-        }, { status: 500 });
+        console.error("Magic error:", error);
+        return NextResponse.json({ success: false, error: "Внутренняя ошибка" }, { status: 500 });
     }
 }
