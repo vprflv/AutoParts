@@ -3,7 +3,50 @@
 import { prisma } from "@/src/lib/prisma";
 import { ProductsFilter } from "@/src/types";
 
+// ====================== Вспомогательная функция ======================
+function generateSearchText(data: any): string {
+    const parts = [
+        data.name,
+        data.oem,
+        data.brand,
+        ...(Array.isArray(data.crossNumbers) ? data.crossNumbers : [])
+    ].filter(Boolean);
 
+    return parts.join(" | ");
+}
+
+
+// ====================== Создание товара ======================
+export async function createProduct(data: any) {
+    const searchText = generateSearchText(data);
+
+    return prisma.product.create({
+        data: {
+            ...data,
+            searchText,
+        }
+    });
+}
+
+
+// ====================== Обновление товара ======================
+export async function updateProduct(id: string, data: any) {
+    const searchText = generateSearchText(data);
+
+    return prisma.product.update({
+        where: { id },
+        data: {
+            ...data,
+            searchText,
+        }
+    });
+}
+
+
+
+
+
+// ====================== getProducts (быстрый поиск) ======================
 export async function getProducts(filters: ProductsFilter & { page?: number; limit?: number }) {
     const page = filters.page || 1;
     const limit = filters.limit || 12;
@@ -12,67 +55,44 @@ export async function getProducts(filters: ProductsFilter & { page?: number; lim
     const where: any = {};
 
     if (filters.search?.trim()) {
-        const term = filters.search.trim().toLowerCase();
+        const term = filters.search.trim();
 
         where.OR = [
             { name:        { contains: term, mode: "insensitive" } },
             { oem:         { contains: term, mode: "insensitive" } },
             { brand:       { contains: term, mode: "insensitive" } },
             { description: { contains: term, mode: "insensitive" } },
-            { crossNumbers: { has: term } },
+            { searchText:  { contains: term, mode: "insensitive" } },
         ];
     }
 
     if (filters.brand) where.brand = filters.brand;
     if (filters.onlyInStock) where.stock = { gt: 0 };
 
-    const orderBy =
-        filters.sort === "price_asc" ? { price: "asc" as const } :
-            filters.sort === "price_desc" ? { price: "desc" as const } :
-                { createdAt: "desc" as const };
+    const orderBy = filters.sort === "price_asc" ? { price: "asc" as const }
+        : filters.sort === "price_desc" ? { price: "desc" as const }
+            : { createdAt: "desc" as const };
 
-    try {
-        const [products, total] = await Promise.all([
-            prisma.product.findMany({
-                where,
-                orderBy,
-                skip,
-                take: limit,
-                select: {
-                    id: true,
-                    name: true,
-                    oem: true,
-                    price: true,
-                    brand: true,
-                    stock: true,
-                    images: true,
-                    description: true,
-                    specifications: true,
-                    applicability: true,
-                    crossNumbers: true,
-                    category: true,
-                    createdAt: true,
-                }
-            }),
-            prisma.product.count({ where }),
-        ]);
+    const [products, total] = await Promise.all([
+        prisma.product.findMany({
+            where,
+            orderBy,
+            skip,
+            take: limit,
+            select: {
+                id: true, name: true, oem: true, price: true, brand: true,
+                stock: true, images: true, description: true, crossNumbers: true,
+            }
+        }),
+        prisma.product.count({ where }),
+    ]);
 
-        return {
-            products,
-            total,
-            page,
-            totalPages: Math.ceil(total / limit),
-        };
-    } catch (error) {
-        console.error("getProducts error:", error);
-        // Возвращаем пустой результат вместо падения сервера
-        return {
-            products: [],
-            total: 0,
-            page,
-            totalPages: 0,
-        };
-    }
+    return {
+        products,
+        total,
+        page,
+        totalPages: Math.ceil(total / limit),
+    };
 }
 
 export async function getBrands() {
@@ -83,7 +103,7 @@ export async function getBrands() {
         select: {
             brand: true
         },
-        distinct: ['brand'],           // Prisma сам уберёт дубликаты
+        distinct: ['brand'],
         orderBy: {
             brand: 'asc'
         }

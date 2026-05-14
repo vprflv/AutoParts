@@ -104,11 +104,14 @@ model Product {
   description    String?
   specifications Json?
 
+  searchText  String?    // ← добавь это поле
+
   orderItems OrderItem[]
 
   @@index([brand])
   @@index([oem])
-  @@index([crossNumbers], type: Gin) // ← вернул
+  @@index([searchText])
+  @@index([crossNumbers], type: Gin)
   @@map("products")
 }
 
