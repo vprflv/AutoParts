@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { X, Plus, Trash2 } from "lucide-react";
 import Image from "next/image";
+import {toast} from "react-hot-toast";
 
 interface AddProductModalProps {
     isOpen: boolean;
@@ -41,7 +42,7 @@ export default function AddProductModal({ isOpen, onClose, onSave }: AddProductM
         e.preventDefault();
 
         if (images.length === 0) {
-            alert("Добавьте хотя бы одно фото товара");
+            toast.error("Добавьте хотя бы одно фото товара");
             return;
         }
 

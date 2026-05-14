@@ -45,7 +45,6 @@ export const useProfileVehicleStore = create<ProfileVehicleStore>((set, get) => 
         try {
             console.log("Zustand → addVehicle вызван");
             await addVehicle(data);
-            debugger
             await get().loadVehicles();
             toast.success("Автомобиль успешно добавлен в гараж!");
             return true;

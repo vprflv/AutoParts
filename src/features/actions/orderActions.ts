@@ -13,7 +13,7 @@ export async function createOrder(data: {
 }) {
     let cartItems = data.cartItems;
 
-    // Если cartItems не передали — берём из Zustand store
+    // Если cartItems не передали — берём из store
     if (!cartItems || cartItems.length === 0) {
         try {
             const { useCartStore } = await import("@/src/store/useCartStore");
@@ -28,32 +28,35 @@ export async function createOrder(data: {
     }
 
     const userId = await getCurrentUserId();
-    if (!userId) {
-        throw new Error("Пользователь не авторизован");
+
+    // ←←← ИСПРАВЛЕНИЕ: делаем заказ возможным и для гостей
+    const orderData: any = {
+        totalAmount: cartItems.reduce((sum: number, item: any) => {
+            return sum + Number(item.price) * item.quantity;
+        }, 0),
+
+        customerName: data.customerName,
+        customerPhone: data.customerPhone,
+        customerEmail: data.customerEmail || null,
+        deliveryAddress: data.deliveryAddress,
+        comment: data.comment || null,
+
+        items: {
+            create: cartItems.map((item: any) => ({
+                productId: item.id,
+                quantity: item.quantity,
+                price: Number(item.price),
+            })),
+        },
+    };
+
+    // Если пользователь авторизован — привязываем заказ к нему
+    if (userId) {
+        orderData.userId = userId;
     }
 
-    const totalAmount = cartItems.reduce((sum: number, item: any) => {
-        return sum + Number(item.price) * item.quantity;
-    }, 0);
-
     const order = await prisma.order.create({
-        data: {
-            userId,
-            totalAmount,
-            customerName: data.customerName,
-            customerPhone: data.customerPhone,
-            customerEmail: data.customerEmail || null,
-            deliveryAddress: data.deliveryAddress,
-            comment: data.comment || null,
-
-            items: {
-                create: cartItems.map((item: any) => ({
-                    productId: item.id,
-                    quantity: item.quantity,
-                    price: Number(item.price),
-                })),
-            },
-        },
+        data: orderData,
         include: {
             items: {
                 include: {
@@ -71,7 +74,6 @@ export async function createOrder(data: {
         useCartStore.getState().clearCart();
     } catch (_) {}
 
-    // Приводим Decimal к числу для фронтенда
     const plainOrder = {
         ...order,
         totalAmount: Number(order.totalAmount),
@@ -85,6 +87,7 @@ export async function createOrder(data: {
         success: true,
         orderId: order.id,
         order: plainOrder,
+        isGuest: !userId, // полезно знать на фронте
     };
 }
 

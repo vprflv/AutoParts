@@ -1,5 +1,4 @@
-import {useQuery} from "@tanstack/react-query";
-import {getBrands} from "@/features/actions/productActions";
+
 
 export const usePagination = () => {
     function getPaginationRange(currentPage: number, totalPages: number): (number | string)[] {

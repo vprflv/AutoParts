@@ -6,6 +6,7 @@ import SocialLoginButtons from "@/src/features/auth/components/SocialLoginButton
 
 import TelegramModal from "@/features/auth/components/telegram/TelegramModal";
 import {useLoginForm} from "@/features/auth/hooks/useLoginForm";
+import {toast} from "react-hot-toast";
 
 
 interface LoginFormProps {
@@ -52,7 +53,7 @@ export default function LoginForm({ onClose, setTab }: LoginFormProps) {
         if (provider === "telegram") {
             setIsTelegramWidgetOpen(true);
         } else {
-            alert(`🔄 Вход через ${provider} будет реализован позже`);
+            toast.error(`🔄 Вход через ${provider} будет реализован позже`);
         }
     };
 

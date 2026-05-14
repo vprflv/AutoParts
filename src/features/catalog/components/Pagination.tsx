@@ -1,6 +1,6 @@
 "use client";
 
-import {usePagination} from "@/features/catalog/hooks/usePagination";
+import { usePagination } from "@/features/catalog/hooks/usePagination";
 
 interface PaginationProps {
     currentPage: number;
@@ -11,40 +11,39 @@ interface PaginationProps {
 export default function Pagination({ currentPage, totalPages, onPageChange }: PaginationProps) {
     if (totalPages <= 1) return null;
 
-   const {getPaginationRange}=usePagination()
-
+    const { getPaginationRange } = usePagination();
     const pageRange = getPaginationRange(currentPage, totalPages);
 
     return (
-        <div className="mt-12 flex justify-center">
-            <div className="flex items-center gap-2 bg-zinc-900 px-4 py-3 rounded-3xl border border-zinc-700 shadow-inner">
+        <div className="mt-10 md:mt-12 flex justify-center">
+            <div className="flex items-center gap-1.5 sm:gap-2 bg-zinc-900 px-3 sm:px-4 py-2.5 sm:py-3 rounded-3xl border border-zinc-700 shadow-inner">
 
                 {/* Кнопка Назад */}
                 <button
                     onClick={() => onPageChange(currentPage - 1)}
                     disabled={currentPage === 1}
-                    className="px-6 py-3 rounded-2xl hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all text-sm font-medium flex items-center gap-2"
+                    className="px-4 sm:px-6 py-3 rounded-2xl hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center min-w-[44px] sm:min-w-auto"
                 >
-                    ← Назад
+                    <span className="text-lg sm:text-base">←</span>
+                    <span className="hidden sm:inline ml-2 text-sm font-medium">Назад</span>
                 </button>
 
                 {/* Номера страниц */}
-                <div className="flex items-center gap-1 px-2">
+                <div className="flex items-center gap-0.5 sm:gap-1 px-1 sm:px-2">
                     {pageRange.map((pageNum, index) => (
                         <span
                             key={index}
-                            className={`min-w-[42px] h-11 rounded-2xl flex items-center justify-center text-sm font-medium transition-all ${
+                            className={`min-w-[38px] sm:min-w-[42px] h-9 sm:h-11 rounded-2xl flex items-center justify-center text-sm font-medium transition-all ${
                                 typeof pageNum === 'number' && pageNum === currentPage
-                                    ? "text-cyan-300 underline shadow-neon-main font-semibold"
+                                    ? "bg-zinc-800 text-cyan-300 shadow-neon-main font-semibold"
                                     : typeof pageNum === 'number'
                                         ? "hover:bg-zinc-800 text-white"
-                                        : "text-zinc-400 cursor-default"
+                                        : "text-zinc-500 cursor-default"
                             }`}
                             onClick={() => typeof pageNum === 'number' && onPageChange(pageNum)}
-                            style={{ cursor: typeof pageNum === 'number' ? 'pointer' : 'default' }}
                         >
-              {pageNum}
-            </span>
+                            {pageNum}
+                        </span>
                     ))}
                 </div>
 
@@ -52,9 +51,10 @@ export default function Pagination({ currentPage, totalPages, onPageChange }: Pa
                 <button
                     onClick={() => onPageChange(currentPage + 1)}
                     disabled={currentPage === totalPages}
-                    className="px-6 py-3 rounded-2xl hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all text-sm font-medium flex items-center gap-2"
+                    className="px-4 sm:px-6 py-3 rounded-2xl hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center min-w-[44px] sm:min-w-auto"
                 >
-                    Вперёд →
+                    <span className="hidden sm:inline mr-2 text-sm font-medium">Вперёд</span>
+                    <span className="text-lg sm:text-base">→</span>
                 </button>
             </div>
         </div>

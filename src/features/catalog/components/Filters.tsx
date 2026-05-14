@@ -91,19 +91,19 @@ export default function Filters({ filters, setFilters, resetFilters, brands }: F
             </div>
 
             {/* Только в наличии */}
-            <div>
-                <label className="flex items-center gap-3 cursor-pointer group">
-                    <input
-                        type="checkbox"
-                        checked={filters.onlyInStock || false}
-                        onChange={(e) => setFilters({ onlyInStock: e.target.checked })}
-                        className="w-5 h-5 accent-cyan-500 bg-zinc-800 border-zinc-700 rounded focus:ring-cyan-400 cursor-pointer"
-                    />
-                    <span className="text-sm text-zinc-300 group-hover:text-white transition-colors">
-                        Только в наличии
-                    </span>
-                </label>
-            </div>
+            {/*<div>*/}
+            {/*    <label className="flex items-center gap-3 cursor-pointer group">*/}
+            {/*        <input*/}
+            {/*            type="checkbox"*/}
+            {/*            checked={filters.onlyInStock || false}*/}
+            {/*            onChange={(e) => setFilters({ onlyInStock: e.target.checked })}*/}
+            {/*            className="w-5 h-5 accent-cyan-500 bg-zinc-800 border-zinc-700 rounded focus:ring-cyan-400 cursor-pointer"*/}
+            {/*        />*/}
+            {/*        <span className="text-sm text-zinc-300 group-hover:text-white transition-colors">*/}
+            {/*            Только в наличии*/}
+            {/*        </span>*/}
+            {/*    </label>*/}
+            {/*</div>*/}
         </div>
     );
 }

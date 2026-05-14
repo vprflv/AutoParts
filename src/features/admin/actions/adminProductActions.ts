@@ -212,14 +212,16 @@ export async function updateProduct(id: string, data: any) {
             where: { id },
             data: {
                 ...data,
-                applicability: Array.isArray(data.applicability) ? data.applicability : [],
-                searchText,
+                searchText,                    // ← гарантированно обновляем
+                applicability: Array.isArray(data.applicability)
+                    ? data.applicability
+                    : [],
             },
         });
 
         return { success: true, product: updated };
     } catch (error: any) {
-        console.error("Update error:", error);
+        console.error("Update product error:", error);
         throw new Error(error.message || "Не удалось обновить товар");
     }
 }
