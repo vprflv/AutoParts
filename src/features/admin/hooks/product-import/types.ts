@@ -12,6 +12,7 @@ export interface ImportProduct {
     applicability?: string[];
     specifications?: Record<string, any>;
     description?: string;
+    searchText?: string;
 }
 
 export interface ImportResult {
