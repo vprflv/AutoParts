@@ -1,5 +1,7 @@
 "use client";
 
+import {usePagination} from "@/features/catalog/hooks/usePagination";
+
 interface PaginationProps {
     currentPage: number;
     totalPages: number;
@@ -8,6 +10,10 @@ interface PaginationProps {
 
 export default function Pagination({ currentPage, totalPages, onPageChange }: PaginationProps) {
     if (totalPages <= 1) return null;
+
+   const {getPaginationRange}=usePagination()
+
+    const pageRange = getPaginationRange(currentPage, totalPages);
 
     return (
         <div className="mt-12 flex justify-center">
@@ -24,18 +30,21 @@ export default function Pagination({ currentPage, totalPages, onPageChange }: Pa
 
                 {/* Номера страниц */}
                 <div className="flex items-center gap-1 px-2">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
-                        <button
-                            key={pageNum}
-                            onClick={() => onPageChange(pageNum)}
+                    {pageRange.map((pageNum, index) => (
+                        <span
+                            key={index}
                             className={`min-w-[42px] h-11 rounded-2xl flex items-center justify-center text-sm font-medium transition-all ${
-                                pageNum === currentPage
-                                    ? " text-cyan-300 underline shadow-neon-main font-semibold"
-                                    : "hover:bg-zinc-800  text-white "
+                                typeof pageNum === 'number' && pageNum === currentPage
+                                    ? "text-cyan-300 underline shadow-neon-main font-semibold"
+                                    : typeof pageNum === 'number'
+                                        ? "hover:bg-zinc-800 text-white"
+                                        : "text-zinc-400 cursor-default"
                             }`}
+                            onClick={() => typeof pageNum === 'number' && onPageChange(pageNum)}
+                            style={{ cursor: typeof pageNum === 'number' ? 'pointer' : 'default' }}
                         >
-                            {pageNum}
-                        </button>
+              {pageNum}
+            </span>
                     ))}
                 </div>
 
