@@ -4,6 +4,7 @@ import { prisma } from "@/src/lib/prisma";
 import { Product } from "@/src/types";
 import {createClient} from "@/lib/supabase/client";
 import {createServerClientFn} from "@/lib/supabase/server";
+import {generateSearchText} from "@/app/admin/utils/generateSearchText";
 
 export async function getAdminProducts(): Promise<Product[]> {
     try {
@@ -199,5 +200,26 @@ export async function deletePhotoAction(fileName: string) {
     } catch (error: any) {
         console.error("deletePhotoAction error:", error);
         throw new Error(error.message || "Не удалось удалить фото");
+    }
+}
+
+
+export async function updateProduct(id: string, data: any) {
+    try {
+        const searchText = generateSearchText(data);
+
+        const updated = await prisma.product.update({
+            where: { id },
+            data: {
+                ...data,
+                applicability: Array.isArray(data.applicability) ? data.applicability : [],
+                searchText,
+            },
+        });
+
+        return { success: true, product: updated };
+    } catch (error: any) {
+        console.error("Update error:", error);
+        throw new Error(error.message || "Не удалось обновить товар");
     }
 }
