@@ -13,6 +13,7 @@ import { SlidersHorizontal, MessageCircle } from "lucide-react";
 import { useCatalogFilters } from "@/src/hooks/useCatalogFilters";
 import { useFloatingButton } from "@/src/hooks/useFloatingButton";
 import {useBrands} from "@/features/catalog/hooks/useBrands";
+import {Product} from "@/types";
 
 export default function HomeContent() {
     const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
@@ -100,7 +101,7 @@ export default function HomeContent() {
                         ) : (
                             <>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
-                                    {products.map((product) => (
+                                    {products.map((product:Product) => (
                                         <ProductCard key={product.id} product={product} />
                                     ))}
                                 </div>

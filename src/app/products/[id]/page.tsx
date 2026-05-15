@@ -150,7 +150,7 @@ export default function ProductDetailPage() {
 
                     {activeTab === "applicability" && product.applicability?.length > 0 && (
                         <div className="flex flex-wrap gap-3">
-                            {product.applicability.map((item, index) => (
+                            {product.applicability.map((item: string, index: number) => (
                                 <div
                                     key={index}
                                     className="bg-zinc-900 border border-zinc-700 hover:border-cyan-500/30 px-5 py-3 rounded-2xl text-zinc-300 transition-colors"

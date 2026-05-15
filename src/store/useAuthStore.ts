@@ -1,6 +1,6 @@
 // src/store/useAuthStore.ts
-import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
+import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 export interface User {
     id: string;
@@ -10,7 +10,7 @@ export interface User {
     avatarUrl?: string | null;
     telegramId?: string | null;
     phone?: string | null;
-    provider: "email" | "telegram";
+    provider: 'email' | 'telegram';
 }
 
 interface AuthStore {
@@ -27,7 +27,6 @@ interface AuthStore {
     logout: () => Promise<void>;
     clearError: () => void;
 }
-
 
 export const useAuthStore = create<AuthStore>()(
     persist(
@@ -47,12 +46,12 @@ export const useAuthStore = create<AuthStore>()(
                     const { user } = await res.json();
                     set({ user, isAuthenticated: true });
                 } catch (err) {
-                    console.error("loadUser error:", err);
+                    console.error('loadUser error:', err);
                     set({ user: null, isAuthenticated: false });
                 }
             },
 
-            register: async (name, email, password) => {
+            register: async (name: string, email: string, password: string) => {
                 set({ isLoading: true, error: null });
                 try {
                     const res = await fetch('/api/auth/register', {
@@ -61,7 +60,8 @@ export const useAuthStore = create<AuthStore>()(
                         body: JSON.stringify({ name, email, password }),
                     });
                     const data = await res.json();
-                    if (!data.success) throw new Error(data.error || "Ошибка регистрации");
+                    if (!data.success)
+                        throw new Error(data.error || 'Ошибка регистрации');
 
                     await get().loadUser();
                     return true;
@@ -73,7 +73,7 @@ export const useAuthStore = create<AuthStore>()(
                 }
             },
 
-            login: async (email, password) => {
+            login: async (email: string, password: string) => {
                 set({ isLoading: true, error: null });
                 try {
                     const res = await fetch('/api/auth/login', {
@@ -82,7 +82,7 @@ export const useAuthStore = create<AuthStore>()(
                         body: JSON.stringify({ email, password }),
                     });
                     const data = await res.json();
-                    if (!data.success) throw new Error(data.error || "Ошибка входа");
+                    if (!data.success) throw new Error(data.error || 'Ошибка входа');
 
                     await get().loadUser();
                     return true;
@@ -94,10 +94,10 @@ export const useAuthStore = create<AuthStore>()(
                 }
             },
 
-            updateUser: async (updates) => {
+            updateUser: async (updates: Partial<User>) => {
                 const current = get().user;
                 if (!current) {
-                    set({ error: "Пользователь не авторизован" });
+                    set({ error: 'Пользователь не авторизован' });
                     return false;
                 }
 
@@ -108,30 +108,32 @@ export const useAuthStore = create<AuthStore>()(
                         method: 'PATCH',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(updates),
-                        credentials: 'include'
+                        credentials: 'include',
                     });
 
                     const data = await res.json();
 
                     if (!res.ok) {
-                        throw new Error(data.error || data.message || "Не удалось обновить профиль");
+                        throw new Error(
+                            data.error || data.message || 'Не удалось обновить профиль'
+                        );
                     }
 
-                    set((state) => ({
+                    set((state:AuthStore) => ({
                         user: state.user ? { ...state.user, ...data.user } : null,
                     }));
 
                     return true;
                 } catch (err: any) {
-                    console.error("updateUser error:", err);
-                    set({ error: err.message || "Ошибка обновления профиля" });
+                    console.error('updateUser error:', err);
+                    set({ error: err.message || 'Ошибка обновления профиля' });
                     return false;
                 } finally {
                     set({ isLoading: false });
                 }
             },
 
-            loginWithTelegram: async (telegramUser) => {
+            loginWithTelegram: async (telegramUser:any) => {
                 set({ isLoading: true, error: null });
                 try {
                     const res = await fetch('/api/auth/magic', {
@@ -141,12 +143,13 @@ export const useAuthStore = create<AuthStore>()(
                     });
 
                     const data = await res.json();
-                    if (!data.success) throw new Error(data.error || "Ошибка входа через Telegram");
+                    if (!data.success)
+                        throw new Error(data.error || 'Ошибка входа через Telegram');
 
                     await get().loadUser();
                     return true;
                 } catch (err: any) {
-                    console.error("Telegram login error:", err);
+                    console.error('Telegram login error:', err);
                     set({ error: err.message });
                     return false;
                 } finally {
@@ -158,10 +161,10 @@ export const useAuthStore = create<AuthStore>()(
                 try {
                     await fetch('/api/auth/logout', {
                         method: 'POST',
-                        credentials: 'include'
+                        credentials: 'include',
                     });
                 } catch (e) {
-                    console.error("Logout error:", e);
+                    console.error('Logout error:', e);
                 }
                 set({ user: null, isAuthenticated: false, error: null });
             },
@@ -170,9 +173,9 @@ export const useAuthStore = create<AuthStore>()(
         }),
 
         {
-            name: "auth-storage",
+            name: 'auth-storage',
             storage: createJSONStorage(() => localStorage),
-            partialize: (state) => ({ user: state.user }),
+            partialize: (state:AuthStore) => ({ user: state.user }),
         }
     )
 );

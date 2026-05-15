@@ -22,7 +22,7 @@ export type Product = {
     brand: string;
     stock: number;
     images: string[];
-    applicability?: string[];
+    applicability?: string | string[];
     crossNumbers?: string[];
     description?: string | null;
     specifications?: any;

@@ -25,7 +25,7 @@ export function useEditProduct(product: Product | null) {
         onError: (err: any) => toast.error(err.message || "Ошибка обновления"),
     });
 
-    // Инициализация
+    // Инициализация формы при получении товара
     useEffect(() => {
         if (product) {
             setFormData({ ...product });
@@ -71,17 +71,35 @@ export function useEditProduct(product: Product | null) {
 
         setIsSaving(true);
 
-        const applicability = Array.isArray(formData.applicability)
-            ? formData.applicability
-            : typeof formData.applicability === "string"
-                ? formData.applicability.split(",").map(s => s.trim()).filter(Boolean)
-                : [];
+        // === Нормализация applicability ===
+        let applicability: string[] = [];
 
-        const dataToSave = { ...formData, images, applicability };
+        const field = formData.applicability as string | string[] | undefined;
+
+        if (Array.isArray(field)) {
+            applicability = field.filter((item): item is string => typeof item === "string");
+        } else if (typeof field === "string") {
+            applicability = field
+                .split(",")
+                .map(s => s.trim())
+                .filter(s => s.length > 0);
+        }
+
+        const dataToSave = {
+            ...formData,
+            images,
+            applicability,
+        };
 
         try {
-            await updateMutation.mutateAsync({ id: product!.id, data: dataToSave });
+            await updateMutation.mutateAsync({
+                id: product!.id,
+                data: dataToSave,
+            });
             return true;
+        } catch (error) {
+            console.error(error);
+            return false;
         } finally {
             setIsSaving(false);
         }
