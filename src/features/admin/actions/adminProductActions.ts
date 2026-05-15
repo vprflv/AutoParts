@@ -2,16 +2,19 @@
 
 import { prisma } from "@/src/lib/prisma";
 import { Product } from "@/src/types";
-import {createClient} from "@/lib/supabase/client";
-import {createServerClientFn} from "@/lib/supabase/server";
-import {generateSearchText} from "@/app/admin/utils/generateSearchText";
+import { createClient } from "@/lib/supabase/client";
+import { createServerClientFn } from "@/lib/supabase/server";
+import { generateSearchText } from "@/app/admin/utils/generateSearchText";
+import {toPlain} from "@/lib/utils/toPlain";
+
 
 export async function getAdminProducts(): Promise<Product[]> {
     try {
         const products = await prisma.product.findMany({
             orderBy: { createdAt: 'desc' },
         });
-        return products;
+
+        return toPlain(products);
     } catch (error) {
         console.error("Ошибка получения товаров для админки:", error);
         return [];
@@ -40,7 +43,6 @@ export async function bulkPhotoUpload(files: File[]) {
     const supabase = createClient();
 
     try {
-        // Получаем все товары один раз
         const products = await prisma.product.findMany({
             select: { oem: true, images: true }
         });
@@ -52,7 +54,6 @@ export async function bulkPhotoUpload(files: File[]) {
         const results = { updated: 0, skipped: 0, errors: 0 };
         const filesByOem = new Map<string, File[]>();
 
-        // === Группировка файлов по OEM ===
         for (const file of files) {
             const fileNameUpper = file.name.toUpperCase();
             let matchedOem: string | null = null;
@@ -73,8 +74,7 @@ export async function bulkPhotoUpload(files: File[]) {
             filesByOem.get(matchedOem)!.push(file);
         }
 
-        // === Параллельная загрузка с ограничением concurrency ===
-        const CONCURRENCY = 6; // можно поднять до 8-10, если Supabase выдерживает
+        const CONCURRENCY = 6;
 
         const processGroup = async ([oem, groupFiles]: [string, File[]]) => {
             try {
@@ -90,10 +90,7 @@ export async function bulkPhotoUpload(files: File[]) {
 
                     const { data, error } = await supabase.storage
                         .from("product-images")
-                        .upload(fileName, file, {
-                            cacheControl: "3600",
-                            upsert: true,
-                        });
+                        .upload(fileName, file, { cacheControl: "3600", upsert: true });
 
                     if (error) throw error;
 
@@ -108,11 +105,10 @@ export async function bulkPhotoUpload(files: File[]) {
                     .filter(r => r.status === 'fulfilled')
                     .map(r => (r as PromiseFulfilledResult<string>).value);
 
-                // Объединяем + чистим
                 const allImages = [...uploadedUrls, ...currentImages];
                 const cleanImages = [...new Set(allImages)]
                     .filter(url => typeof url === "string" && url.startsWith("http"))
-                    .slice(0, 10); // максимум 10 фото
+                    .slice(0, 10);
 
                 await prisma.product.update({
                     where: { oem },
@@ -126,7 +122,6 @@ export async function bulkPhotoUpload(files: File[]) {
             }
         };
 
-        // Запускаем с ограничением параллельности
         const groups = Array.from(filesByOem.entries());
         for (let i = 0; i < groups.length; i += CONCURRENCY) {
             const batch = groups.slice(i, i + CONCURRENCY);
@@ -148,20 +143,16 @@ export async function deletePhotoAction(fileName: string) {
     if (!fileName) throw new Error("Имя файла не указано");
 
     try {
-        const supabase = await createServerClientFn();   // ← используем стандартное имя
+        const supabase = await createServerClientFn();
 
-        if (!supabase) {
-            throw new Error("Не удалось создать Supabase клиент");
-        }
+        if (!supabase) throw new Error("Не удалось создать Supabase клиент");
 
-        // 1. Получаем публичный URL
         const { data: urlData } = supabase.storage
             .from("product-images")
             .getPublicUrl(fileName);
 
         const publicUrl = urlData.publicUrl;
 
-        // 2. Удаляем из Storage
         const { error: storageError } = await supabase.storage
             .from("product-images")
             .remove([fileName]);
@@ -170,11 +161,8 @@ export async function deletePhotoAction(fileName: string) {
             console.warn("Storage delete warning:", storageError);
         }
 
-        // 3. Очищаем из товаров
         const productsWithPhoto = await prisma.product.findMany({
-            where: {
-                images: { has: publicUrl }
-            },
+            where: { images: { has: publicUrl } },
             select: { id: true, images: true, oem: true }
         });
 
@@ -182,12 +170,10 @@ export async function deletePhotoAction(fileName: string) {
 
         for (const product of productsWithPhoto) {
             const newImages = product.images.filter((url: string) => url !== publicUrl);
-
             await prisma.product.update({
                 where: { id: product.id },
                 data: { images: newImages }
             });
-
             cleaned++;
         }
 
@@ -203,7 +189,6 @@ export async function deletePhotoAction(fileName: string) {
     }
 }
 
-
 export async function updateProduct(id: string, data: any) {
     try {
         const searchText = generateSearchText(data);
@@ -212,14 +197,15 @@ export async function updateProduct(id: string, data: any) {
             where: { id },
             data: {
                 ...data,
-                searchText,                    // ← гарантированно обновляем
-                applicability: Array.isArray(data.applicability)
-                    ? data.applicability
-                    : [],
+                searchText,
+                applicability: Array.isArray(data.applicability) ? data.applicability : [],
             },
         });
 
-        return { success: true, product: updated };
+        return {
+            success: true,
+            product: toPlain(updated)     // ← Добавлено
+        };
     } catch (error: any) {
         console.error("Update product error:", error);
         throw new Error(error.message || "Не удалось обновить товар");

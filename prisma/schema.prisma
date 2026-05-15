@@ -17,6 +17,7 @@ model User {
   name       String?
   username   String?
   avatarUrl  String?
+  phone      String?
   provider   String?
 
   vehicles Vehicle[]

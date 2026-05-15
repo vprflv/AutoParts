@@ -22,11 +22,12 @@ interface AuthStore {
     loadUser: () => Promise<void>;
     register: (name: string, email: string, password: string) => Promise<boolean>;
     login: (email: string, password: string) => Promise<boolean>;
-    updateUser: (updates: Partial<User>) => Promise<void>;
+    updateUser: (updates: Partial<User>) => Promise<boolean>;
     loginWithTelegram: (telegramUser: any) => Promise<boolean>;
     logout: () => Promise<void>;
     clearError: () => void;
 }
+
 
 export const useAuthStore = create<AuthStore>()(
     persist(
@@ -38,27 +39,20 @@ export const useAuthStore = create<AuthStore>()(
 
             loadUser: async () => {
                 try {
-                    const res = await fetch('/api/auth/me', {
-                        credentials: 'include'
-                    });
-
+                    const res = await fetch('/api/auth/me', { credentials: 'include' });
                     if (!res.ok) {
                         set({ user: null, isAuthenticated: false });
                         return;
                     }
-
                     const { user } = await res.json();
-                    set({
-                        user,
-                        isAuthenticated: true
-                    });
+                    set({ user, isAuthenticated: true });
                 } catch (err) {
                     console.error("loadUser error:", err);
                     set({ user: null, isAuthenticated: false });
                 }
             },
 
-            register: async (name: string, email: string, password: string) => {
+            register: async (name, email, password) => {
                 set({ isLoading: true, error: null });
                 try {
                     const res = await fetch('/api/auth/register', {
@@ -66,7 +60,6 @@ export const useAuthStore = create<AuthStore>()(
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ name, email, password }),
                     });
-
                     const data = await res.json();
                     if (!data.success) throw new Error(data.error || "Ошибка регистрации");
 
@@ -80,7 +73,7 @@ export const useAuthStore = create<AuthStore>()(
                 }
             },
 
-            login: async (email: string, password: string) => {
+            login: async (email, password) => {
                 set({ isLoading: true, error: null });
                 try {
                     const res = await fetch('/api/auth/login', {
@@ -88,7 +81,6 @@ export const useAuthStore = create<AuthStore>()(
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ email, password }),
                     });
-
                     const data = await res.json();
                     if (!data.success) throw new Error(data.error || "Ошибка входа");
 
@@ -102,14 +94,50 @@ export const useAuthStore = create<AuthStore>()(
                 }
             },
 
-            loginWithTelegram: async (telegramUser: any) => {
+            updateUser: async (updates) => {
+                const current = get().user;
+                if (!current) {
+                    set({ error: "Пользователь не авторизован" });
+                    return false;
+                }
+
+                set({ isLoading: true, error: null });
+
+                try {
+                    const res = await fetch('/api/auth/update', {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(updates),
+                        credentials: 'include'
+                    });
+
+                    const data = await res.json();
+
+                    if (!res.ok) {
+                        throw new Error(data.error || data.message || "Не удалось обновить профиль");
+                    }
+
+                    set((state) => ({
+                        user: state.user ? { ...state.user, ...data.user } : null,
+                    }));
+
+                    return true;
+                } catch (err: any) {
+                    console.error("updateUser error:", err);
+                    set({ error: err.message || "Ошибка обновления профиля" });
+                    return false;
+                } finally {
+                    set({ isLoading: false });
+                }
+            },
+
+            loginWithTelegram: async (telegramUser) => {
                 set({ isLoading: true, error: null });
                 try {
-                    // ←←← Важно! Убедись, что путь правильный
-                    const res = await fetch('/api/auth/magic', {   // или /api/auth/telegram — как у тебя настроено
+                    const res = await fetch('/api/auth/magic', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(telegramUser),        // обычно { telegramId, name, username, avatarUrl }
+                        body: JSON.stringify(telegramUser),
                     });
 
                     const data = await res.json();
@@ -123,31 +151,6 @@ export const useAuthStore = create<AuthStore>()(
                     return false;
                 } finally {
                     set({ isLoading: false });
-                }
-            },
-
-            updateUser: async (updates: Partial<User>) => {
-                const current = get().user;
-                if (!current) return;
-
-                try {
-                    const res = await fetch('/api/auth/update', {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(updates),
-                        credentials: 'include'
-                    });
-
-                    if (!res.ok) throw new Error("Не удалось обновить профиль");
-
-                    const { user: updated } = await res.json();
-
-                    set((state) => ({
-                        user: state.user ? { ...state.user, ...updated } : null,
-                    }));
-                } catch (err: any) {
-                    console.error("updateUser error:", err);
-                    set({ error: err.message });
                 }
             },
 

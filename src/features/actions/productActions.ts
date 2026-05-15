@@ -2,51 +2,9 @@
 
 import { prisma } from "@/src/lib/prisma";
 import { ProductsFilter } from "@/src/types";
-
-// ====================== Вспомогательная функция ======================
-function generateSearchText(data: any): string {
-    const parts = [
-        data.name,
-        data.oem,
-        data.brand,
-        ...(Array.isArray(data.crossNumbers) ? data.crossNumbers : [])
-    ].filter(Boolean);
-
-    return parts.join(" | ");
-}
+import {toPlain} from "@/lib/utils/toPlain";
 
 
-// ====================== Создание товара ======================
-export async function createProduct(data: any) {
-    const searchText = generateSearchText(data);
-
-    return prisma.product.create({
-        data: {
-            ...data,
-            searchText,
-        }
-    });
-}
-
-
-// ====================== Обновление товара ======================
-export async function updateProduct(id: string, data: any) {
-    const searchText = generateSearchText(data);
-
-    return prisma.product.update({
-        where: { id },
-        data: {
-            ...data,
-            searchText,
-        }
-    });
-}
-
-
-
-
-
-// ====================== getProducts (быстрый поиск) ======================
 export async function getProducts(filters: ProductsFilter & { page?: number; limit?: number }) {
     const page = filters.page || 1;
     const limit = filters.limit || 12;
@@ -56,7 +14,6 @@ export async function getProducts(filters: ProductsFilter & { page?: number; lim
 
     if (filters.search?.trim()) {
         const term = filters.search.trim();
-
         where.OR = [
             { name:        { contains: term, mode: "insensitive" } },
             { oem:         { contains: term, mode: "insensitive" } },
@@ -80,15 +37,22 @@ export async function getProducts(filters: ProductsFilter & { page?: number; lim
             skip,
             take: limit,
             select: {
-                id: true, name: true, oem: true, price: true, brand: true,
-                stock: true, images: true, description: true, crossNumbers: true,
+                id: true,
+                name: true,
+                oem: true,
+                price: true,
+                brand: true,
+                stock: true,
+                images: true,
+                description: true,
+                crossNumbers: true,
             }
         }),
         prisma.product.count({ where }),
     ]);
 
     return {
-        products,
+        products: toPlain(products),        // ← КРИТИЧНО
         total,
         page,
         totalPages: Math.ceil(total / limit),
@@ -97,21 +61,14 @@ export async function getProducts(filters: ProductsFilter & { page?: number; lim
 
 export async function getBrands() {
     const brands = await prisma.product.findMany({
-        where: {
-            brand: { not: undefined }
-        },
-        select: {
-            brand: true
-        },
+        where: { brand: { not: undefined } },
+        select: { brand: true },
         distinct: ['brand'],
-        orderBy: {
-            brand: 'asc'
-        }
+        orderBy: { brand: 'asc' }
     });
 
-    return brands.map(item => item.brand).filter(Boolean); // на всякий случай
+    return brands.map(item => item.brand).filter(Boolean);
 }
-
 
 export async function getProduct(id: string) {
     const product = await prisma.product.findUnique({
@@ -122,7 +79,7 @@ export async function getProduct(id: string) {
         throw new Error("Товар не найден");
     }
 
-    return product;
+    return toPlain(product);     // ← тоже нужно!
 }
 
 export async function cleanupBrokenImages() {
@@ -147,12 +104,9 @@ export async function cleanupBrokenImages() {
                 data: { images: cleanImages }
             });
             cleaned++;
-            console.log(`🧹 Очищен товар ${product.oem}: ${product.images.length} → ${cleanImages.length}`);
         }
     }
 
     console.log(`✅ Очистка завершена. Обработано товаров: ${cleaned}`);
     return cleaned;
 }
-
-

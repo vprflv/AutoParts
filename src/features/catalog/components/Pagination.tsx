@@ -33,7 +33,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange }: Pa
                     {pageRange.map((pageNum, index) => (
                         <span
                             key={index}
-                            className={`min-w-[38px] sm:min-w-[42px] h-9 sm:h-11 rounded-2xl flex items-center justify-center text-sm font-medium transition-all ${
+                            className={`min-w-[38px] sm:min-w-[42px] h-9 sm:h-11 rounded-2xl cursor-pointer flex items-center justify-center text-sm font-medium transition-all ${
                                 typeof pageNum === 'number' && pageNum === currentPage
                                     ? "bg-zinc-800 text-cyan-300 shadow-neon-main font-semibold"
                                     : typeof pageNum === 'number'
