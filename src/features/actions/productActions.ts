@@ -82,31 +82,3 @@ export async function getProduct(id: string) {
     return toPlain(product);     // ← тоже нужно!
 }
 
-export async function cleanupBrokenImages() {
-    const products = await prisma.product.findMany({
-        select: { id: true, oem: true, images: true }
-    });
-
-    let cleaned = 0;
-
-    for (const product of products) {
-        const cleanImages = product.images.filter((url): url is string =>
-            typeof url === "string" &&
-            url.trim() !== "" &&
-            !url.includes("undefined") &&
-            !url.includes("null") &&
-            url.startsWith("http")
-        );
-
-        if (cleanImages.length !== product.images.length) {
-            await prisma.product.update({
-                where: { id: product.id },
-                data: { images: cleanImages }
-            });
-            cleaned++;
-        }
-    }
-
-    console.log(`✅ Очистка завершена. Обработано товаров: ${cleaned}`);
-    return cleaned;
-}

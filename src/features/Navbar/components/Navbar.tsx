@@ -11,7 +11,7 @@ import AuthModal from "../../auth/components/AuthModal";
 import SearchInput from "@/src/features/Navbar/components/SearchInput";
 import { toast } from "react-hot-toast";
 import Link from "next/link";
-
+import Image from "next/image";
 interface NavbarProps {
     onSearchChange: (search: string) => void;
     searchValue: string;
@@ -52,11 +52,19 @@ export default function Navbar({ onSearchChange, searchValue }: NavbarProps) {
                         {/* Логотип */}
                         <Link href="/">
                             <div className="flex items-center gap-3 flex-shrink-0 group">
-                                <div className="w-9 h-9 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center text-2xl transition-all group-hover:scale-110 group-hover:rotate-6 shadow-neon-main">
-                                    {/* Можно добавить иконку авто */}
+                                {/* НОВЫЙ ЛОГОТИП */}
+                                <div className="relative w-10 h-10 flex-shrink-0 transition-all">
+                                    <Image
+                                        src="/images/logo.png"
+                                        alt="AutoPart PRO"
+                                        fill
+                                        className="object-contain drop-shadow-[0_0_5px_rgb(34,211,238)]"
+                                        priority
+                                    />
                                 </div>
+
                                 <div>
-                                    <h1 className="text-2xl font-bold tracking-tighter bg-cyan-300 bg-clip-text text-transparent">
+                                    <h1 className="text-2xl font-bold tracking-tighter bg-cyan-600 bg-clip-text text-transparent">
                                         AutoPart
                                     </h1>
                                     <p className="text-[10px] text-zinc-500 -mt-1 tracking-widest">PRO</p>
