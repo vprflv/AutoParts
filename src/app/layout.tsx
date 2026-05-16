@@ -9,6 +9,11 @@ import {startMagicTokenCleanup} from "@/lib/cron/clean-magic-tokens";
 export const metadata: Metadata = {
     title: "AutoPart Pro — Автозапчасти",
     description: "Современный магазин автозапчастей",
+    icons: {
+        icon: ['/icon-512.png','/icon-192.png', '/icon-32.png', '/icon-16.png'],
+        apple: '/apple-touch-icon.png',
+        shortcut: '/icon-16.png',
+    },
 };
 
 export default function RootLayout({
