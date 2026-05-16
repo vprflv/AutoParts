@@ -65,7 +65,7 @@ export default function Navbar({ onSearchChange, searchValue }: NavbarProps) {
 
                                 <div>
                                     <h1 className="text-2xl font-bold tracking-tighter bg-cyan-600 bg-clip-text text-transparent">
-                                        AutoPart
+                                        AutoForge
                                     </h1>
                                     <p className="text-[10px] text-zinc-500 -mt-1 tracking-widest">PRO</p>
                                 </div>
