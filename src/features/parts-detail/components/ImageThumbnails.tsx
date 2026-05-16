@@ -1,0 +1,56 @@
+"use client";
+
+import Image from "next/image";
+import {getFreshImageUrl} from "@/src/lib/utils/image";
+
+interface ImageThumbnailsProps {
+    images: string[];
+    selectedIndex: number;
+    onSelect: (index: number) => void;
+}
+
+export default function ImageThumbnails({
+                                            images,
+                                            selectedIndex,
+                                            onSelect
+                                        }: ImageThumbnailsProps) {
+
+    const validImages = images.filter(img =>
+        img &&
+        typeof img === "string" &&
+        img.trim() !== "" &&
+        !img.includes("undefined") &&
+        !img.includes("null")
+    );
+
+
+
+
+    if (validImages.length <= 1) return null;
+
+
+
+    return (
+        <div className="flex gap-4 justify-center overflow-x-auto pb-4 scrollbar-hide pt-2 snap-x">
+            {validImages.map((img, index) => (
+                <button
+                    key={index}
+                    onClick={() => onSelect(index)}
+                    className={`flex-shrink-0 w-28 h-20 rounded-2xl overflow-hidden border-2 transition-all duration-200
+                        ${selectedIndex === index
+                        ? "border-cyan-600 "   
+                        : "border-transparent hover:border-zinc-600"
+                    }`}
+                >
+                    <Image
+                        src={getFreshImageUrl(img)}
+                        alt={`Миниатюра ${index + 1}`}
+                        width={120}
+                        height={80}
+                        className="object-cover w-full h-full"
+                    />
+                </button>
+            ))}
+        </div>
+    );
+}

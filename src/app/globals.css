@@ -1,0 +1,101 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ====================== Твоя тёмная тема (оставляем как есть) ====================== */
+:root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+    --card: #171717;
+    --card-foreground: #ededed;
+    --primary: #3b82f6;
+    --primary-foreground: #ffffff;
+}
+
+body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* ====================== Кастомные цвета и стили ====================== */
+@theme {
+    --color-neon-main: #22d3ee;
+    --color-neon-accent: #3b82f6;
+    --color-neon-purple: #c026d3;
+    --color-neon-pink: #db2777;
+}
+
+/* ====================== Основная кнопка ====================== */
+.btn-neon {
+    @apply w-full py-4 border-2 border-[var(--color-neon-main)] text-[var(--color-neon-main)]
+    hover:border-[var(--color-neon-main)] hover:text-white
+    rounded-2xl font-semibold text-lg transition-all active:scale-[0.985]
+    hover:shadow-[0_0_5px_var(--color-neon-main),0_0_10px_rgba(34,211,238,0.3)];
+}
+
+/* ====================== Скроллбар ====================== */
+.custom-scroll-purple {
+    scrollbar-width: thin;
+    scrollbar-color: #22d3ee #27272a;
+}
+
+.custom-scroll-purple::-webkit-scrollbar {
+    width: 8px;
+}
+
+.custom-scroll-purple::-webkit-scrollbar-track {
+    background: #18181b;
+    border-radius: 20px;
+}
+
+.custom-scroll-purple::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #22d3ee, #3b82f6, #06b6d4);
+    border-radius: 20px;
+    box-shadow:
+            0 0 8px #22d3ee,
+            0 0 18px rgba(34, 211, 238, 0.6),
+            inset 0 0 4px rgba(255,255,255,0.3);
+    transition: all 0.3s ease;
+}
+
+.custom-scroll-purple::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #67e8f9, #3b82f6, #22d3ee);
+    box-shadow:
+            0 0 12px #67e8f9,
+            0 0 25px rgba(34, 211, 238, 0.8);
+}
+
+
+button,
+a,
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+label,
+select,
+summary,
+[role="button"],
+div[onClick],
+span[onClick],
+td[onClick],
+li[onClick] {
+    cursor: pointer;
+}
+
+
+button:disabled,
+input:disabled,
+a:disabled,
+[role="button"][aria-disabled="true"],
+[onClick=""] {
+    cursor: not-allowed !important;
+}
+
+/* Плавный переход при hover */
+button:hover,
+a:hover,
+[role="button"]:hover,
+div[onClick]:hover {
+    transition: all 0.2s ease;
+}
