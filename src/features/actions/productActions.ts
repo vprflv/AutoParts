@@ -43,7 +43,7 @@ export async function getProducts(filters: ProductsFilter & { page?: number; lim
                 price: true,
                 brand: true,
                 stock: true,
-                images: true,
+                // images: true,
                 // description: true,
                 // crossNumbers: true,
             }
