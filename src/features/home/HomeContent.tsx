@@ -9,13 +9,13 @@ import { useCatalogFilters } from "@/src/hooks/useCatalogFilters";
 import { useFloatingButton } from "@/src/hooks/useFloatingButton";
 
 import Filters from "@/src/features/catalog/components/Filters";
-import ProductCard from "@/src/features/catalog/components/ProductCard";
-import ProductCardSkeleton from "@/src/features/catalog/components/ProductCardSkeleton";
+
 import Pagination from "@/src/features/catalog/components/Pagination";
 import FeedbackModal from "@/src/features/feedback/components/FeedbackModal";
 
 import { SlidersHorizontal, MessageCircle } from "lucide-react";
 import { Product } from "@/types";
+import ProductCard from "@/features/catalog/components/productDetail/ProductDetailCard";
 
 export default function HomeContent() {
     const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
@@ -128,7 +128,9 @@ export default function HomeContent() {
                             <>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
                                     {paginatedProducts.map((product: Product) => (
+                                        // <ProductCard key={product.id} product={product} />
                                         <ProductCard key={product.id} product={product} />
+
                                     ))}
                                 </div>
 

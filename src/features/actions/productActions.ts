@@ -224,6 +224,10 @@ export async function getAllLightProducts() {
             stock: true,
             images: true,
             crossNumbers: true,
+
+            description: true,
+            specifications: true,
+            applicability: true,
         },
         orderBy: { createdAt: 'desc' },
     });
