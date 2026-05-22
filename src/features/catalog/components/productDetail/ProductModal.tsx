@@ -1,4 +1,3 @@
-// features/catalog/components/ProductModal.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -6,6 +5,8 @@ import Image from 'next/image';
 import { X } from 'lucide-react';
 import { Product } from '@/types';
 import ProductActions from "@/src/features/parts-detail/components/ProductActions";
+import ImageThumbnails from "@/features/parts-detail/components/ImageThumbnails";
+
 
 interface ProductModalProps {
     product: Product;
@@ -17,12 +18,8 @@ export default function ProductModal({ product, isOpen, onClose }: ProductModalP
     const [activeTab, setActiveTab] = useState<"description" | "applicability">("description");
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-    // Галерея
-    const images = product.images?.length > 0
-        ? product.images
-        : ['/images/placeholder.svg'];
-
-    const currentImage = images[currentImageIndex];
+    const images = product.images?.filter(Boolean) || [];
+    const currentImage = images[currentImageIndex] || '/images/placeholder.svg';
 
     // Закрытие по Escape
     useEffect(() => {
@@ -43,14 +40,13 @@ export default function ProductModal({ product, isOpen, onClose }: ProductModalP
 
     if (!isOpen || !product) return null;
 
-    // Приводим applicability к массиву
     const applicabilityArray = Array.isArray(product.applicability)
         ? product.applicability
         : product.applicability ? [product.applicability] : [];
 
     return (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 backdrop-blur-lg p-4">
-            <div className="bg-zinc-900 w-full max-w-5xl max-h-[95vh] overflow-hidden rounded-3xl relative flex flex-col">
+            <div className="bg-zinc-900 w-full max-w-6xl max-h-[95vh] overflow-hidden rounded-3xl relative flex flex-col">
 
                 {/* Кнопка закрытия */}
                 <button
@@ -62,67 +58,35 @@ export default function ProductModal({ product, isOpen, onClose }: ProductModalP
 
                 <div className="flex flex-col lg:flex-row h-full overflow-hidden">
 
-                    {/* Галерея */}
+                    {/* === ЛЕВАЯ ЧАСТЬ — ГАЛЕРЕЯ === */}
                     <div className="lg:w-1/2 bg-zinc-950 p-8 flex flex-col">
-                        <div className="relative flex-1 min-h-[300px] rounded-2xl overflow-hidden bg-zinc-950">
+                        {/* Большое фото */}
+                        <div className="relative flex-1 min-h-[300px] rounded-3xl overflow-hidden bg-zinc-950 flex items-center justify-center">
                             <Image
                                 src={currentImage}
                                 alt={product.name}
                                 fill
-                                className="object-contain p-6"
+                                className="object-contain p-4"
                                 priority
                             />
                         </div>
 
                         {/* Миниатюры */}
-                        {images.length > 1 && (
-                            <div className="flex gap-3 mt-6 justify-center">
-                                {images.map((img, index) => (
-                                    <button
-                                        key={index}
-                                        onClick={() => setCurrentImageIndex(index)}
-                                        className={`w-20 h-20 rounded-xl overflow-hidden border-2 transition-all flex-shrink-0 ${
-                                            index === currentImageIndex
-                                                ? 'border-cyan-400 scale-110'
-                                                : 'border-zinc-700 hover:border-zinc-500'
-                                        }`}
-                                    >
-                                        <Image
-                                            src={img}
-                                            alt={`Фото ${index + 1}`}
-                                            width={80}
-                                            height={80}
-                                            className="object-cover w-full h-full"
-                                        />
-                                    </button>
-                                ))}
-                            </div>
-                        )}
+                        <div className="mt-6">
+                            <ImageThumbnails
+                                images={images}
+                                selectedIndex={currentImageIndex}
+                                onSelect={setCurrentImageIndex}
+                            />
+                        </div>
                     </div>
 
-                    {/* Информация о товаре */}
+                    {/* === ПРАВАЯ ЧАСТЬ — ИНФОРМАЦИЯ === */}
                     <div className="lg:w-1/2 p-8 lg:p-12 overflow-y-auto">
                         <div className="mb-6">
                             <p className="text-cyan-400 font-mono text-sm">{product.oem}</p>
                             <h1 className="text-3xl font-bold mt-2 leading-tight">{product.name}</h1>
                             <p className="text-zinc-400 mt-1">{product.brand}</p>
-                        </div>
-
-                        <div className="pb-6">
-                            {/* Характеристики */}
-                            {product.specifications && Object.keys(product.specifications).length > 0 && (
-                                <div className="mt-10">
-                                    <h3 className="uppercase text-xs tracking-widest text-zinc-500 mb-4">Характеристики</h3>
-                                    <div className="space-y-3 text-sm">
-                                        {Object.entries(product.specifications).map(([key, value]) => (
-                                            <div key={key} className="flex justify-between border-b border-zinc-800 pb-2">
-                                                <span className="text-zinc-400">{key}</span>
-                                                <span className="text-white text-right">{String(value)}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
                         </div>
 
                         {/* Цена и наличие */}
@@ -157,11 +121,7 @@ export default function ProductModal({ product, isOpen, onClose }: ProductModalP
                             </button>
                         </div>
 
-
-
                         <div className="pt-8">
-
-
                             {activeTab === "description" && (
                                 <div className="prose prose-invert text-zinc-300 leading-relaxed">
                                     {product.description || <p className="text-zinc-500 italic">Описание отсутствует</p>}
@@ -185,8 +145,6 @@ export default function ProductModal({ product, isOpen, onClose }: ProductModalP
                                 </div>
                             )}
                         </div>
-
-
                     </div>
                 </div>
             </div>

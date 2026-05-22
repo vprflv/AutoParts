@@ -204,7 +204,7 @@ export async function updateProduct(id: string, data: any) {
 
         return {
             success: true,
-            product: toPlain(updated)     // ← Добавлено
+            product: toPlain(updated)
         };
     } catch (error: any) {
         console.error("Update product error:", error);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { X, Upload, Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import { X, Upload, Loader2 } from "lucide-react";
 import { useBulkPhotoUpload } from "@/src/features/admin/hooks/useBulkPhotoUpload";
 import { toast } from "react-hot-toast";
 
@@ -14,37 +14,54 @@ export default function BulkPhotoUploadModal({ isOpen, onClose }: BulkPhotoUploa
     const bulkUpload = useBulkPhotoUpload();
 
     const [files, setFiles] = useState<File[]>([]);
+    const [previews, setPreviews] = useState<string[]>([]);
     const [isDragging, setIsDragging] = useState(false);
+    const [uploading, setUploading] = useState(false);
+
+    const addFiles = useCallback((newFiles: File[]) => {
+        const imageFiles = newFiles.filter(file => file.type.startsWith("image/"));
+
+        setFiles(prev => [...prev, ...imageFiles]);
+
+        // Создаём превью
+        imageFiles.forEach(file => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                setPreviews(prev => [...prev, e.target?.result as string]);
+            };
+            reader.readAsDataURL(file);
+        });
+    }, []);
 
     const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
         setIsDragging(false);
-
-        const droppedFiles = Array.from(e.dataTransfer.files).filter(file =>
-            file.type.startsWith("image/")
-        );
-        setFiles(prev => [...prev, ...droppedFiles]);
-    }, []);
+        addFiles(Array.from(e.dataTransfer.files));
+    }, [addFiles]);
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files) {
-            setFiles(prev => [...prev, ...Array.from(e.target.files!)]);
-        }
+        if (e.target.files) addFiles(Array.from(e.target.files));
     };
 
     const removeFile = (index: number) => {
         setFiles(prev => prev.filter((_, i) => i !== index));
+        setPreviews(prev => prev.filter((_, i) => i !== index));
     };
 
     const handleUpload = async () => {
         if (files.length === 0) return;
 
+        setUploading(true);
+
         try {
             await bulkUpload.mutateAsync(files);
-            setFiles([]); // очищаем после успеха
-            setTimeout(onClose, 1800);
+            setFiles([]);
+            setPreviews([]);
+            setTimeout(onClose, 1400);
         } catch (err) {
             // ошибка уже обработана в хуке
+        } finally {
+            setUploading(false);
         }
     };
 
@@ -52,37 +69,35 @@ export default function BulkPhotoUploadModal({ isOpen, onClose }: BulkPhotoUploa
 
     return (
         <div className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center p-4">
-            <div className="bg-zinc-900 rounded-3xl w-full max-w-2xl overflow-hidden">
-                {/* Заголовок */}
+            <div className="bg-zinc-900 rounded-3xl w-full max-w-3xl overflow-hidden">
+                {/* Header */}
                 <div className="px-8 py-6 border-b border-zinc-800 flex items-center justify-between">
                     <div>
                         <h2 className="text-2xl font-semibold">Массовая загрузка фото</h2>
                         <p className="text-zinc-400 text-sm mt-1">
-                            Названия файлов должны содержать OEM номер запчасти
+                            Фото будут привязаны к товарам по OEM в названии файла
                         </p>
                     </div>
-                    <button onClick={onClose} className="text-zinc-400 hover:text-white">
+                    <button onClick={onClose} className="text-zinc-400 hover:text-white transition">
                         <X size={28} />
                     </button>
                 </div>
 
                 <div className="p-8 space-y-6">
-                    {/* Drag & Drop зона */}
+                    {/* Drag & Drop */}
                     <div
                         onDrop={handleDrop}
                         onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
                         onDragLeave={() => setIsDragging(false)}
-                        className={`border-2 border-dashed rounded-3xl p-16 text-center transition-all ${
-                            isDragging
-                                ? "border-white bg-white/5"
-                                : "border-zinc-700 hover:border-zinc-500"
+                        className={`border-2 border-dashed rounded-3xl p-12 text-center transition-all ${
+                            isDragging ? "border-white bg-white/5" : "border-zinc-700 hover:border-zinc-500"
                         }`}
                     >
                         <Upload size={56} className="mx-auto mb-4 text-zinc-500" />
-                        <p className="text-xl text-zinc-300 mb-2">Перетащите фото сюда</p>
-                        <p className="text-zinc-500">или нажмите для выбора файлов</p>
+                        <p className="text-xl text-zinc-300 mb-1">Перетащите фото сюда</p>
+                        <p className="text-zinc-500 mb-6">или нажмите для выбора файлов</p>
 
-                        <label className="mt-6 inline-block bg-white text-black px-8 py-3.5 rounded-2xl font-medium cursor-pointer hover:bg-zinc-200 transition">
+                        <label className="inline-block bg-white text-black px-8 py-3.5 rounded-2xl font-medium cursor-pointer hover:bg-zinc-200 transition">
                             Выбрать изображения
                             <input
                                 type="file"
@@ -94,34 +109,25 @@ export default function BulkPhotoUploadModal({ isOpen, onClose }: BulkPhotoUploa
                         </label>
                     </div>
 
-                    {/* Список загруженных файлов */}
+                    {/* Превью */}
                     {files.length > 0 && (
                         <div>
-                            <p className="text-sm text-zinc-400 mb-3">
-                                Выбрано файлов: <span className="text-white">{files.length}</span>
+                            <p className="text-sm text-zinc-400 mb-4">
+                                Выбрано: <span className="text-white font-medium">{files.length}</span> фото
                             </p>
-                            <div className="max-h-80 overflow-auto space-y-2 pr-2">
-                                {files.map((file, index) => (
-                                    <div
-                                        key={index}
-                                        className="flex items-center justify-between bg-zinc-800 rounded-2xl px-5 py-3 group"
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-zinc-700 rounded-xl flex items-center justify-center">
-                                                📸
-                                            </div>
-                                            <div>
-                                                <p className="text-sm truncate max-w-[300px]">{file.name}</p>
-                                                <p className="text-xs text-zinc-500">
-                                                    {(file.size / 1024 / 1024).toFixed(2)} MB
-                                                </p>
-                                            </div>
-                                        </div>
+                            <div className="grid grid-cols-4 gap-4 max-h-96 overflow-auto p-1">
+                                {previews.map((preview, index) => (
+                                    <div key={index} className="relative group rounded-2xl overflow-hidden">
+                                        <img
+                                            src={preview}
+                                            alt={files[index].name}
+                                            className="w-full aspect-square object-cover"
+                                        />
                                         <button
                                             onClick={() => removeFile(index)}
-                                            className="text-red-500 opacity-0 group-hover:opacity-100 transition"
+                                            className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition"
                                         >
-                                            <X size={20} />
+                                            <X size={16} />
                                         </button>
                                     </div>
                                 ))}
@@ -132,10 +138,10 @@ export default function BulkPhotoUploadModal({ isOpen, onClose }: BulkPhotoUploa
                     {/* Кнопка загрузки */}
                     <button
                         onClick={handleUpload}
-                        disabled={files.length === 0 || bulkUpload.isPending}
-                        className="w-full bg-white text-black py-4 rounded-2xl font-semibold text-lg hover:bg-zinc-200 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-3"
+                        disabled={files.length === 0 || uploading}
+                        className="w-full py-4 bg-white text-black rounded-2xl font-semibold text-lg disabled:opacity-50 transition flex items-center justify-center gap-3"
                     >
-                        {bulkUpload.isPending ? (
+                        {uploading ? (
                             <>
                                 <Loader2 className="animate-spin" size={24} />
                                 Загружаем фото...
@@ -147,10 +153,6 @@ export default function BulkPhotoUploadModal({ isOpen, onClose }: BulkPhotoUploa
                             </>
                         )}
                     </button>
-
-                    <p className="text-center text-xs text-zinc-500">
-                        Фото будут автоматически привязаны к товарам по OEM номеру в названии файла
-                    </p>
                 </div>
             </div>
         </div>
