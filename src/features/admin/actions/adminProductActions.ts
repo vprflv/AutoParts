@@ -2,15 +2,14 @@
 
 import { prisma } from "@/src/lib/prisma";
 import { Product } from "@/src/types";
-import { createClient } from "@/lib/supabase/client";
-import { createServerClientFn } from "@/lib/supabase/server";
+import { createServerClientFn } from "@/src/lib/supabase/server";
 import { generateSearchText } from "@/features/admin/utils/generateSearchText";
-import {toPlain} from "@/lib/utils/toPlain";
-
+import { toPlain } from "@/lib/utils/toPlain";
 
 export async function getAdminProducts(): Promise<Product[]> {
     try {
         const products = await prisma.product.findMany({
+            where: { active: true },
             orderBy: { createdAt: 'desc' },
         });
 
@@ -21,174 +20,89 @@ export async function getAdminProducts(): Promise<Product[]> {
     }
 }
 
+// =============================================
+// УДАЛЕНИЕ ТОВАРА + ЕГО ФОТО ИЗ STORAGE
+// =============================================
 export async function deleteProductAction(id: string) {
     try {
-        await prisma.product.delete({
-            where: { id }
+        const product = await prisma.product.findUnique({
+            where: { id },
+            select: { id: true, oem: true, images: true }
         });
+
+        if (!product) throw new Error("Товар не найден");
+
+        const supabase = await createServerClientFn();
+
+        // Удаляем фото из Storage
+        if (product.images?.length > 0) {
+            const fileNames = product.images
+                .map((url: string) => url.split("/").pop())
+                .filter((name): name is string => Boolean(name));
+
+            if (fileNames.length > 0) {
+                await supabase.storage
+                    .from("product-images")
+                    .remove(fileNames)
+                    .catch(err => console.warn("Storage cleanup warning:", err));
+            }
+        }
+
+        await prisma.product.delete({ where: { id } });
+
+        console.log(`✅ Товар ${product.oem} и его фото удалены`);
+
         return { success: true };
-    } catch (error) {
-        console.error("Ошибка удаления товара:", error);
-        throw error;
-    }
-}
-
-/**
- * Массовая загрузка фото + очистка невалидных ссылок
- */
-export async function bulkPhotoUpload(files: File[]) {
-    if (files.length === 0) throw new Error("Нет файлов для загрузки");
-
-    const startTime = Date.now();
-    const supabase = createClient();
-
-    try {
-        const products = await prisma.product.findMany({
-            select: { oem: true, images: true }
-        });
-
-        const productMap = new Map(
-            products.map(p => [p.oem.toUpperCase(), p])
-        );
-
-        const results = { updated: 0, skipped: 0, errors: 0 };
-        const filesByOem = new Map<string, File[]>();
-
-        for (const file of files) {
-            const fileNameUpper = file.name.toUpperCase();
-            let matchedOem: string | null = null;
-
-            for (const [oem] of productMap) {
-                if (fileNameUpper.includes(oem)) {
-                    matchedOem = oem;
-                    break;
-                }
-            }
-
-            if (!matchedOem) {
-                results.skipped++;
-                continue;
-            }
-
-            if (!filesByOem.has(matchedOem)) filesByOem.set(matchedOem, []);
-            filesByOem.get(matchedOem)!.push(file);
-        }
-
-        const CONCURRENCY = 6;
-
-        const processGroup = async ([oem, groupFiles]: [string, File[]]) => {
-            try {
-                const currentProduct = productMap.get(oem);
-                let currentImages: string[] = Array.isArray(currentProduct?.images)
-                    ? currentProduct.images
-                    : [];
-
-                const uploadPromises = groupFiles.map(async (file, index) => {
-                    const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-                    const safeOem = oem.replace(/[^A-Z0-9-]/g, '');
-                    const fileName = `${safeOem}_${Date.now()}_${index}.${fileExt}`;
-
-                    const { data, error } = await supabase.storage
-                        .from("product-images")
-                        .upload(fileName, file, { cacheControl: "3600", upsert: true });
-
-                    if (error) throw error;
-
-                    const { data: urlData } = supabase.storage
-                        .from("product-images")
-                        .getPublicUrl(data.path);
-
-                    return urlData.publicUrl;
-                });
-
-                const uploadedUrls = (await Promise.allSettled(uploadPromises))
-                    .filter(r => r.status === 'fulfilled')
-                    .map(r => (r as PromiseFulfilledResult<string>).value);
-
-                const allImages = [...uploadedUrls, ...currentImages];
-                const cleanImages = [...new Set(allImages)]
-                    .filter(url => typeof url === "string" && url.startsWith("http"))
-                    .slice(0, 10);
-
-                await prisma.product.update({
-                    where: { oem },
-                    data: { images: cleanImages }
-                });
-
-                results.updated++;
-            } catch (err) {
-                console.error(`Ошибка обработки OEM ${oem}:`, err);
-                results.errors++;
-            }
-        };
-
-        const groups = Array.from(filesByOem.entries());
-        for (let i = 0; i < groups.length; i += CONCURRENCY) {
-            const batch = groups.slice(i, i + CONCURRENCY);
-            await Promise.all(batch.map(processGroup));
-        }
-
-        const duration = Date.now() - startTime;
-        console.log(`📸 Bulk photo upload завершён за ${duration}мс | Обновлено: ${results.updated} | Пропущено: ${results.skipped}`);
-
-        return results;
-
     } catch (error: any) {
-        console.error("bulkPhotoUpload error:", error);
-        throw error;
+        console.error("deleteProductAction error:", error);
+        throw new Error(error.message || "Не удалось удалить товар");
     }
 }
 
-export async function deletePhotoAction(fileName: string) {
-    if (!fileName) throw new Error("Имя файла не указано");
+// =============================================
+// УДАЛЕНИЕ ОДНОГО ФОТО
+// =============================================
+export async function deleteProductImageAction(productId: string, imageUrl: string) {
+    if (!productId || !imageUrl) {
+        throw new Error("Не переданы необходимые данные");
+    }
 
     try {
         const supabase = await createServerClientFn();
 
-        if (!supabase) throw new Error("Не удалось создать Supabase клиент");
+        const fileName = imageUrl.split("/").pop();
 
-        const { data: urlData } = supabase.storage
-            .from("product-images")
-            .getPublicUrl(fileName);
-
-        const publicUrl = urlData.publicUrl;
-
-        const { error: storageError } = await supabase.storage
-            .from("product-images")
-            .remove([fileName]);
-
-        if (storageError) {
-            console.warn("Storage delete warning:", storageError);
+        if (fileName) {
+            await supabase.storage
+                .from("product-images")
+                .remove([fileName])
+                .catch(err => console.warn("Storage delete warning:", err));
         }
 
-        const productsWithPhoto = await prisma.product.findMany({
-            where: { images: { has: publicUrl } },
-            select: { id: true, images: true, oem: true }
+        const product = await prisma.product.findUnique({
+            where: { id: productId },
+            select: { images: true }
         });
 
-        let cleaned = 0;
+        if (!product) throw new Error("Товар не найден");
 
-        for (const product of productsWithPhoto) {
-            const newImages = product.images.filter((url: string) => url !== publicUrl);
-            await prisma.product.update({
-                where: { id: product.id },
-                data: { images: newImages }
-            });
-            cleaned++;
-        }
+        const updatedImages = product.images.filter((url: string) => url !== imageUrl);
 
-        return {
-            success: true,
-            cleaned,
-            message: `Фото "${fileName}" удалено и очищено из ${cleaned} товаров`
-        };
+        await prisma.product.update({
+            where: { id: productId },
+            data: { images: updatedImages }
+        });
 
+        return { success: true, remaining: updatedImages.length };
     } catch (error: any) {
-        console.error("deletePhotoAction error:", error);
+        console.error("deleteProductImageAction error:", error);
         throw new Error(error.message || "Не удалось удалить фото");
     }
 }
 
+// =============================================
+// ОБНОВЛЕНИЕ ТОВАРА
+// =============================================
 export async function updateProduct(id: string, data: any) {
     try {
         const searchText = generateSearchText(data);
@@ -198,7 +112,11 @@ export async function updateProduct(id: string, data: any) {
             data: {
                 ...data,
                 searchText,
-                applicability: Array.isArray(data.applicability) ? data.applicability : [],
+                applicability: Array.isArray(data.applicability)
+                    ? data.applicability
+                    : typeof data.applicability === "string"
+                        ? data.applicability.split(",").map((s: string) => s.trim()).filter(Boolean)
+                        : [],
             },
         });
 

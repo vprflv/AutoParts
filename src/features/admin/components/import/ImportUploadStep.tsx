@@ -1,4 +1,3 @@
-// src/features/admin/components/import/ImportUploadStep.tsx
 "use client";
 
 import { useState, useCallback } from "react";
@@ -6,10 +5,10 @@ import { Upload, FileSpreadsheet, X } from "lucide-react";
 import { toast } from "react-hot-toast";
 
 interface ImportUploadStepProps {
-    onPreviewReady: (excelFile: File) => void;        // ← теперь только Excel
+    onPreviewReady: (excelFile: File) => void;
     excelFile: File | null;
     setExcelFile: (file: File | null) => void;
-    isLoading: boolean;
+    isLoading: boolean;        // используется для отключения кнопки
 }
 
 export default function ImportUploadStep({
@@ -103,7 +102,6 @@ export default function ImportUploadStep({
                 </div>
             </div>
 
-            {/* Кнопка продолжения */}
             <div className="pt-8">
                 <button
                     onClick={handleContinue}

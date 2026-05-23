@@ -1,11 +1,12 @@
-// src/features/admin/hooks/useEditProduct.ts
 import { useState, useEffect, useCallback } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-hot-toast";
 
 import { Product } from "@/src/types";
 import { updateProduct } from "@/features/admin/actions/adminProductActions";
+import { deleteProductImageAction } from "@/features/admin/actions/adminProductActions"; // ← добавь импорт
 import { uploadImage } from "@/features/admin/hooks/product-import/uploadImages";
+import {uploadSingleImageAction} from "@/features/admin/actions/uploadSingleImage";
 
 export function useEditProduct(product: Product | null) {
     const queryClient = useQueryClient();
@@ -22,10 +23,9 @@ export function useEditProduct(product: Product | null) {
             queryClient.invalidateQueries({ queryKey: ['products'] });
             toast.success("Товар успешно обновлён!");
         },
-        onError: (err: any) => toast.error(err.message || "Ошибка обновления"),
     });
 
-    // Инициализация формы при получении товара
+    // Инициализация
     useEffect(() => {
         if (product) {
             setFormData({ ...product });
@@ -33,31 +33,61 @@ export function useEditProduct(product: Product | null) {
         }
     }, [product]);
 
+    // Удаление фото с очисткой Storage
+    const removeImage = useCallback(async (index: number) => {
+        if (!product || !images[index]) return;
+
+        const imageUrl = images[index];
+
+        if (!confirm("Удалить это фото полностью (из хранилища и из товара)?")) {
+            return;
+        }
+
+        setIsUploading(true);
+
+        try {
+            await deleteProductImageAction(product.id, imageUrl);
+
+            // Обновляем локальное состояние
+            const newImages = images.filter((_, i) => i !== index);
+            setImages(newImages);
+
+            toast.success("Фото удалено");
+        } catch (error: any) {
+            toast.error(error.message || "Не удалось удалить фото");
+            console.error(error);
+        } finally {
+            setIsUploading(false);
+        }
+    }, [product, images]);
+
     const handleFilesSelect = useCallback(async (selectedFiles: File[]) => {
         if (selectedFiles.length === 0 || !product) return;
 
         setIsUploading(true);
-        const newUrls: string[] = [];
 
-        for (let i = 0; i < selectedFiles.length; i++) {
-            const url = await uploadImage(selectedFiles[i], product.oem, images.length + i);
-            if (url) newUrls.push(url);
+        try {
+            const newUrls: string[] = [];
+
+            for (const file of selectedFiles) {
+                const url = await uploadSingleImageAction(file, product.oem);
+                if (url) newUrls.push(url);
+            }
+
+            setImages(prev => [...prev, ...newUrls]);
+            toast.success(`Загружено ${newUrls.length} фото`);
+        } catch (error: any) {
+            toast.error(error.message || "Ошибка загрузки фото");
+        } finally {
+            setIsUploading(false);
         }
-
-        setImages(prev => [...prev, ...newUrls]);
-        setIsUploading(false);
-        toast.success(`Загружено ${newUrls.length} фото`);
-    }, [product, images.length]);
+    }, [product]);
 
     const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
         const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith("image/"));
         handleFilesSelect(files);
     }, [handleFilesSelect]);
-
-    const removeImage = useCallback((index: number) => {
-        setImages(prev => prev.filter((_, i) => i !== index));
-    }, []);
 
     const updateField = useCallback((field: keyof Product, value: any) => {
         setFormData(prev => ({ ...prev, [field]: value }));
@@ -71,24 +101,14 @@ export function useEditProduct(product: Product | null) {
 
         setIsSaving(true);
 
-        // === Нормализация applicability ===
-        let applicability: string[] = [];
-
-        const field = formData.applicability as string | string[] | undefined;
-
-        if (Array.isArray(field)) {
-            applicability = field.filter((item): item is string => typeof item === "string");
-        } else if (typeof field === "string") {
-            applicability = field
-                .split(",")
-                .map(s => s.trim())
-                .filter(s => s.length > 0);
-        }
-
         const dataToSave = {
             ...formData,
-            images,
-            applicability,
+            images, // ← передаём актуальный массив
+            applicability: Array.isArray(formData.applicability)
+                ? formData.applicability
+                : typeof formData.applicability === "string"
+                    ? formData.applicability.split(",").map(s => s.trim()).filter(Boolean)
+                    : [],
         };
 
         try {

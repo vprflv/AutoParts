@@ -23,11 +23,9 @@ export default function ImportPreviewStep({
                                           }: ImportPreviewStepProps) {
     const { toAdd, toUpdate, errors, stats } = previewData;
 
-
-
-    // Вспомогательная функция для красивого отображения характеристик
     const formatSpecifications = (specs?: Record<string, any>) => {
         if (!specs || Object.keys(specs).length === 0) return "—";
+
         return Object.entries(specs)
             .slice(0, 3)
             .map(([key, value]) => `${key}: ${value}`)
@@ -192,20 +190,4 @@ export default function ImportPreviewStep({
             </div>
         </div>
     );
-}
-
-// Вспомогательная функция
-function formatSpecifications(specs?: Record<string, any>): string {
-    if (!specs || Object.keys(specs).length === 0) return "—";
-
-    return Object.entries(specs)
-        .map(([key, value]) => {
-            const keyStr = String(key).trim();
-            const valueStr = String(value).trim();
-
-            // Делаем красивую строку с точками
-            const dots = ".".repeat(Math.max(2, 35 - keyStr.length));
-            return `${keyStr} ${dots} ${valueStr}`;
-        })
-        .join("\n");
 }

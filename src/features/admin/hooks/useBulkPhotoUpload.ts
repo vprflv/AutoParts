@@ -10,39 +10,73 @@ export function useBulkPhotoUpload() {
             const total = files.length;
             const toastId = toast.loading(`Загрузка фото: 0/${total}`);
 
-            // Разбиваем на чанки по 4 файла для обновления прогресса
             const chunkSize = 4;
             let successTotal = 0;
             let failedTotal = 0;
+            let notFoundTotal = 0;
+            const allErrors: string[] = [];
+            const allNotFoundOems: string[] = [];
+            const allUploadedUrls: string[] = [];
 
             for (let i = 0; i < files.length; i += chunkSize) {
                 const chunk = files.slice(i, i + chunkSize);
-                const current = i + chunk.length;
+                const current = Math.min(i + chunkSize, total);
 
-                // Обновляем тост
                 toast.loading(`Загрузка фото: ${current}/${total}`, { id: toastId });
 
                 const result = await uploadProductImages(chunk);
 
-                successTotal += result.success;
-                failedTotal += result.failed;
+                successTotal += result.success || 0;
+                failedTotal += result.failed || 0;
+                notFoundTotal += result.notFound || 0;
+
+                if (result.errors) allErrors.push(...result.errors);
+                if (result.notFoundOems) allNotFoundOems.push(...result.notFoundOems);
+                if (result.uploadedUrls) allUploadedUrls.push(...result.uploadedUrls);
             }
 
             toast.dismiss(toastId);
 
-            // Финальное уведомление
-            if (successTotal > 0) {
-                toast.success(`✅ Успешно загружено ${successTotal} из ${total} фото`, { duration: 6000 });
-            }
-            if (failedTotal > 0) {
-                toast.error(`❌ Не удалось загрузить ${failedTotal} фото`, { duration: 6000 });
+            const finalResult = {
+                success: successTotal,
+                failed: failedTotal,
+                notFound: notFoundTotal,
+                total,
+                errors: allErrors,
+                notFoundOems: allNotFoundOems,
+                uploadedUrls: allUploadedUrls,
+            };
+
+            return finalResult;
+        },
+
+        onSuccess: (result) => {
+            if (result.success > 0) {
+                toast.success(`✅ Загружено ${result.success} из ${result.total} фото`, {
+                    duration: 5000
+                });
             }
 
-            return { success: successTotal, failed: failedTotal, total };
+            if (result.notFound && result.notFound > 0) {
+                toast.error(`⚠️ Товары не найдены для ${result.notFound} фото`, {
+                    duration: 7000
+                });
+            }
+
+            if (result.failed && result.failed > (result.notFound || 0)) {
+                toast.error(`❌ Ошибка загрузки ${result.failed - (result.notFound || 0)} фото`, {
+                    duration: 6000
+                });
+            }
+
+            // Возвращаем полный результат для открытия модалки
+            return result;
         },
 
         onError: (error: any) => {
-            toast.error(`Критическая ошибка: ${error.message}`);
+            toast.error(`Критическая ошибка: ${error.message || "Неизвестная ошибка"}`, {
+                duration: 8000
+            });
         },
     });
 }
