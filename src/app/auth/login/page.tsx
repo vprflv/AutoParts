@@ -1,10 +1,10 @@
-// app/auth/login/page.tsx
 "use client";
 
 import { useState } from "react";
-import {useRouter, useSearchParams} from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { createClient } from "@/lib/supabase/client";
+import { useAdminStore } from "@/store/useAdminStore";
 
 export default function LoginPage() {
     const [email, setEmail] = useState("");
@@ -21,20 +21,57 @@ export default function LoginPage() {
 
         const supabase = createClient();
 
-        const { error } = await supabase.auth.signInWithPassword({
-            email: email.trim(),
-            password,
-        });
+        try {
+            const { error } = await supabase.auth.signInWithPassword({
+                email: email.trim(),
+                password,
+            });
 
-        if (error) {
-            toast.error(error.message);
+            if (error) {
+                toast.error(error.message);
+                return;
+            }
+
+            // Получаем текущего пользователя
+            const { data: { user } } = await supabase.auth.getUser();
+
+            if (!user) {
+                toast.error("Не удалось получить данные пользователя");
+                return;
+            }
+
+            // Проверяем роль (через API route — безопасно)
+            const res = await fetch('/api/auth/check-admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user.id }),
+            });
+
+            const data = await res.json();
+
+            if (!data.success || data.role !== "ADMIN") {
+                await supabase.auth.signOut();
+                toast.error("У вас нет прав администратора");
+                return;
+            }
+
+            // Сохраняем админские данные
+            useAdminStore.getState().setAdminUser({
+                id: user.id,
+                email: user.email || '',
+                name: data.name,
+                role: data.role,
+            });
+
+            toast.success("Добро пожаловать в админку!");
+            router.push(redirectTo);
+            router.refresh();
+
+        } catch (err) {
+            toast.error("Произошла ошибка при входе");
+        } finally {
             setIsLoading(false);
-            return;
         }
-
-        toast.success("Успешный вход!");
-        router.push(redirectTo);
-        router.refresh(); // важно!
     };
 
     return (

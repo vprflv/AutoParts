@@ -8,6 +8,8 @@ import { useAuthStore } from "@/src/store/useAuthStore";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "react-hot-toast";
 import {useQueryClient} from "@tanstack/react-query";
+import {useAdminStore} from "@/store/useAdminStore";
+
 
 const menuItems = [
     { href: "/admin/dashboard", label: "Дашборд", icon: LayoutDashboard },
@@ -20,7 +22,7 @@ interface AdminSidebarProps {
 
 export default function AdminSidebar({ onClose }: AdminSidebarProps) {
     const pathname = usePathname();
-    const { user } = useAuthStore();
+    const { adminUser } = useAdminStore();
 
     const handleLogout = async () => {
         const supabase = createClient();
@@ -47,6 +49,16 @@ export default function AdminSidebar({ onClose }: AdminSidebarProps) {
                     <h1 className="text-2xl font-bold text-white">Admin Panel</h1>
                     <p className="text-zinc-500 text-sm">AutoPart Pro</p>
                 </div>
+                {/* Кнопка выхода */}
+                <div className="p-3 mt-auto">
+                    <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-zinc-800 rounded-2xl transition-colors"
+                    >
+                        <LogOut className="w-5 h-5" />
+                        <span>Выйти</span>
+                    </button>
+                </div>
 
                 <button
                     onClick={onClose}
@@ -59,8 +71,8 @@ export default function AdminSidebar({ onClose }: AdminSidebarProps) {
             {/* Информация об администраторе */}
             <div className="px-6 mb-8">
                 <p className="text-xs text-zinc-500 mb-2">АДМИНИСТРАТОР</p>
-                <p className="font-medium">{user?.name}</p>
-                <p className="text-sm text-zinc-500 truncate">{user?.email}</p>
+                <p className="font-medium">{adminUser?.name}</p>
+                <p className="text-sm text-zinc-500 truncate">{adminUser?.email}</p>
             </div>
 
             {/* Навигация */}
@@ -87,16 +99,7 @@ export default function AdminSidebar({ onClose }: AdminSidebarProps) {
                 })}
             </nav>
 
-            {/* Кнопка выхода */}
-            <div className="p-3 mt-auto">
-                <button
-                    onClick={handleLogout}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-zinc-800 rounded-2xl transition-colors"
-                >
-                    <LogOut className="w-5 h-5" />
-                    <span>Выйти</span>
-                </button>
-            </div>
+
         </div>
     );
 }
