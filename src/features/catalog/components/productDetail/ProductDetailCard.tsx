@@ -4,7 +4,7 @@
 import Image from 'next/image';
 import { useState } from 'react';
 import { Product } from '@/types';
-import ProductModal from './ProductModal';
+import ProductModal from './modal/ProductModal';
 import { useCartStore } from '@/src/store/useCartStore';
 import { ShoppingCart, Plus, Minus } from 'lucide-react';
 
