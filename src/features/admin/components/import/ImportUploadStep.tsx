@@ -8,7 +8,7 @@ interface ImportUploadStepProps {
     onPreviewReady: (excelFile: File) => void;
     excelFile: File | null;
     setExcelFile: (file: File | null) => void;
-    isLoading: boolean;        // используется для отключения кнопки
+    isLoading: boolean;
 }
 
 export default function ImportUploadStep({

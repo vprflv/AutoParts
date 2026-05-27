@@ -3,15 +3,26 @@ import { z } from "zod";
 import { ImportProduct, ImportResult } from "./types";
 
 const ProductSchema = z.object({
-    name: z.string().min(1, "Название обязательно").transform(v => String(v).trim()),
-    oem: z.string().min(3, "OEM обязателен").transform(v => String(v).trim().toUpperCase()),
-    brand: z.string().min(1, "Бренд обязателен").transform(v => String(v).trim()),
+    name: z.string()
+        .min(1, "Название обязательно")
+        .transform(v => String(v).trim()),
+
+    oem: z.string()
+        .min(3, "OEM обязателен (минимум 3 символа)")
+        .transform(v => String(v).trim().toUpperCase()),
+
+    brand: z.string()
+        .min(1, "Бренд обязателен")
+        .transform(v => String(v).trim()),
 
     price: z.union([z.number(), z.string()])
         .transform(v => Number(v) || 0)
+        .refine(v => v >= 0, "Цена не может быть отрицательной"),
+
+    stock: z.union([z.number(), z.string()])
+        .transform(v => Number(v) || 0)
         .default(0),
 
-    stock: z.union([z.number(), z.string()]).transform(v => Number(v) || 0).default(0),
     category: z.string().default("Разное"),
     description: z.string().optional().default(""),
     applicability: z.array(z.string()).default([]),
@@ -24,8 +35,11 @@ function generateSearchText(product: any): string {
         product.name,
         product.oem,
         product.brand,
-        ...(product.crossNumbers ? String(product.crossNumbers).split(/[;,|]/).map((s: string) => s.trim()) : [])
+        ...(product.crossNumbers
+            ? String(product.crossNumbers).split(/[;,|]/).map((s: string) => s.trim())
+            : [])
     ].filter(Boolean);
+
     return parts.join(" | ");
 }
 
@@ -34,16 +48,16 @@ function getColumnMap(headers: any[]): Record<string, number> {
     const texts = headers.map(h => String(h || '').toLowerCase().trim());
 
     const rules: [string, string[]][] = [
-        ['oem', ['oem', 'артикул', 'код']],
-        ['name', ['название', 'наименование']],
+        ['oem', ['oem', 'артикул', 'код', 'article']],
+        ['name', ['название', 'наименование', 'name']],
         ['brand', ['бренд', 'brand', 'производитель']],
         ['price', ['цена', 'price']],
-        ['stock', ['остаток', 'stock']],
-        ['category', ['категория']],
-        ['description', ['описание']],
-        ['applicability', ['применяемость']],
-        ['analogs', ['аналоги', 'cross']],
-        ['specifications', ['характеристики', 'specifications', 'specs', 'spec', 'параметры']],
+        ['stock', ['остаток', 'stock', 'количество']],
+        ['category', ['категория', 'category']],
+        ['description', ['описание', 'description']],
+        ['applicability', ['применяемость', 'applicability']],
+        ['analogs', ['аналоги', 'cross', 'аналог']],
+        ['specifications', ['характеристики', 'specifications', 'specs', 'параметры']],
     ];
 
     for (const [key, keywords] of rules) {
@@ -55,42 +69,6 @@ function getColumnMap(headers: any[]): Record<string, number> {
         }
     }
     return map;
-}
-
-function parseSpecifications(raw: any): Record<string, any> {
-    if (!raw) return {};
-
-    if (typeof raw === 'object' && !Array.isArray(raw)) return raw;
-
-    const str = String(raw).trim();
-    if (!str) return {};
-
-    // JSON
-    if (str.startsWith('{') && str.endsWith('}')) {
-        try {
-            return JSON.parse(str);
-        } catch (e) {
-            console.warn("Не удалось распарсить JSON specifications:", str);
-        }
-    }
-
-    // Ключ: Значение
-    const specs: Record<string, string> = {};
-    const pairs = str.split(';').map(p => p.trim()).filter(Boolean);
-
-    for (const pair of pairs) {
-        const colonIndex = pair.indexOf(':');
-        if (colonIndex > 0) {
-            const key = pair.substring(0, colonIndex).trim();
-            const value = pair.substring(colonIndex + 1).trim();
-            if (key) specs[key] = value;
-        } else if (pair.includes('=')) {
-            const [key, value] = pair.split('=').map(s => s.trim());
-            if (key) specs[key] = value || '';
-        }
-    }
-
-    return specs;
 }
 
 export async function parseExcelFile(
@@ -110,7 +88,9 @@ export async function parseExcelFile(
                 const errors: string[] = [];
                 let processed = 0;
 
-                const existingOemSet = new Set(existingOems.map(o => String(o).trim().toUpperCase()));
+                const existingOemSet = new Set(
+                    existingOems.map(o => String(o).trim().toUpperCase())
+                );
 
                 workbook.SheetNames.forEach(sheetName => {
                     const sheetData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {
@@ -126,51 +106,78 @@ export async function parseExcelFile(
                     const dataRows = sheetData.slice(1);
 
                     dataRows.forEach((row, rowIdx) => {
-                        if (!row || row.length === 0 || row.every(c => c == null || String(c).trim() === '')) return;
+                        const rowNumber = rowIdx + 2;
+
+                        // Пропускаем пустые строки
+                        if (!row || row.length === 0 || row.every(c => c == null || String(c).trim() === '')) {
+                            return;
+                        }
 
                         processed++;
 
-                        // === Извлечение данных с fallback ===
-                        const oemRaw = colMap.oem !== undefined ? String(row[colMap.oem] || '') : String(row[0] || '');
-                        const nameRaw = colMap.name !== undefined ? String(row[colMap.name] || '') : String(row[1] || '');
-                        const brandRaw = colMap.brand !== undefined ? String(row[colMap.brand] || '') : String(row[2] || '');
-                        const priceRaw = colMap.price !== undefined ? String(row[colMap.price] || '') : String(row[3] || '');
-                        const stockRaw = colMap.stock !== undefined ? String(row[colMap.stock] || '') : String(row[4] || '');
-                        const categoryRaw = colMap.category !== undefined ? String(row[colMap.category] || '') : String(row[5] || 'Разное');
-                        const descriptionRaw = colMap.description !== undefined ? String(row[colMap.description] || '') : String(row[6] || '');
-                        const applicabilityRaw = colMap.applicability !== undefined ? String(row[colMap.applicability] || '') : String(row[7] || row[8] || '');
-                        const analogsRaw = colMap.analogs !== undefined ? String(row[colMap.analogs] || '') : String(row[8] || row[9] || '');
-                        const specificationsRaw = colMap.specifications !== undefined
-                            ? row[colMap.specifications]
-                            : row[10] || row[11] || ''; // увеличил fallback
+                        // Извлечение сырых данных
+                        const oemRaw = colMap.oem !== undefined
+                            ? String(row[colMap.oem] || '')
+                            : String(row[0] || '');
 
-                        const oem = oemRaw.trim().toUpperCase();
-                        if (!oem || oem.length < 3) return;
+                        const nameRaw = colMap.name !== undefined
+                            ? String(row[colMap.name] || '')
+                            : String(row[1] || '');
 
-                        const productBase = {
+                        const brandRaw = colMap.brand !== undefined
+                            ? String(row[colMap.brand] || '')
+                            : String(row[2] || '');
+
+                        const productBase: any = {
                             name: nameRaw.trim(),
-                            oem,
+                            oem: oemRaw.trim().toUpperCase(),
                             brand: brandRaw.trim() || "Без бренда",
-                            price: Number(priceRaw) || 0,
-                            stock: Number(stockRaw) || 0,
-                            category: categoryRaw.trim(),
-                            description: descriptionRaw.trim() || undefined,
-                            applicability: applicabilityRaw.split(/[;,|]/).map(s => s.trim()).filter(Boolean),
-                            crossNumbers: analogsRaw.split(/[;,|]/)
-                                .map(s => s.trim().toUpperCase())
-                                .filter(s => s && s !== oem)
+                            price: Number(colMap.price !== undefined ? row[colMap.price] : row[3]) || 0,
+                            stock: Number(colMap.stock !== undefined ? row[colMap.stock] : row[4]) || 0,
+                            category: String(colMap.category !== undefined ? row[colMap.category] : row[5] || 'Разное').trim(),
+                            description: String(colMap.description !== undefined ? row[colMap.description] : row[6] || '').trim(),
+                            applicability: String(colMap.applicability !== undefined ? row[colMap.applicability] : '')
+                                .split(/[;,|]/).map(s => s.trim()).filter(Boolean),
+                            crossNumbers: String(colMap.analogs !== undefined ? row[colMap.analogs] : row[8] || '')
+                                .split(/[;,|]/).map(s => s.trim().toUpperCase())
+                                .filter(s => s && s !== oemRaw.trim().toUpperCase())
                                 .join(';'),
-                            images: [],
-                            specifications: parseSpecifications(specificationsRaw),
+                            specifications: {}, // можно расширить позже
                         };
 
-                        const searchText = generateSearchText(productBase);
-                        const finalProduct: ImportProduct = { ...productBase, searchText };
+                        // === Zod валидация ===
+                        try {
+                            const validated = ProductSchema.parse(productBase);
+                            const searchText = generateSearchText(validated);
 
-                        if (existingOemSet.has(oem)) {
-                            toUpdate.push(finalProduct);
-                        } else {
-                            toAdd.push(finalProduct);
+                            const finalProduct: ImportProduct = {
+                                ...validated,
+                                searchText,
+                                images: [],
+                            };
+
+                            if (existingOemSet.has(validated.oem)) {
+                                toUpdate.push(finalProduct);
+                            } else {
+                                toAdd.push(finalProduct);
+                            }
+                        } catch (err: any) {
+                            if (err instanceof z.ZodError) {
+                                const errorMsg = err.issues
+                                    .map(issue => {
+                                        const field = issue.path.length > 0
+                                            ? issue.path.join('.')
+                                            : 'общее поле';
+                                        return `${field}: ${issue.message}`;
+                                    })
+                                    .join(', ');
+
+                                errors.push(
+                                    `Строка ${rowNumber} | ${productBase.oem || '—'} | ${productBase.name || '—'} → ${errorMsg}`
+                                );
+                            } else {
+                                errors.push(`Строка ${rowNumber} | Неизвестная ошибка валидации`);
+                            }
                         }
                     });
                 });
@@ -186,12 +193,12 @@ export async function parseExcelFile(
                         errors: errors.length,
                     },
                 });
-            } catch (err) {
-                console.error("Ошибка парсинга Excel:", err);
+            } catch (err: any) {
+                console.error("Критическая ошибка парсинга Excel:", err);
                 resolve({
                     toAdd: [],
                     toUpdate: [],
-                    errors: ["Ошибка чтения файла"],
+                    errors: ["Критическая ошибка при чтении файла Excel"],
                     stats: { total: 0, new: 0, updates: 0, errors: 1 }
                 });
             }
