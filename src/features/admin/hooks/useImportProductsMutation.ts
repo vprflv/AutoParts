@@ -6,7 +6,15 @@ export function useImportProductsMutation() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: importProducts,
+        mutationFn: async ({ productsInput, fileName }: {
+            productsInput: any[];
+            fileName?: string
+        }) => {
+            if (!Array.isArray(productsInput)) {
+                throw new Error("productsInput не array!!!");
+            }
+            return await importProducts(productsInput, fileName);
+        },
 
         onSuccess: (result) => {
             queryClient.invalidateQueries({ queryKey: ["allProducts"] });

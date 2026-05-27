@@ -48,18 +48,27 @@ export default function ImportProductsModal({ isOpen, onClose }: ImportProductsM
 
         try {
             const allProducts = [...previewData.toAdd, ...previewData.toUpdate];
-            const result = await importMutation.mutateAsync(allProducts);
 
-            // Успешно → закрываем текущую модалку и показываем результат
+            if (allProducts.length === 0) {
+                toast.error("Нет товаров для импорта");
+                setStep("preview");
+                return;
+            }
+            
+            const result = await importMutation.mutateAsync({
+                productsInput: allProducts,
+                fileName: excelFile?.name || "import.xlsx"
+            });
+
             setResultData(result);
             setShowResult(true);
 
-            // Небольшая задержка, чтобы анимация закрытия выглядела нормально
             setTimeout(() => {
-                onClose();           // закрываем ImportProductsModal
+                onClose();
             }, 300);
 
         } catch (err: any) {
+            console.error(err);
             setStep("preview");
             toast.error(err.message || "Ошибка импорта");
         }

@@ -24,6 +24,7 @@
 		"@vercel/speed-insights": "^2.0.0",
 		"bcryptjs": "^3.0.3",
 		"clsx": "2.1.1",
+		"date-fns": "^4.3.0",
 		"dotenv": "^17.4.2",
 		"intl-messageformat": "10.7.16",
 		"jsonwebtoken": "^9.0.3",

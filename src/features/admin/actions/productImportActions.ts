@@ -2,28 +2,57 @@
 
 import pool from "@/src/lib/db/pg";
 import { generateSearchText } from "@/features/admin/utils/generateSearchText";
+import { getCurrentAdmin } from "@/features/admin/lib/getCurrentAdmin";
+import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
+import { validateProduct, formatError } from "@/features/admin/utils/validateProduct";
 
-export async function importProducts(productsInput: any[]) {
+export async function importProducts(
+    productsInput: any[] = [],
+    fileName: string = "import.xlsx"
+) {
     const startTime = Date.now();
     const client = await pool.connect();
+    const errors: string[] = [];
+    let skipped = 0;
 
     try {
+        const admin = await getCurrentAdmin();
+
         await client.query("BEGIN");
 
         const oemsInNewFile = new Set<string>();
         const preparedMap = new Map<string, any>();
-        let skipped = 0;
 
-        for (const p of productsInput) {
-            const oem = p.oem?.toString().trim().toUpperCase();
+        // === ОСНОВНОЙ ЦИКЛ С ВАЛИДАЦИЕЙ ===
+        for (let i = 0; i < productsInput.length; i++) {
+            const p = productsInput[i];
 
-            if (!oem || !p.name?.toString().trim() || !p.brand?.toString().trim()) {
+            // Валидация
+            const validationErrors = validateProduct(p, i);
+
+            console.log(validationErrors)
+
+            if (validationErrors.length > 0) {
                 skipped++;
+                validationErrors.forEach(err => {
+                    errors.push(formatError(err));
+                });
+                continue; // пропускаем товар
+            }
+
+            const oem = p.oem.toString().trim().toUpperCase();
+
+            // Проверка на дубли в текущем файле
+            if (oemsInNewFile.has(oem)) {
+                skipped++;
+                errors.push(`Дублирующийся OEM: ${oem} (строка ${i + 1})`);
                 continue;
             }
 
             oemsInNewFile.add(oem);
 
+            // Подготовка данных
             const crossNumbers = typeof p.crossNumbers === "string"
                 ? p.crossNumbers.split(/[;,|]/).map((s: string) => s.trim().toUpperCase()).filter(Boolean)
                 : Array.isArray(p.crossNumbers) ? p.crossNumbers.map((s: any) => s?.toString().trim().toUpperCase()).filter(Boolean) : [];
@@ -56,10 +85,10 @@ export async function importProducts(productsInput: any[]) {
 
         const prepared = Array.from(preparedMap.values());
 
-        // Деактивация отсутствующих товаров
+        // Деактивация отсутствующих
         if (oemsInNewFile.size > 0) {
             await client.query(`
-                UPDATE "products" 
+                UPDATE "products"
                 SET active = false, "updatedAt" = NOW()
                 WHERE oem NOT IN (${Array.from(oemsInNewFile).map((_, i) => `$${i+1}`).join(',')})
                   AND active = true
@@ -100,7 +129,6 @@ export async function importProducts(productsInput: any[]) {
                                              "searchText" = EXCLUDED."searchText",
                                              active = true,
                                              "updatedAt" = NOW()
-                -- images намеренно НЕ обновляется!
             `, flatValues);
         }
 
@@ -108,7 +136,22 @@ export async function importProducts(productsInput: any[]) {
 
         const duration = Date.now() - startTime;
 
-        console.log(`✅ Импорт завершён за ${duration}мс | Обработано: ${prepared.length} | Пропущено: ${skipped}`);
+        await prisma.importHistory.create({
+            data: {
+                userId: admin.id,
+                type: "products",
+                fileName,
+                totalRows: productsInput.length,
+                added: prepared.length,
+                updated: 0,
+                skipped,
+                failed: errors.length,
+                errors: errors.length > 0 ? errors : Prisma.JsonNull,
+                resultData: { durationMs: duration },
+            },
+        });
+
+        console.log(`✅ Импорт завершён | Добавлено: ${prepared.length} | Пропущено: ${skipped} | Ошибок: ${errors.length}`);
 
         return {
             success: true,
@@ -116,13 +159,29 @@ export async function importProducts(productsInput: any[]) {
             updated: 0,
             skipped,
             total: productsInput.length,
-            duration
+            duration,
+            errors
         };
 
     } catch (error: any) {
         await client.query("ROLLBACK");
+
+        await prisma.importHistory.create({
+            data: {
+                userId: "system",
+                type: "products",
+                fileName,
+                totalRows: Array.isArray(productsInput) ? productsInput.length : 0,
+                added: 0,
+                updated: 0,
+                skipped,
+                failed: Array.isArray(productsInput) ? productsInput.length : 0,
+                errors: [error.message, ...errors],
+            },
+        });
+
         console.error("Import error:", error);
-        return { success: false, error: error.message || "Ошибка импорта" };
+        return { success: false, error: error.message || "Ошибка импорта", errors };
     } finally {
         client.release();
     }

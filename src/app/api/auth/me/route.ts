@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/src/lib/prisma';
-import { getCurrentUserId } from '@/src/lib/auth'; // твоя функция
+import { getCurrentUserId } from '@/lib/auth/auth'; // твоя функция
 
 export async function GET(req: NextRequest) {
     const userId = await getCurrentUserId();

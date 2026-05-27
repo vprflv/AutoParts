@@ -101,9 +101,9 @@ export async function deleteProductImageAction(productId: string, imageUrl: stri
     }
 }
 
-// =============================================
-// ОБНОВЛЕНИЕ ТОВАРА
-// =============================================
+
+// UPDATE PRODUCT
+
 export async function updateProduct(id: string, data: any) {
     try {
         const searchText = generateSearchText(data);

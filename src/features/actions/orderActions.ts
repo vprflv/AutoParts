@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/src/lib/prisma";
-import { getCurrentUserId } from "@/src/lib/auth";
+import { getCurrentUserId } from "@/lib/auth/auth";
 import {toPlain} from "@/lib/utils/toPlain";
 import {CartItem} from "@/types";
 import { Prisma } from "@prisma/client";

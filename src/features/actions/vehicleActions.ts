@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/src/lib/prisma";
-import { getCurrentUserId } from "@/src/lib/auth";
+import { getCurrentUserId } from "@/lib/auth/auth";
 
 export async function getUserVehicles() {
     const userId = await getCurrentUserId();

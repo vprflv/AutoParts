@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Package, LogOut, X } from "lucide-react";
+import {LayoutDashboard, Package, LogOut, X, HistoryIcon} from "lucide-react";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "react-hot-toast";
@@ -14,6 +14,7 @@ import {useAdminStore} from "@/store/useAdminStore";
 const menuItems = [
     { href: "/admin/dashboard", label: "Дашборд", icon: LayoutDashboard },
     { href: "/admin/products", label: "Товары", icon: Package },
+    { href: "/admin/update-history", label: "История", icon: HistoryIcon },
 ];
 
 interface AdminSidebarProps {
