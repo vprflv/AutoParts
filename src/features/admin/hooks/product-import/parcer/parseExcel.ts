@@ -1,7 +1,7 @@
 import * as XLSX from "xlsx";
-import {validateProduct} from "@/features/admin/utils/validateProduct";
-import {getColumnMap} from "@/features/admin/hooks/product-import/parcer/components/columnMapping";
 import {ImportProduct, ImportResult} from "@/features/admin/hooks/product-import";
+import {getColumnMap} from "@/features/admin/hooks/product-import/parcer/components/columnMapping";
+import {validateProduct} from "@/features/admin/utils/validateProduct";
 
 
 export async function parseExcelFile(
@@ -48,7 +48,6 @@ export async function parseExcelFile(
 
                         processed++;
 
-
                         const oemRaw = colMap.oem !== undefined
                             ? String(row[colMap.oem] || '')
                             : String(row[0] || '');
@@ -78,15 +77,16 @@ export async function parseExcelFile(
                             specifications: {},
                         };
 
-                        // === Валидация через отдельный модуль ===
+                        // === Валидация ===
                         const validation = validateProduct(productBase, rowNumber);
 
                         if (!validation.success) {
-                            const errorMsg = validation.errors.join(', ');
+                            // Предполагаем, что validateProduct возвращает { success: false, error: ImportError }
+                            const err = validation.error;
                             errors.push(
-                                `Строка ${validation.rowNumber} | ${validation.oem || '—'} | ${validation.name || '—'} → ${errorMsg}`
+                                `Строка ${err.rowNumber} | ${err.oem || '—'} | ${err.name || '—'} → ${err.errors.join(', ')}`
                             );
-                            return; // пропускаем плохую строку
+                            return;
                         }
 
                         // Успешная валидация

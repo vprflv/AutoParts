@@ -1,49 +1,34 @@
-import { z } from "zod";
-import {ImportProduct} from "@/features/admin/hooks/product-import";
-import {ProductSchema} from "@/features/admin/hooks/product-import/parcer/schemas/productSchema";
-import {generateSearchText} from "@/features/admin/utils/generateSearchText";
-
+import { ImportProduct } from "@/features/admin/hooks/product-import";
+import { ImportError } from "@/features/admin/hooks/product-import/types";
+import { ProductSchema } from "@/features/admin/hooks/product-import/parcer/schemas/productSchema";
+import { generateSearchText } from "@/features/admin/utils/generateSearchText";
+import { formatZodError } from "@/features/admin/hooks/product-import/importErrors";
 
 export type ValidationResult =
     | { success: true; product: ImportProduct; rowNumber?: number }
-    | { success: false; rowNumber?: number; oem?: string; name?: string; errors: string[] };
+    | { success: false; error: ImportError };
 
-export function validateProduct(
-    rawData: any,
-    rowNumber?: number
-): ValidationResult {
+export function validateProduct(rawData: any, rowNumber?: number): ValidationResult {
     try {
         const validated = ProductSchema.parse(rawData);
 
         const finalProduct: ImportProduct = {
             ...validated,
             searchText: generateSearchText(validated),
-            images: validated.images || [],
+            images: [],
         };
 
-        return { success: true, product: finalProduct, rowNumber };
+        return {
+            success: true,
+            product: finalProduct,
+            rowNumber,
+        };
     } catch (err: any) {
-        if (err instanceof z.ZodError) {
-            const errors = err.issues.map(issue => {
-                const field = issue.path.length > 0 ? issue.path.join('.') : 'общее поле';
-                return `${field}: ${issue.message}`;
-            });
-
-            return {
-                success: false,
-                rowNumber,
-                oem: rawData?.oem,
-                name: rawData?.name,
-                errors,
-            };
-        }
+        const importError = formatZodError(err, rowNumber || 0, rawData);
 
         return {
             success: false,
-            rowNumber,
-            oem: rawData?.oem,
-            name: rawData?.name,
-            errors: [err.message || "Неизвестная ошибка"],
+            error: importError,
         };
     }
 }
