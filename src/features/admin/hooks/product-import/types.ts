@@ -26,3 +26,11 @@ export interface ImportResult {
         errors: number;
     };
 }
+
+export interface ImportError {
+    rowNumber: number;
+    oem?: string;
+    name?: string;
+    errors: string[];
+    rawData?: any;
+}

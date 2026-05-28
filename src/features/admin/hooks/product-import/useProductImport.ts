@@ -1,5 +1,5 @@
 // src/features/admin/hooks/product-import/useProductImport.ts
-import { parseExcelFile } from "./parseExcel";
+import { parseExcelFile } from "./parcer/parseExcel";
 import { ImportResult } from "./types";
 import { useQuery } from '@tanstack/react-query';
 

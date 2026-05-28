@@ -39,7 +39,7 @@ export default function AdminSidebar({ onClose }: AdminSidebarProps) {
             }
         });
 
-        window.location.href = "/"; // жёсткий редирект
+        window.location.href = "/";
     };
 
     return (
