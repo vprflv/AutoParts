@@ -1,8 +1,8 @@
+// src/features/admin/hooks/product-import/parcer/parseExcel.ts
 import * as XLSX from "xlsx";
-import {ImportProduct, ImportResult} from "@/features/admin/hooks/product-import";
-import {getColumnMap} from "@/features/admin/hooks/product-import/parcer/components/columnMapping";
-import {validateProduct} from "@/features/admin/utils/validateProduct";
-
+import { ImportProduct, ImportResult } from "@/features/admin/hooks/product-import";
+import { getColumnMap } from "@/features/admin/hooks/product-import/parcer/components/columnMapping";
+import { validateProduct } from "@/features/admin/utils/validateProduct";
 
 export async function parseExcelFile(
     excelFile: File,
@@ -25,6 +25,9 @@ export async function parseExcelFile(
                     existingOems.map(o => String(o).trim().toUpperCase())
                 );
 
+                // === ДОБАВЛЕНО: отслеживание дублей OEM внутри загружаемого файла ===
+                const oemsInCurrentFile = new Set<string>();
+
                 workbook.SheetNames.forEach(sheetName => {
                     const sheetData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {
                         defval: "",
@@ -40,7 +43,6 @@ export async function parseExcelFile(
 
                     dataRows.forEach((row, rowIdx) => {
                         const rowNumber = rowIdx + 2;
-
 
                         if (!row || row.length === 0 || row.every(c => c == null || String(c).trim() === '')) {
                             return;
@@ -77,11 +79,9 @@ export async function parseExcelFile(
                             specifications: {},
                         };
 
-
                         const validation = validateProduct(productBase, rowNumber);
 
                         if (!validation.success) {
-
                             const err = validation.error;
                             errors.push(
                                 `Строка ${err.rowNumber} | ${err.oem || '—'} | ${err.name || '—'} → ${err.errors.join(', ')}`
@@ -89,11 +89,21 @@ export async function parseExcelFile(
                             return;
                         }
 
+                        const product = validation.product;
+                        const oemUpper = product.oem;
 
-                        if (existingOemSet.has(validation.product.oem)) {
-                            toUpdate.push(validation.product);
+                        // === ДОБАВЛЕНО: проверка дубля OEM внутри текущего файла ===
+                        if (oemsInCurrentFile.has(oemUpper)) {
+                            errors.push(`Строка ${rowNumber}: Дублирующийся OEM ${oemUpper} в файле`);
+                            return;
+                        }
+
+                        oemsInCurrentFile.add(oemUpper);
+
+                        if (existingOemSet.has(oemUpper)) {
+                            toUpdate.push(product);
                         } else {
-                            toAdd.push(validation.product);
+                            toAdd.push(product);
                         }
                     });
                 });
