@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowLeft, CheckCircle, AlertTriangle, Plus, RefreshCw, Loader2 } from "lucide-react";
-import { ImportProduct } from "@/src/features/admin/hooks/product-import/types";
+import { ImportProduct } from "@/features/admin/hooks/product-import/types";
 
 interface ImportPreviewStepProps {
     previewData: {

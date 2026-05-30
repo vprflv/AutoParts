@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { X, Loader2 } from "lucide-react";
-import { useImportProductsMutation } from "@/src/features/admin/hooks/useImportProductsMutation";
+import { useImportProductsMutation } from "@/features/admin/hooks/product-import/useImportProductsMutation";
 import ImportUploadStep from "./ImportUploadStep";
 import ImportPreviewStep from "./ImportPreviewStep";
 import ImportResultModal from "./ImportResultModal";
@@ -23,13 +23,13 @@ export default function ImportProductsModal({ isOpen, onClose }: ImportProductsM
     const [excelFile, setExcelFile] = useState<File | null>(null);
     const [isParsing, setIsParsing] = useState(false);
 
-    // Локальное состояние для результата
     const [showResult, setShowResult] = useState(false);
     const [resultData, setResultData] = useState<any>(null);
 
     const handlePreviewReady = async (excel: File) => {
         setExcelFile(excel);
         setIsParsing(true);
+
         try {
             const data = await parseImportFile(excel);
             setPreviewData(data);
@@ -54,10 +54,11 @@ export default function ImportProductsModal({ isOpen, onClose }: ImportProductsM
                 setStep("preview");
                 return;
             }
-            
+
             const result = await importMutation.mutateAsync({
                 productsInput: allProducts,
-                fileName: excelFile?.name || "import.xlsx"
+                fileName: excelFile?.name || "import.xlsx",
+                importErrors: previewData.errors || [],
             });
 
             setResultData(result);
@@ -66,7 +67,6 @@ export default function ImportProductsModal({ isOpen, onClose }: ImportProductsM
             setTimeout(() => {
                 onClose();
             }, 300);
-
         } catch (err: any) {
             console.error(err);
             setStep("preview");
@@ -78,7 +78,7 @@ export default function ImportProductsModal({ isOpen, onClose }: ImportProductsM
         setShowResult(false);
         setResultData(null);
 
-        // Полный сброс состояния
+        // Полный сброс
         setStep("upload");
         setPreviewData(null);
         setExcelFile(null);

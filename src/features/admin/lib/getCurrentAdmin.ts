@@ -33,7 +33,7 @@ export async function getCurrentAdmin() {
             throw new Error("Доступ запрещён");
         }
 
-        // Возвращаем максимально простой объект
+
         return {
             id: dbUser.id,
             email: dbUser.email,

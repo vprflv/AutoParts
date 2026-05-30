@@ -7,7 +7,7 @@ import HistoryDetailModal from "@/features/admin/components/HistoryDetailModal";
 
 
 async function getImportHistory() {
-    return await prisma.importHistory.findMany({
+     const result = await prisma.importHistory.findMany({
         orderBy: { createdAt: "desc" },
         include: {
             user: {
@@ -16,6 +16,9 @@ async function getImportHistory() {
         },
         take: 50,
     });
+
+     console.log(result)
+     return result
 }
 
 export default async function UpdateHistoryPage() {

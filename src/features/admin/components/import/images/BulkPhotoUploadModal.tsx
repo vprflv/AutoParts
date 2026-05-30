@@ -2,8 +2,8 @@
 
 import { useState, useCallback } from "react";
 import { X, Upload, Loader2 } from "lucide-react";
-import { useBulkPhotoUpload } from "@/src/features/admin/hooks/useBulkPhotoUpload";
-import ImportResultModal from "@/src/features/admin/components/import/ImportResultModal"; // ← добавь этот импорт
+import { useBulkPhotoUpload } from "@/features/admin/hooks/useBulkPhotoUpload";
+import ImportResultModal from "@/features/admin/components/import/products/ImportResultModal"; // ← добавь этот импорт
 
 interface BulkPhotoUploadModalProps {
     isOpen: boolean;

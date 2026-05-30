@@ -6,14 +6,19 @@ export function useImportProductsMutation() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async ({ productsInput, fileName }: {
+        mutationFn: async ({
+                               productsInput,
+                               fileName = "import.xlsx",
+                               importErrors = [],
+                           }: {
             productsInput: any[];
-            fileName?: string
-        }) => {
+            fileName?: string;
+            importErrors?: string[];
+        })=> {
             if (!Array.isArray(productsInput)) {
                 throw new Error("productsInput не array!!!");
             }
-            return await importProducts(productsInput, fileName);
+            return await importProducts(productsInput, fileName, importErrors);
         },
 
         onSuccess: (result) => {

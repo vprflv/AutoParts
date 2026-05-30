@@ -2,9 +2,9 @@
 
 import { Plus, Search, Edit2, Trash2, Upload, AlertTriangle } from "lucide-react";
 import { useAdminProductsPage } from "@/features/admin/hooks/useAdminProductsPage";
-import ImportProductsModal from "@/src/features/admin/components/import/ImportProductsModal";
+import ImportProductsModal from "@/features/admin/components/import/products/ImportProductsModal";
 import EditProductModal from "@/src/features/admin/components/EditProductModal";
-import BulkPhotoUploadModal from "@/src/features/admin/components/import/BulkPhotoUploadModal";
+import BulkPhotoUploadModal from "@/features/admin/components/import/images/BulkPhotoUploadModal";
 import ProductImage from "@/features/admin/components/ProductImage";
 import {useAdminProducts} from "@/features/admin/hooks/useAdminProducts";
 import {useEffect} from "react";

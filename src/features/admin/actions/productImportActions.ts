@@ -8,11 +8,12 @@ import { Prisma } from "@prisma/client";
 
 export async function importProducts(
     productsInput: any[] = [],
-    fileName: string = "import.xlsx"
+    fileName: string = "import.xlsx",
+    importErrors: string[] = []
 ) {
     const startTime = Date.now();
     const client = await pool.connect();
-    const errors: string[] = [];
+    const errors: string[] = [...importErrors];
     let skipped = 0;
 
     try {
@@ -27,7 +28,6 @@ export async function importProducts(
             const p = productsInput[i];
             const rowNumber = i + 1;
 
-            // Пропускаем, если товар пустой (на всякий случай)
             if (!p || !p.oem) {
                 skipped++;
                 errors.push(`Строка ${rowNumber}: Пустой товар или отсутствует OEM`);
@@ -36,7 +36,6 @@ export async function importProducts(
 
             const oem = p.oem.toString().trim().toUpperCase();
 
-            // Проверка дублей внутри файла
             if (oemsInNewFile.has(oem)) {
                 skipped++;
                 errors.push(`Строка ${rowNumber}: Дублирующийся OEM ${oem}`);
@@ -45,7 +44,6 @@ export async function importProducts(
 
             oemsInNewFile.add(oem);
 
-            // Подготовка данных для базы
             const crossNumbers = typeof p.crossNumbers === "string"
                 ? p.crossNumbers.split(/[;,|]/).map((s: string) => s.trim().toUpperCase()).filter(Boolean)
                 : Array.isArray(p.crossNumbers)
@@ -76,18 +74,13 @@ export async function importProducts(
                 applicability,
                 crossNumbers,
                 specifications,
-                searchText: generateSearchText({
-                    name: p.name,
-                    oem,
-                    brand: p.brand,
-                    crossNumbers
-                }),
+                searchText: generateSearchText({ name: p.name, oem, brand: p.brand, crossNumbers }),
             });
         }
 
         const prepared = Array.from(preparedMap.values());
 
-        // Деактивация товаров, которых нет в новом импорте
+        // Деактивация отсутствующих товаров
         if (oemsInNewFile.size > 0) {
             await client.query(`
                 UPDATE "products"
@@ -97,7 +90,7 @@ export async function importProducts(
             `, Array.from(oemsInNewFile));
         }
 
-        // Добавление / обновление товаров
+        // Запись товаров
         if (prepared.length > 0) {
             const valuesPlaceholders = prepared.map((_, idx) => {
                 const base = idx * 13;
@@ -108,8 +101,8 @@ export async function importProducts(
 
             const flatValues = prepared.flatMap(item => [
                 item.id, item.oem, item.name, item.brand, item.price, item.stock,
-                item.category, item.description, [],
-                item.applicability, item.crossNumbers, item.specifications, item.searchText
+                item.category, item.description, [], item.applicability,
+                item.crossNumbers, item.specifications, item.searchText
             ]);
 
             await client.query(`
@@ -138,6 +131,7 @@ export async function importProducts(
 
         const duration = Date.now() - startTime;
 
+        // Сохранение в историю
         await prisma.importHistory.create({
             data: {
                 userId: admin.id,
@@ -152,8 +146,6 @@ export async function importProducts(
                 resultData: { durationMs: duration },
             },
         });
-
-        console.log(`✅ Импорт завершён | Добавлено: ${prepared.length} | Пропущено: ${skipped} | Ошибок: ${errors.length}`);
 
         return {
             success: true,
@@ -178,7 +170,7 @@ export async function importProducts(
                 added: 0,
                 updated: 0,
                 skipped,
-                failed: productsInput.length,
+                failed: errors.length,
                 errors: [error.message, ...errors],
             },
         });

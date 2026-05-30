@@ -41,7 +41,7 @@ export async function parseExcelFile(
                     dataRows.forEach((row, rowIdx) => {
                         const rowNumber = rowIdx + 2;
 
-                        // Пропускаем пустые строки
+
                         if (!row || row.length === 0 || row.every(c => c == null || String(c).trim() === '')) {
                             return;
                         }
@@ -77,11 +77,11 @@ export async function parseExcelFile(
                             specifications: {},
                         };
 
-                        // === Валидация ===
+
                         const validation = validateProduct(productBase, rowNumber);
 
                         if (!validation.success) {
-                            // Предполагаем, что validateProduct возвращает { success: false, error: ImportError }
+
                             const err = validation.error;
                             errors.push(
                                 `Строка ${err.rowNumber} | ${err.oem || '—'} | ${err.name || '—'} → ${err.errors.join(', ')}`
@@ -89,7 +89,7 @@ export async function parseExcelFile(
                             return;
                         }
 
-                        // Успешная валидация
+
                         if (existingOemSet.has(validation.product.oem)) {
                             toUpdate.push(validation.product);
                         } else {

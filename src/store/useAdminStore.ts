@@ -1,4 +1,3 @@
-// src/store/useAdminStore.ts
 import { create } from 'zustand';
 
 type AdminUser = {
