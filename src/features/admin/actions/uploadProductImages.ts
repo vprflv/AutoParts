@@ -2,9 +2,11 @@
 
 import { prisma } from "@/src/lib/prisma";
 import { createServerClientFn } from "@/src/lib/supabase/server";
-
+import { getCurrentAdmin } from "@/features/admin/lib/getCurrentAdmin";
+import { Prisma } from "@prisma/client";
 export async function uploadProductImages(files: File[]) {
     const supabase = await createServerClientFn();
+    const admin = await getCurrentAdmin().catch(() => null);
 
     let success = 0;
     let failed = 0;
@@ -12,6 +14,9 @@ export async function uploadProductImages(files: File[]) {
     const errors: string[] = [];
     const notFoundOems: string[] = [];
     const uploadedUrls: string[] = [];
+
+    // === ДОБАВЛЕНО: сохранение истории загрузки фото ===
+    const startTime = Date.now();
 
     for (let i = 0; i < files.length; i++) {
         const file = files[i];
@@ -28,9 +33,31 @@ export async function uploadProductImages(files: File[]) {
                 notFound++;
                 notFoundOems.push(oem || file.name);
             }
-            errors.push(`❌ ${file.name} (OEM: ${oem}): ${result.error}`);
+            errors.push(`❌ ${file.name} (OEM: ${oem || '—'}): ${result.error}`);
         }
     }
+
+    const duration = Date.now() - startTime;
+
+    // === ДОБАВЛЕНО: запись в importHistory ===
+    await prisma.importHistory.create({
+        data: {
+            userId: admin?.id || "system",
+            type: "photos",
+            fileName: `bulk-upload-${new Date().toISOString().slice(0, 10)}`,
+            totalRows: files.length,
+            added: success,
+            updated: 0,
+            skipped: 0,
+            failed: failed,
+            errors: errors.length > 0 ? errors : Prisma.JsonNull,
+            resultData: {
+                durationMs: duration,
+                notFound,
+                notFoundOems,
+            },
+        },
+    });
 
     return {
         success,
@@ -43,7 +70,6 @@ export async function uploadProductImages(files: File[]) {
     };
 }
 
-// extractOEM и processSingleImage — оставляем как в прошлой версии
 function extractOEM(fileName: string): string | null {
     const nameWithoutExt = fileName.split('.').slice(0, -1).join('.');
     const firstPart = nameWithoutExt.split('_')[0];

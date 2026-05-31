@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import { X, Upload, Loader2 } from "lucide-react";
 import { useBulkPhotoUpload } from "@/features/admin/hooks/useBulkPhotoUpload";
-import ImportResultModal from "@/features/admin/components/import/products/ImportResultModal"; // ← добавь этот импорт
+import ImportResultModal from "@/features/admin/components/import/products/ImportResultModal";
 
 interface BulkPhotoUploadModalProps {
     isOpen: boolean;
@@ -18,7 +18,6 @@ export default function BulkPhotoUploadModal({ isOpen, onClose }: BulkPhotoUploa
     const [isDragging, setIsDragging] = useState(false);
     const [uploading, setUploading] = useState(false);
 
-    // Состояние для модалки результата
     const [resultModal, setResultModal] = useState<{
         isOpen: boolean;
         result: any;
@@ -64,18 +63,16 @@ export default function BulkPhotoUploadModal({ isOpen, onClose }: BulkPhotoUploa
         try {
             const result = await bulkUpload.mutateAsync(files);
 
-            // Открываем модалку с результатом
             setResultModal({
                 isOpen: true,
                 result: result,
             });
 
-            // Очищаем форму
             setFiles([]);
             setPreviews([]);
 
-        } catch (err) {
-            // Ошибка уже обработана внутри хука
+        } catch (err: any) {
+            console.error("Upload error:", err);
         } finally {
             setUploading(false);
         }
@@ -83,7 +80,6 @@ export default function BulkPhotoUploadModal({ isOpen, onClose }: BulkPhotoUploa
 
     const closeResultModal = () => {
         setResultModal({ isOpen: false, result: null });
-        // Закрываем основную модалку через небольшую задержку
         setTimeout(onClose, 300);
     };
 
@@ -93,7 +89,6 @@ export default function BulkPhotoUploadModal({ isOpen, onClose }: BulkPhotoUploa
         <>
             <div className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center p-4">
                 <div className="bg-zinc-900 rounded-3xl w-full max-w-3xl overflow-hidden">
-                    {/* Header */}
                     <div className="px-8 py-6 border-b border-zinc-800 flex items-center justify-between">
                         <div>
                             <h2 className="text-2xl font-semibold">Массовая загрузка фото</h2>
@@ -107,7 +102,6 @@ export default function BulkPhotoUploadModal({ isOpen, onClose }: BulkPhotoUploa
                     </div>
 
                     <div className="p-8 space-y-6">
-                        {/* Drag & Drop */}
                         <div
                             onDrop={handleDrop}
                             onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
@@ -132,7 +126,6 @@ export default function BulkPhotoUploadModal({ isOpen, onClose }: BulkPhotoUploa
                             </label>
                         </div>
 
-                        {/* Превью */}
                         {files.length > 0 && (
                             <div>
                                 <p className="text-sm text-zinc-400 mb-4">
@@ -158,7 +151,6 @@ export default function BulkPhotoUploadModal({ isOpen, onClose }: BulkPhotoUploa
                             </div>
                         )}
 
-                        {/* Кнопка загрузки */}
                         <button
                             onClick={handleUpload}
                             disabled={files.length === 0 || uploading}
@@ -180,7 +172,6 @@ export default function BulkPhotoUploadModal({ isOpen, onClose }: BulkPhotoUploa
                 </div>
             </div>
 
-            {/* Модалка с результатом */}
             <ImportResultModal
                 isOpen={resultModal.isOpen}
                 onClose={closeResultModal}

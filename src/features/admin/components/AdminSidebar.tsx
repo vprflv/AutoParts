@@ -3,17 +3,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {LayoutDashboard, Package, LogOut, X, HistoryIcon} from "lucide-react";
-import { useAuthStore } from "@/src/store/useAuthStore";
+import {LayoutDashboard, Package, LogOut, X, HistoryIcon, Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { toast } from "react-hot-toast";
-import {useQueryClient} from "@tanstack/react-query";
 import {useAdminStore} from "@/store/useAdminStore";
 
 
 const menuItems = [
     { href: "/admin/dashboard", label: "Дашборд", icon: LayoutDashboard },
     { href: "/admin/products", label: "Товары", icon: Package },
+    { href: "/admin/users", label: "Пользователи", icon: Users },
     { href: "/admin/update-history", label: "История", icon: HistoryIcon },
 ];
 

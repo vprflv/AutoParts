@@ -37,7 +37,7 @@ export function useBulkPhotoUpload() {
 
             toast.dismiss(toastId);
 
-            const finalResult = {
+            return {
                 success: successTotal,
                 failed: failedTotal,
                 notFound: notFoundTotal,
@@ -46,8 +46,6 @@ export function useBulkPhotoUpload() {
                 notFoundOems: allNotFoundOems,
                 uploadedUrls: allUploadedUrls,
             };
-
-            return finalResult;
         },
 
         onSuccess: (result) => {
@@ -69,7 +67,6 @@ export function useBulkPhotoUpload() {
                 });
             }
 
-            // Возвращаем полный результат для открытия модалки
             return result;
         },
 

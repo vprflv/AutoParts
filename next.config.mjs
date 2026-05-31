@@ -12,6 +12,13 @@ const nextConfig = {
         },
     },
 
+    resolve: {
+        alias: {
+            "@": "/src",
+            "@/src": "/src",
+        },
+    },
+
     images: {
 
         unoptimized: true,
